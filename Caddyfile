@@ -5,7 +5,5 @@
 }
 
 :{$PORT:8080} {
-    root * /app/public
-    encode zstd br gzip
-    php_server
+    respond "CUSTOM CADDY CONFIG IS ACTIVE" 200
 }
