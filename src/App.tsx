@@ -53,6 +53,12 @@ export default function App() {
 
   // Synchronize currentUser from authService
   useEffect(() => {
+    void archiveDB.syncPublishedFromBackend().catch(() => {
+      // Keep demo fixtures available during local work; production must not present
+      // stale browser/demo content as the shared archive database.
+      if (!import.meta.env.DEV) archiveDB.clearPublishedCache();
+    });
+    void authService.refreshSession();
     return authService.subscribe(user => {
       setCurrentUser(user);
     });
@@ -79,7 +85,7 @@ export default function App() {
   }, [currentTab]);
 
   const currentUserRole: UserRole =
-    currentUser?.role === 'admin'
+    currentUser?.role === 'admin' || currentUser?.role === 'super_admin'
       ? 'Admin'
       : currentUser?.role === 'editor'
       ? 'Editor'

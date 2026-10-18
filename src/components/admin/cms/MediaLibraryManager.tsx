@@ -1,8 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { archiveDB } from '../../../db/archiveStore';
 import { SiteImage, RightsStatus } from '../../../types';
+import { authService } from '../../../services/authService';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
 import { Image, Upload, Search, Filter, Trash2, CheckCircle2, AlertTriangle, Eye, ArrowUp, ArrowDown, Star, Link, Shield } from 'lucide-react';
+
+function rightsToApi(value: RightsStatus): string {
+  return {
+    'Public Domain': 'public_domain',
+    'Creative Commons': 'creative_commons',
+    'Copyrighted - Permission Granted': 'copyrighted_permitted',
+    Unknown: 'unknown',
+    Restricted: 'restricted',
+  }[value];
+}
 
 interface Props {
   actorName: string;
@@ -10,9 +21,33 @@ interface Props {
 
 export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
   const [tick, setTick] = useState(0);
-  const refresh = () => setTick(t => t + 1);
+  const [images, setImages] = useState<SiteImage[]>([]);
+  const refresh = async () => {
+    const token = authService.getToken();
+    if (!token) return;
+    const response = await fetch('/api/v1/admin/media?per_page=100', {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('تعذر تحميل مكتبة الصور من الخادم.');
+    const result = await response.json();
+    const rights: Record<string, RightsStatus> = {
+      public_domain: 'Public Domain', creative_commons: 'Creative Commons',
+      copyrighted_permitted: 'Copyrighted - Permission Granted', unknown: 'Unknown', restricted: 'Restricted',
+    };
+    setImages((result.data || []).map((image: any) => ({
+      id: String(image.id), site_id: String(image.site_id), title: image.title || '', caption: image.caption || '',
+      description: image.description || '', alt_text: image.alt_text || '', date_taken: image.date_taken || '',
+      date_precision: image.date_precision || 'unknown', photographer: image.photographer || '', credit_line: image.credit_line || '',
+      license: image.license || '', usage_restrictions: image.usage_restrictions || '',
+      rights_status: rights[image.rights_status] || 'Unknown', image_role: image.image_role || 'current_view',
+      sort_order: Number(image.sort_order || 0), featured: Boolean(image.featured), visibility: Boolean(image.visibility),
+      ai_assisted: Boolean(image.ai_assisted), web_url: image.web_url || '', thumb_url: image.thumbnail_url || '',
+      download_url: '', source_ids: [], file_hash_sha256: '',
+    })));
+    setTick(t => t + 1);
+  };
+  useEffect(() => { void refresh().catch(error => alert(error.message)); }, []);
 
-  const images = archiveDB.getAllImages();
   const sites = archiveDB.getAllSites(true);
 
   const [search, setSearch] = useState('');
@@ -29,6 +64,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
   const [uploadRights, setUploadRights] = useState<RightsStatus>('Creative Commons');
   const [uploadLicense, setUploadLicense] = useState('CC BY-NC 4.0');
   const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
 
   // Edit metadata form state
   const [editCaption, setEditCaption] = useState('');
@@ -66,33 +102,30 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
     setIsEditingMetadata(true);
   };
 
-  const handleSaveMetadata = (e: React.FormEvent) => {
+  const handleSaveMetadata = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedImage) return;
 
-    archiveDB.updateImageMetadata(
-      selectedImage.id,
-      {
-        caption: editCaption,
-        title: editCaption,
-        photographer: editPhotographer,
-        alt_text: editAltText,
-        rights_status: editRights as any,
-        license: editLicense,
-        credit_line: editCopyrightNotice,
-        site_id: editSiteId,
-      },
-      actorName
-    );
-
-    refresh();
-    setIsEditingMetadata(false);
-    alert('تم حفظ البيانات الوصفية وحقوق الصورة بنجاح.');
+    try {
+      const response = await fetch(`/api/v1/admin/media/${selectedImage.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` },
+        body: JSON.stringify({
+          caption_ar: editCaption, photographer: editPhotographer, alt_text: editAltText,
+          rights_status: rightsToApi(editRights), license: editLicense, copyright_notice: editCopyrightNotice, site_id: editSiteId,
+        }),
+      });
+      if (!response.ok) throw new Error('تعذر حفظ بيانات الصورة.');
+      await refresh();
+      setIsEditingMetadata(false);
+      alert('تم حفظ البيانات الوصفية وحقوق الصورة بنجاح.');
+    } catch (error: any) { alert(error.message); }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploadFile(file);
 
     if (!file.type.startsWith('image/')) {
       alert('يرجى اختيار ملف صورة صالح (JPEG, PNG, WebP).');
@@ -111,9 +144,9 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
     reader.readAsDataURL(file);
   };
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadPreviewUrl) {
+    if (!uploadPreviewUrl || !uploadFile) {
       alert('يرجى اختيار صورة للرفع.');
       return;
     }
@@ -122,34 +155,25 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
       return;
     }
 
-    const newImage: Omit<SiteImage, 'id'> = {
-      site_id: uploadSiteId,
-      title: uploadCaption || 'صورة توثيقية للأثر',
-      caption: uploadCaption || 'صورة توثيقية للأثر',
-      description: uploadCaption || '',
-      web_url: uploadPreviewUrl,
-      thumb_url: uploadPreviewUrl,
-      photographer: uploadPhotographer,
-      rights_status: uploadRights as any,
-      license: uploadLicense,
-      credit_line: `جميع الحقوق محفوظة — ${uploadPhotographer}`,
-      featured: false,
-      sort_order: images.filter(i => i.site_id === uploadSiteId).length + 1,
-      visibility: true,
-      alt_text: uploadCaption || 'صورة من أرشيف كربلاء',
-      date_taken: new Date().toISOString().split('T')[0],
-      date_precision: 'approximate',
-      image_role: 'current_view',
-      ai_assisted: false,
-      file_hash_sha256: `hash_${Date.now()}`,
-    };
-
-    archiveDB.addImage(newImage, actorName);
-    setIsUploading(false);
-    setUploadPreviewUrl(null);
-    setUploadCaption('');
-    refresh();
-    alert('تم رفع الصورة وإدراجها في مكتبة الوسائط بنجاح.');
+    const form = new FormData();
+    form.append('image', uploadFile);
+    form.append('site_id', uploadSiteId);
+    form.append('caption_ar', uploadCaption);
+    form.append('photographer', uploadPhotographer);
+    form.append('rights_status', rightsToApi(uploadRights));
+    form.append('license', uploadLicense);
+    try {
+      const response = await fetch('/api/v1/admin/media/upload', {
+        method: 'POST', headers: { Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` }, body: form,
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.message || 'تعذر رفع الصورة إلى الخادم.');
+      }
+      setIsUploading(false); setUploadPreviewUrl(null); setUploadFile(null); setUploadCaption('');
+      await refresh();
+      alert('تم حفظ الصورة الأصلية في التخزين الدائم. ستظهر بعد اكتمال معالجة المشتقات.');
+    } catch (error: any) { alert(error.message); }
   };
 
   const handleDeleteImage = (img: SiteImage) => {
@@ -160,19 +184,23 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
 
     if (!confirm(confirmMsg)) return;
 
-    archiveDB.deleteImage(img.id, actorName);
-    if (selectedImage?.id === img.id) {
-      setSelectedImage(null);
-      setIsEditingMetadata(false);
-    }
-    refresh();
-    alert('تم حذف الصورة من مكتبة الوسائط.');
+    void fetch(`/api/v1/admin/media/${img.id}`, {
+      method: 'DELETE', headers: { Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` },
+    }).then(async response => {
+      if (!response.ok) throw new Error('تعذر حذف الصورة من الخادم.');
+      if (selectedImage?.id === img.id) { setSelectedImage(null); setIsEditingMetadata(false); }
+      await refresh(); alert('تم حذف الصورة من مكتبة الوسائط.');
+    }).catch(error => alert(error.message));
   };
 
   const handleSetPrimary = (img: SiteImage) => {
-    archiveDB.setFeaturedImage(img.site_id, img.id, actorName);
-    refresh();
-    alert('تم تعيين الصورة كصورة رئيسية شاخصة للمعلم.');
+    void fetch(`/api/v1/admin/media/${img.id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` },
+      body: JSON.stringify({ is_primary: true }),
+    }).then(async response => {
+      if (!response.ok) throw new Error('تعذر تعيين الصورة الرئيسية.');
+      await refresh(); alert('تم تعيين الصورة كصورة رئيسية شاخصة للمعلم.');
+    }).catch(error => alert(error.message));
   };
 
   return (

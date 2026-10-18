@@ -11,7 +11,10 @@ use App\Models\SiteImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use App\Jobs\ProcessImageDerivativeJob;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class MediaController extends Controller
 {
@@ -28,9 +31,9 @@ class MediaController extends Controller
 
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
-                $q->where('caption_ar', 'LIKE', "%{$search}%")
+                $q->where('caption', 'LIKE', "%{$search}%")
                   ->orWhere('photographer', 'LIKE', "%{$search}%")
-                  ->orWhere('storage_key_original', 'LIKE', "%{$search}%");
+                  ->orWhere('original_storage_path', 'LIKE', "%{$search}%");
             });
         }
 
@@ -42,7 +45,7 @@ class MediaController extends Controller
             $query->where('rights_status', $rights);
         }
 
-        $images = $query->paginate(24);
+        $images = $query->paginate(min(max($request->integer('per_page', 24), 1), 100));
 
         return response()->json($images);
     }
@@ -53,16 +56,22 @@ class MediaController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => 'required|file|mimes:jpeg,png,webp,tiff|max:15360', // max 15MB
+            'image' => 'required|image|mimes:jpeg,png,webp|max:15360', // max 15MB
             'site_id' => 'required|exists:sites,id',
             'photographer' => 'nullable|string|max:255',
-            'rights_status' => 'nullable|string',
+            'license' => 'nullable|string|max:100',
+            'rights_status' => ['sometimes', Rule::enum(RightsStatus::class)],
             'caption_ar' => 'nullable|string|max:500',
             'alt_text' => 'nullable|string|max:500',
         ]);
 
         $file = $request->file('image');
         $site = Site::findOrFail($request->input('site_id'));
+
+        $dimensions = @getimagesize($file->getRealPath());
+        if (!$dimensions || $dimensions[0] > 8000 || $dimensions[1] > 8000 || ($dimensions[0] * $dimensions[1]) > 12_000_000) {
+            return response()->json(['message' => 'أبعاد الصورة كبيرة أو غير قابلة للقراءة بأمان.'], 422);
+        }
 
         // Authorization Gate (M5): Image may attach only to a site the user may edit
         if ($request->user() && $request->user()->cannot('create', [SiteImage::class, $site])) {
@@ -76,7 +85,7 @@ class MediaController extends Controller
         $realMime = finfo_file($finfo, $file->getRealPath());
         finfo_close($finfo);
 
-        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/tiff'];
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
         if (!in_array($realMime, $allowedMimes)) {
             return response()->json([
                 'error' => 'تم رفض الملف: البصمة الثنائية غير متوافقة مع صور الأرشيف المعتمدة',
@@ -87,7 +96,7 @@ class MediaController extends Controller
         $sha256 = hash_file('sha256', $file->getRealPath());
 
         // Check for duplicate media hash
-        $duplicate = MediaHash::where('sha256_hash', $sha256)->first();
+        $duplicate = MediaHash::where('hash_value', $sha256)->where('file_version', 'original')->first();
         if ($duplicate) {
             return response()->json([
                 'error' => 'هذه الصورة موجودة مسبقاً في الأرشيف (تطابق بصمة التجزئة الرقمية SHA-256)',
@@ -99,34 +108,51 @@ class MediaController extends Controller
         $originalPath = "sites/{$site->slug}/original/{$ulid}.bin";
 
         try {
-            Storage::disk('originals')->put($originalPath, file_get_contents($file->getRealPath()));
+            if (!Storage::disk('originals')->put($originalPath, file_get_contents($file->getRealPath()))) {
+                throw new \RuntimeException('Original image could not be stored.');
+            }
+
+            $siteImage = DB::transaction(function () use ($site, $originalPath, $ulid, $request, $realMime, $file, $sha256) {
+                $image = SiteImage::create([
+                    'site_id' => $site->id,
+                    'ulid' => (string) $ulid,
+                    'title' => $request->input('caption_ar', $site->name_ar),
+                    'caption' => $request->input('caption_ar', $site->name_ar),
+                    'alt_text' => $request->input('alt_text'),
+                    'original_storage_path' => $originalPath,
+                    'photographer' => $request->input('photographer', 'أرشيف أثر كربلاء'),
+                    'license' => $request->input('license'),
+                    'rights_status' => $request->input('rights_status') ?: RightsStatus::UNKNOWN->value,
+                    'mime_type' => $realMime,
+                    'file_size_bytes' => $file->getSize(),
+                    'created_by' => $request->user()?->id,
+                ]);
+
+                MediaHash::create([
+                    'site_image_id' => $image->id,
+                    'file_version' => 'original',
+                    'hash_algorithm' => 'sha256',
+                    'hash_value' => $sha256,
+                    'file_size_bytes' => $file->getSize(),
+                    'verified_at' => now(),
+                ]);
+
+                return $image;
+            });
+
         } catch (\Throwable $e) {
-            // Fallback storage path if s3/r2 is not configured
-            Storage::disk('local')->put("private/{$originalPath}", file_get_contents($file->getRealPath()));
+            // Never claim success or fall back to instance-local storage if R2 fails.
+            try { Storage::disk('originals')->delete($originalPath); } catch (\Throwable) {}
+            report($e);
+            return response()->json(['message' => 'تعذر تخزين الصورة بأمان. يرجى المحاولة لاحقاً.'], 503);
         }
 
-        $siteImage = SiteImage::create([
-            'site_id' => $site->id,
-            'storage_key_original' => $originalPath,
-            'web_path' => "sites/{$site->slug}/web/{$ulid}.jpg",
-            'thumbnail_path' => "sites/{$site->slug}/thumb/{$ulid}.jpg",
-            'watermarked_download_path' => "sites/{$site->slug}/download/{$ulid}_watermarked.jpg",
-            'caption_ar' => $request->input('caption_ar', $site->name_ar),
-            'photographer' => $request->input('photographer', 'أرشيف أثر كربلاء'),
-            'rights_status' => $request->input('rights_status', RightsStatus::PUBLIC_DOMAIN->value ?? 'public_domain'),
-            'mime_type' => $realMime,
-            'file_size_bytes' => $file->getSize(),
-            'sha256_original' => $sha256,
-        ]);
-
-        MediaHash::create([
-            'image_id' => $siteImage->id,
-            'derivative_type' => 'original',
-            'storage_path' => $originalPath,
-            'sha256_hash' => $sha256,
-            'verified_at' => now(),
-            'status' => 'valid',
-        ]);
+        try {
+            ProcessImageDerivativeJob::dispatch($originalPath, $site->slug, (string) $ulid);
+        } catch (\Throwable $e) {
+            // Keep the durable original and database row. Operators can retry failed jobs.
+            report($e);
+        }
 
         $this->auditLogAction->execute(
             action: 'media.uploaded',
@@ -138,7 +164,7 @@ class MediaController extends Controller
         );
 
         return response()->json([
-            'message' => 'تم استلام الصورة وتخزينها في الخزينة الآمنة وجارٍ توليد المشتقات',
+            'message' => 'تم استلام الصورة وتخزينها بأمان، وجارٍ توليد المشتقات',
             'image' => $siteImage,
         ], 201);
     }
@@ -159,14 +185,29 @@ class MediaController extends Controller
         $validated = $request->validate([
             'caption_ar' => 'sometimes|string|max:500',
             'photographer' => 'nullable|string|max:255',
-            'rights_status' => 'nullable|string|max:100',
+            'rights_status' => ['sometimes', Rule::enum(RightsStatus::class)],
             'license' => 'nullable|string|max:100',
             'copyright_notice' => 'nullable|string|max:500',
-            'source_title' => 'nullable|string|max:255',
-            'site_id' => 'nullable|exists:sites,id',
+            'credit_line' => 'nullable|string|max:500',
+            'site_id' => 'sometimes|exists:sites,id',
             'sort_order' => 'nullable|integer',
             'is_primary' => 'nullable|boolean',
+            'alt_text' => 'nullable|string|max:500',
         ]);
+
+        if (array_key_exists('caption_ar', $validated)) {
+            $validated['caption'] = $validated['caption_ar'];
+            $validated['title'] = $validated['caption_ar'];
+            unset($validated['caption_ar']);
+        }
+        if (array_key_exists('copyright_notice', $validated)) {
+            $validated['copyright'] = $validated['copyright_notice'];
+            unset($validated['copyright_notice']);
+        }
+        if (array_key_exists('is_primary', $validated)) {
+            $validated['featured'] = $validated['is_primary'];
+            unset($validated['is_primary']);
+        }
 
         // Authorization Gate (M5): If changing site_id, user must have edit permission on target site
         if ($request->filled('site_id') && (int) $request->input('site_id') !== (int) $image->site_id) {
@@ -178,7 +219,12 @@ class MediaController extends Controller
             }
         }
 
-        $image->update($validated);
+        DB::transaction(function () use ($image, $validated) {
+            if (($validated['featured'] ?? false) && $image->site_id) {
+                SiteImage::where('site_id', $image->site_id)->where('id', '!=', $image->id)->update(['featured' => false]);
+            }
+            $image->update($validated);
+        });
 
         $this->auditLogAction->execute(
             action: 'media.updated',
@@ -268,23 +314,19 @@ class MediaController extends Controller
             'downloaded_at' => now(),
         ]);
 
-        $storedPath = $image->watermarked_download_path ?: $image->web_path;
+        $storedPath = $image->download_storage_path;
         $slug = $image->site ? Str::slug($image->site->slug) : 'archive';
         $filename = "KHA_{$slug}_watermarked.jpg";
 
         try {
-            if ($image->watermarked_download_path && Storage::disk('downloads')->exists($image->watermarked_download_path)) {
-                return Storage::disk('downloads')->download($image->watermarked_download_path, $filename);
+            if ($storedPath && Storage::disk('downloads')->exists($storedPath)) {
+                return Storage::disk('downloads')->download($storedPath, $filename);
             }
         } catch (\Throwable $e) {
-            // S3/R2 or storage fallback
+            report($e);
         }
 
-        return response()->json([
-            'message' => 'تصريح التنزيل مُنح، جارٍ توفير المشتق الموسوم مائياً',
-            'download_url' => $storedPath,
-            'filename' => $filename,
-        ]);
+        abort(404, 'النسخة الآمنة للتنزيل غير متاحة بعد.');
     }
 
     /**
@@ -292,9 +334,28 @@ class MediaController extends Controller
      */
     public function verifyHashes(): JsonResponse
     {
-        $hashes = MediaHash::with('image')->get();
+        $hashes = MediaHash::with('siteImage')->get();
         $total = $hashes->count();
-        $valid = $hashes->where('status', 'valid')->count();
+        $valid = 0;
+        foreach ($hashes as $hash) {
+            $image = $hash->siteImage;
+            if (!$image) continue;
+            [$disk, $path] = match ($hash->file_version) {
+                'original' => ['originals', $image->original_storage_path],
+                'web' => ['derivatives', $image->web_storage_path],
+                'thumbnail' => ['derivatives', $image->thumb_storage_path],
+                'download' => ['downloads', $image->download_storage_path],
+                default => [null, null],
+            };
+            try {
+                if ($disk && $path && Storage::disk($disk)->exists($path)
+                    && hash_equals($hash->hash_value, hash('sha256', Storage::disk($disk)->get($path)))) {
+                    $valid++;
+                }
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         return response()->json([
             'total_checked' => $total,

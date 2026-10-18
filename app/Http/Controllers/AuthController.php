@@ -10,6 +10,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -28,12 +29,8 @@ class AuthController extends Controller
     public function handleGoogleLogin(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'id_token' => 'nullable|string', // Firebase ID Token
-            'credential' => 'nullable|string', // Alternate key for token
-            'email' => 'nullable|email|max:255',
-            'name' => 'nullable|string|max:255',
-            'avatar' => 'nullable|string|url|max:1000',
-            'google_id' => 'nullable|string|max:255',
+            'id_token' => 'required_without:credential|string|max:8192',
+            'credential' => 'required_without:id_token|string|max:8192',
             'return_url' => 'nullable|string|max:1000',
         ]);
 
@@ -48,45 +45,19 @@ class AuthController extends Controller
             }
         }
 
-        $email = null;
-        $name = null;
-        $avatar = $validated['avatar'] ?? null;
-        $firebaseUid = $validated['google_id'] ?? null;
-
-        // Verify Firebase JWT token if provided
-        if (!empty($rawToken)) {
-            try {
-                $claims = $this->tokenVerifier->verify($rawToken);
-                if (isset($claims['email_verified']) && $claims['email_verified'] === false) {
-                    return response()->json([
-                        'message' => 'مرفوض: البريد الإلكتروني غير موثق من قِبل المزود (Unverified Email).',
-                    ], 403);
-                }
-                $email = strtolower($claims['email']);
-                $name = $claims['name'] ?: ($validated['name'] ?? 'باحث');
-                $avatar = $claims['avatar'] ?: $avatar;
-                $firebaseUid = $claims['uid'] ?: $firebaseUid;
-            } catch (Exception $e) {
-                // If token verification fails and explicit email is not provided, reject
-                if (empty($validated['email'])) {
-                    return response()->json([
-                        'message' => 'فشل التحقق من رمز Firebase: ' . $e->getMessage(),
-                    ], 401);
-                }
-            }
+        try {
+            $claims = $this->tokenVerifier->verify($rawToken);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'تعذر التحقق من هوية Google.'], 401);
         }
 
-        // Fallback to validated request fields if direct payload
-        if (empty($email) && !empty($validated['email'])) {
-            $email = strtolower(trim($validated['email']));
-            $name = trim($validated['name'] ?? 'باحث');
+        if (($claims['firebase']['sign_in_provider'] ?? null) !== 'google.com') {
+            return response()->json(['message' => 'يجب تسجيل الدخول باستخدام حساب Google.'], 401);
         }
-
-        if (empty($email)) {
-            return response()->json([
-                'message' => 'البريد الإلكتروني مطلوب لإتمام عملية تسجيل الدخول',
-            ], 422);
-        }
+        $email = $claims['email'];
+        $name = $claims['name'];
+        $avatar = $claims['avatar'];
+        $firebaseUid = $claims['uid'];
 
         // Check for pending invitation matching user's email
         $invitation = \App\Models\AccessInvitation::with('role')->where('email', $email)->valid()->first();
@@ -103,25 +74,59 @@ class AuthController extends Controller
         $assignedRoleId = $invitation ? $invitation->role_id : $defaultRole->id;
 
         $isNewUser = false;
-        $user = User::with('role')->where('email', $email)->first();
+        $user = User::with('role')->where('google_id', $firebaseUid)->first();
 
-        // Security Gate: Blocked/deactivated accounts cannot sign in
+        // Deactivated accounts cannot be linked or otherwise modified during a login attempt.
         if ($user && isset($user->is_active) && !$user->is_active) {
             return response()->json([
                 'message' => 'مرفوض: تم إيقاف أو حظر هذا الحساب من قِبل إدارة الأرشيف.',
             ], 403);
         }
 
+        // Backfill legacy accounts only when the provider has cryptographically
+        // verified the exact email. A Google subject already attached elsewhere fails closed.
+        if (!$user) {
+            $user = User::where('email', $email)->first();
+            if ($user && $user->google_id && !hash_equals($user->google_id, $firebaseUid)) {
+                return response()->json(['message' => 'حساب Google مرتبط بحساب آخر.'], 409);
+            }
+            if ($user) {
+                if (isset($user->is_active) && !$user->is_active) {
+                    return response()->json(['message' => 'مرفوض: تم إيقاف أو حظر هذا الحساب من قِبل إدارة الأرشيف.'], 403);
+                }
+                $user->google_id = $firebaseUid;
+                $user->save();
+                $user->load('role');
+                $this->auditLogAction->execute(
+                    action: 'user.google_identity_linked',
+                    entityType: 'User',
+                    entityId: (string) $user->id,
+                    performedBy: $user->name,
+                    details: "ربط حساب Google موثق بالحساب القائم: {$user->email}",
+                    ipAddress: $request->ip(),
+                    performedById: $user->id
+                );
+            }
+        }
+
         if (!$user) {
             $isNewUser = true;
-            $user = User::create([
-                'name' => $name,
-                'email' => $email,
-                'password' => Hash::make(Str::random(32)),
-                'role_id' => $assignedRoleId,
-                // Google accounts are inherently email-verified (email_verified: true)
-                'email_verified_at' => now(),
-            ]);
+            try {
+                $user = DB::transaction(fn () => User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'google_id' => $firebaseUid,
+                    'avatar_url' => $avatar,
+                    'password' => Hash::make(Str::random(64)),
+                    'role_id' => $assignedRoleId,
+                    'email_verified_at' => now(),
+                ]));
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                // A simultaneous login may have created the same subject. Resolve to
+                // that durable account instead of minting a duplicate or failing over.
+                $user = User::where('google_id', $firebaseUid)->firstOrFail();
+                $isNewUser = false;
+            }
 
             $user->load('role');
 
@@ -136,7 +141,8 @@ class AuthController extends Controller
                     entityId: (string) $invitation->id,
                     performedBy: $user->name,
                     details: "قبول دعوة الانضمام وتعيين الرتبة المحددة ({$user->role?->name_ar}) لأول مرة",
-                    ipAddress: $request->ip()
+                    ipAddress: $request->ip(),
+                    performedById: $user->id
                 );
             }
 
@@ -146,7 +152,8 @@ class AuthController extends Controller
                 entityId: (string) $user->id,
                 performedBy: $user->name,
                 details: "تسجيل مستخدم جديد عبر Firebase Google Auth بدور ({$user->role?->name_ar}): {$user->email}",
-                ipAddress: $request->ip()
+                ipAddress: $request->ip(),
+                performedById: $user->id
             );
         } else {
             // If user exists and has a pending invitation, claim it exactly once
@@ -165,7 +172,8 @@ class AuthController extends Controller
                     entityId: (string) $invitation->id,
                     performedBy: $user->name,
                     details: "قبول دعوة الانضمام وترقية حساب المستخدم إلى ({$user->role?->name_ar})",
-                    ipAddress: $request->ip()
+                    ipAddress: $request->ip(),
+                    performedById: $user->id
                 );
             }
 
@@ -179,20 +187,25 @@ class AuthController extends Controller
                 $user->update(['email_verified_at' => now()]);
             }
 
+            if (!$user->google_id) {
+                $user->update(['google_id' => $firebaseUid, 'avatar_url' => $avatar]);
+            } elseif (!$user->avatar_url && $avatar) {
+                $user->update(['avatar_url' => $avatar]);
+            }
+
             $this->auditLogAction->execute(
                 action: 'user.login_google_firebase',
                 entityType: 'User',
                 entityId: (string) $user->id,
                 performedBy: $user->name,
                 details: "تسجيل دخول معتمد عبر Firebase Google Auth: {$user->email} (الدور: {$user->role?->name_ar})",
-                ipAddress: $request->ip()
+                ipAddress: $request->ip(),
+                performedById: $user->id
             );
         }
 
         // Issue Sanctum Personal Access Token or session token
-        $token = method_exists($user, 'createToken')
-            ? $user->createToken('firebase-google-auth')->plainTextToken
-            : 'kha_sanctum_'.Str::random(48);
+        $token = $user->createToken('firebase-google-auth')->plainTextToken;
 
         return response()->json([
             'status' => 'success',
@@ -205,10 +218,10 @@ class AuthController extends Controller
             'return_url' => $returnUrl,
             'user' => [
                 'id' => $user->id,
-                'firebase_uid' => $firebaseUid,
+                'firebase_uid' => $user->google_id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'avatar' => $avatar,
+                'avatar' => $user->avatar_url,
                 'role' => $user->role?->name ?? 'viewer',
                 'role_ar' => $user->role?->name_ar ?? 'مشاهد وباحث',
                 'email_verified' => true,
@@ -237,6 +250,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'avatar' => $user->avatar_url,
                 'role' => $user->role?->name ?? 'viewer',
                 'role_ar' => $user->role?->name_ar ?? 'مشاهد وباحث',
                 'email_verified' => !is_null($user->email_verified_at),

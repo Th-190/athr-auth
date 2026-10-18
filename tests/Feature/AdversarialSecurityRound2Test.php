@@ -208,31 +208,35 @@ class AdversarialSecurityRound2Test extends TestCase
     // =========================================================================
     public function test_media_downloads_resolved_strictly_by_database_id(): void
     {
-        Storage::fake('public');
+        Storage::fake('downloads');
 
         $publishedSite = $this->createSampleSite('published');
         $draftSite = $this->createSampleSite('draft');
 
         // Create sample site image in storage
-        $storedPath = 'sites/test-image.jpg';
-        Storage::disk('public')->put($storedPath, 'fake-jpeg-binary-stream');
+        $storedPath = 'sites/test-image/download.jpg';
+        Storage::disk('downloads')->put($storedPath, 'fake-jpeg-binary-stream');
 
         $publishedImage = SiteImage::create([
             'site_id' => $publishedSite->id,
-            'path' => $storedPath,
-            'file_name' => 'test-image.jpg',
+            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'title' => 'Test image',
+            'original_storage_path' => 'sites/test-image/original.bin',
+            'download_storage_path' => $storedPath,
             'mime_type' => 'image/jpeg',
-            'file_size' => 24,
-            'is_primary' => true,
+            'file_size_bytes' => 24,
+            'featured' => true,
         ]);
 
         $draftImage = SiteImage::create([
             'site_id' => $draftSite->id,
-            'path' => $storedPath,
-            'file_name' => 'draft-image.jpg',
+            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'title' => 'Draft image',
+            'original_storage_path' => 'sites/draft/original.bin',
+            'download_storage_path' => $storedPath,
             'mime_type' => 'image/jpeg',
-            'file_size' => 24,
-            'is_primary' => true,
+            'file_size_bytes' => 24,
+            'featured' => true,
         ]);
 
         // Valid download by ID for published site succeeds
@@ -250,6 +254,71 @@ class AdversarialSecurityRound2Test extends TestCase
         // Non-existent ID returns 404
         $notFoundRes = $this->get('/api/v1/media/9999999/download');
         $notFoundRes->assertStatus(404);
+    }
+
+    public function test_public_site_api_returns_only_visible_published_derivatives(): void
+    {
+        Storage::fake('derivatives');
+        $site = $this->createSampleSite('published');
+        $webPath = "sites/{$site->slug}/web/public.jpg";
+        $thumbPath = "sites/{$site->slug}/thumb/public.jpg";
+        Storage::disk('derivatives')->put($webPath, 'processed-web-image');
+        Storage::disk('derivatives')->put($thumbPath, 'processed-thumbnail');
+
+        $visible = SiteImage::create([
+            'site_id' => $site->id,
+            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'title' => 'Public image',
+            'original_storage_path' => "sites/{$site->slug}/original/private.bin",
+            'web_storage_path' => $webPath,
+            'thumb_storage_path' => $thumbPath,
+            'rights_status' => 'unknown',
+            'visibility' => true,
+            'mime_type' => 'image/jpeg',
+        ]);
+        SiteImage::create([
+            'site_id' => $site->id,
+            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'title' => 'Hidden image',
+            'original_storage_path' => "sites/{$site->slug}/original/hidden.bin",
+            'rights_status' => 'unknown',
+            'visibility' => false,
+            'mime_type' => 'image/jpeg',
+        ]);
+
+        $response = $this->getJson("/api/v1/sites/{$site->slug}")->assertOk();
+        $images = $response->json('data.images');
+        $this->assertCount(1, $images);
+        $this->assertSame($visible->id, $images[0]['id']);
+        $this->assertSame(Storage::disk('derivatives')->url($webPath), $images[0]['web_url']);
+        $this->assertSame(Storage::disk('derivatives')->url($thumbPath), $images[0]['thumbnail_url']);
+        $this->assertArrayNotHasKey('original_storage_path', $images[0]);
+        $this->assertArrayNotHasKey('download_storage_path', $images[0]);
+    }
+
+    public function test_authorized_upload_persists_original_and_generates_shared_derivatives(): void
+    {
+        Storage::fake('originals');
+        Storage::fake('derivatives');
+        Storage::fake('downloads');
+        $admin = $this->createTestUser('admin');
+        $site = $this->createSampleSite('published');
+
+        $response = $this->actingAs($admin)->postJson('/api/v1/admin/media/upload', [
+            'image' => UploadedFile::fake()->image('archive.jpg', 800, 600),
+            'site_id' => $site->id,
+            'caption_ar' => 'صورة تجريبية لعملية الرفع',
+            'rights_status' => 'unknown',
+        ])->assertCreated();
+
+        $image = SiteImage::findOrFail($response->json('image.id'));
+        Storage::disk('originals')->assertExists($image->original_storage_path);
+        Storage::disk('derivatives')->assertExists($image->web_storage_path);
+        Storage::disk('derivatives')->assertExists($image->thumb_storage_path);
+        Storage::disk('downloads')->assertExists($image->download_storage_path);
+        $this->assertSame(Storage::disk('derivatives')->url($image->web_storage_path), $image->web_url);
+        $this->assertDatabaseHas('media_hashes', ['site_image_id' => $image->id, 'file_version' => 'original']);
+        $this->assertDatabaseHas('media_hashes', ['site_image_id' => $image->id, 'file_version' => 'thumbnail']);
     }
 
     // =========================================================================

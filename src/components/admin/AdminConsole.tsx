@@ -131,15 +131,6 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
           <div className="pt-2 flex flex-col gap-2">
             <button
               onClick={() => {
-                authService.loginLocalEditorial('hikmat122112@gmail.com');
-                window.location.reload();
-              }}
-              className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-semibold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow"
-            >
-              <span>الدخول كمدير معتمد (hikmat122112@gmail.com)</span>
-            </button>
-            <button
-              onClick={() => {
                 if (onNavigateHome) onNavigateHome();
                 else window.location.href = '/';
               }}

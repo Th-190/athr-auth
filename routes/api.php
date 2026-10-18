@@ -31,8 +31,10 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/google', [AuthController::class, 'handleGoogleLogin'])
         ->middleware('throttle:15,1')
         ->name('api.v1.auth.google');
-    Route::get('/auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
-    Route::post('/auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
+        Route::post('/auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
+    });
 
     // Public Taxonomies
     Route::get('/taxonomies', [TaxonomyController::class, 'index'])->name('api.v1.taxonomies.index');

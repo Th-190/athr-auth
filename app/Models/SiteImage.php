@@ -10,12 +10,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class SiteImage extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $guarded = ['id'];
+
+    protected $hidden = [
+        'original_storage_path',
+        'download_storage_path',
+    ];
+
+    protected $appends = ['web_url', 'thumbnail_url'];
 
     protected $casts = [
         'rights_status' => RightsStatus::class,
@@ -46,5 +54,19 @@ class SiteImage extends Model
     public function downloadLogs(): HasMany
     {
         return $this->hasMany(DownloadLog::class);
+    }
+
+    public function getWebUrlAttribute(): ?string
+    {
+        return $this->web_storage_path
+            ? Storage::disk('derivatives')->url($this->web_storage_path)
+            : null;
+    }
+
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        return $this->thumb_storage_path
+            ? Storage::disk('derivatives')->url($this->thumb_storage_path)
+            : null;
     }
 }

@@ -123,6 +123,65 @@ class ArchiveDatabase {
     };
   }
 
+  /** Replace the browser's public site/image cache with the Laravel database snapshot. */
+  public async syncPublishedFromBackend(): Promise<void> {
+    const sites: any[] = [];
+    let page = 1;
+    let lastPage = 1;
+    do {
+      const response = await fetch(`/api/v1/sites?per_page=50&page=${page}`, { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error('Could not load published archive records.');
+      const result = await response.json();
+      sites.push(...(result.data || []));
+      lastPage = Number(result.last_page || 1);
+      page += 1;
+    } while (page <= lastPage);
+
+    const mappedSites: Site[] = [];
+    const mappedImages: SiteImage[] = [];
+    for (const item of sites) {
+      const coordinates = item.coordinates || {};
+      mappedSites.push({
+        id: String(item.id), permanent_id: item.inventory_number || String(item.id), slug: item.slug,
+        name_ar: item.name_ar, name_en: item.name_en || '', alternate_names: [],
+        short_description: item.summary_ar || '', description: item.description_ar || '', historical_description: '',
+        architectural_description: '', cultural_significance: '', historical_significance: '', current_condition: '',
+        location_description: '', province_id: String(item.province_id || ''), district_id: '', area_id: String(item.area_id || ''),
+        site_type_id: String(item.site_type_id || ''), historical_period_id: String(item.historical_period_id || ''),
+        lat: Number(coordinates.latitude || 0), lng: Number(coordinates.longitude || 0),
+        location_precision: item.location_precision || 'unknown', publication_status: item.publication_status,
+        verification_status: item.verification_status, verification_notes: '', verified_by: '',
+        verified_at: item.verified_at || '', last_reviewed_at: item.updated_at || '', created_by: '', updated_by: '',
+        published_at: item.published_at, is_demo: Boolean(item.is_demo), is_lost_or_vanished: false,
+        is_under_research: false, ai_assisted: Boolean(item.ai_assisted), view_count: Number(item.view_count || 0),
+        featured: Boolean(item.featured), source_count: 0, image_count: (item.images || []).length,
+      });
+      for (const image of item.images || []) {
+        mappedImages.push({
+          id: String(image.id), site_id: String(item.id), title: image.title || image.caption || item.name_ar,
+          caption: image.caption || '', description: image.description || '', alt_text: image.alt_text || '',
+          date_taken: image.date_taken || '', date_precision: image.date_precision || 'unknown',
+          photographer: image.photographer || '', credit_line: image.credit_line || '', license: image.license || '',
+          usage_restrictions: image.usage_restrictions || '', rights_status: image.rights_status || 'unknown',
+          image_role: image.image_role || 'current_view', sort_order: Number(image.sort_order || 0),
+          featured: Boolean(image.featured), visibility: Boolean(image.visibility), ai_assisted: Boolean(image.ai_assisted),
+          web_url: image.web_url || '', thumb_url: image.thumbnail_url || '', download_url: '',
+          source_ids: [], file_hash_sha256: '',
+        });
+      }
+    }
+
+    this.state.sites = mappedSites;
+    this.state.images = mappedImages;
+    this.notify();
+  }
+
+  public clearPublishedCache(): void {
+    this.state.sites = [];
+    this.state.images = [];
+    this.notify();
+  }
+
   private notify(): void {
     this.listeners.forEach(l => l());
   }

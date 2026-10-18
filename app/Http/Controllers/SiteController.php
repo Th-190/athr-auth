@@ -23,7 +23,7 @@ class SiteController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Site::query()
-            ->with(['siteType', 'historicalPeriod', 'area', 'province', 'images'])
+            ->with(['siteType', 'historicalPeriod', 'area', 'province', 'images' => fn ($images) => $images->where('visibility', true)->whereNotNull('web_storage_path')])
             ->publishedAndPublic();
 
         // Text Search with Arabic normalization
@@ -122,7 +122,7 @@ class SiteController extends Controller
             'names',
             'sources',
             'claims.evidence.source',
-            'images',
+            'images' => fn ($images) => $images->where('visibility', true)->whereNotNull('web_storage_path'),
             'events',
             'timeline',
             'verifications.verifier',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authService } from '../../../services/authService';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
 import { Shield, UserPlus, KeyRound, Ban, CheckCircle2, Trash2, Search, UserCheck, Mail, Send, Clock, XCircle } from 'lucide-react';
 
@@ -24,51 +25,8 @@ interface AccessInvitation {
   created_at: string;
 }
 
-const DEFAULT_USERS: ManagedUser[] = [
-  {
-    id: 1,
-    name: 'مدير النظام الرئيسي',
-    email: 'admin@karbalaheritage.iq',
-    role: 'admin',
-    role_ar: 'مدير أرشيف',
-    is_active: true,
-    email_verified: true,
-    created_at: '2026-03-01T00:00:00Z',
-  },
-  {
-    id: 2,
-    name: 'محرر توثيق التراث',
-    email: 'editor@karbalaheritage.iq',
-    role: 'editor',
-    role_ar: 'محرر وباحث',
-    is_active: true,
-    email_verified: true,
-    created_at: '2026-03-05T00:00:00Z',
-  },
-  {
-    id: 3,
-    name: 'باحث ميداني زائر',
-    email: 'researcher@karbalaheritage.iq',
-    role: 'viewer',
-    role_ar: 'مشاهد وباحث',
-    is_active: true,
-    email_verified: true,
-    created_at: '2026-03-10T00:00:00Z',
-  },
-];
-
-const STORAGE_USERS_KEY = 'kha_managed_users_v1';
-
-export const UsersManager: React.FC<{ actorName: string }> = ({ actorName }) => {
-  const [users, setUsers] = useState<ManagedUser[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_USERS_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // Fallback
-    }
-    return DEFAULT_USERS;
-  });
+export const UsersManager: React.FC<{ actorName: string }> = () => {
+  const [users, setUsers] = useState<ManagedUser[]>([]);
 
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -90,57 +48,30 @@ export const UsersManager: React.FC<{ actorName: string }> = ({ actorName }) => 
 
   const activeAdminsCount = users.filter(u => u.role === 'admin' && u.is_active).length;
 
-  const persistUsers = (list: ManagedUser[]) => {
-    setUsers(list);
-    try {
-      localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(list));
-    } catch {
-      // Fallback
-    }
+  const fetchApiUsers = async () => {
+    const token = authService.getToken();
+    if (!token) { setUsers([]); return; }
+    const response = await fetch('/api/v1/admin/users', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    });
+    if (!response.ok) throw new Error('تعذر تحميل المستخدمين من الخادم.');
+    const data = await response.json();
+    const list = data.users?.data || data.users || [];
+    setUsers(Array.isArray(list) ? list.map((u: any) => ({
+      id: u.id, name: u.name, email: u.email, role: u.role || 'viewer',
+      role_ar: u.role_ar || 'مشاهد وباحث', is_active: u.is_active !== false,
+      email_verified: Boolean(u.email_verified), created_at: u.created_at || '', deactivated_at: u.deactivated_at,
+    })) : []);
   };
 
-  // Try fetching from Laravel backend if token exists
   useEffect(() => {
-    const fetchApi = async () => {
-      try {
-        const token = localStorage.getItem('kha_auth_token');
-        if (!token) return;
-        const res = await fetch('/api/v1/admin/users', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.users && Array.isArray(data.users.data || data.users)) {
-            const apiUsers: ManagedUser[] = (data.users.data || data.users).map((u: any) => ({
-              id: u.id,
-              name: u.name,
-              email: u.email,
-              role: u.role || 'viewer',
-              role_ar: u.role_ar || (u.role === 'admin' ? 'مدير أرشيف' : u.role === 'editor' ? 'محرر وباحث' : 'مشاهد وباحث'),
-              is_active: u.is_active !== false,
-              email_verified: Boolean(u.email_verified),
-              created_at: u.created_at || new Date().toISOString(),
-              deactivated_at: u.deactivated_at,
-            }));
-            if (apiUsers.length > 0) {
-              persistUsers(apiUsers);
-            }
-          }
-        }
-      } catch {
-        // Fallback to local
-      }
-    };
-    fetchApi();
+    void fetchApiUsers().catch(error => alert(error.message));
     fetchInvitations();
   }, []);
 
   const fetchInvitations = async () => {
     try {
-      const token = localStorage.getItem('kha_auth_token');
+      const token = authService.getToken();
       if (!token) return;
       const res = await fetch('/api/v1/admin/invitations', {
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
@@ -150,7 +81,7 @@ export const UsersManager: React.FC<{ actorName: string }> = ({ actorName }) => 
         setInvitations(data.data || []);
       }
     } catch {
-      // Fallback
+      setInvitations([]);
     }
   };
 
@@ -161,7 +92,7 @@ export const UsersManager: React.FC<{ actorName: string }> = ({ actorName }) => 
       return;
     }
     try {
-      const token = localStorage.getItem('kha_auth_token');
+      const token = authService.getToken();
       const res = await fetch('/api/v1/admin/invitations', {
         method: 'POST',
         headers: {
@@ -190,7 +121,7 @@ export const UsersManager: React.FC<{ actorName: string }> = ({ actorName }) => 
       return;
     }
     try {
-      const token = localStorage.getItem('kha_auth_token');
+      const token = authService.getToken();
       const res = await fetch(`/api/v1/admin/invitations/${id}/revoke`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
@@ -222,22 +153,10 @@ export const UsersManager: React.FC<{ actorName: string }> = ({ actorName }) => 
       return;
     }
 
-    const newUser: ManagedUser = {
-      id: `usr_${Date.now()}`,
-      name: newForm.name.trim(),
-      email: newForm.email.trim().toLowerCase(),
-      role: newForm.role,
-      role_ar: newForm.role === 'admin' ? 'مدير أرشيف' : newForm.role === 'editor' ? 'محرر وباحث' : 'مشاهد وباحث',
-      is_active: true,
-      email_verified: true,
-      created_at: new Date().toISOString(),
-    };
-
-    // Attempt backend save
     try {
-      const token = localStorage.getItem('kha_auth_token');
-      if (token) {
-        await fetch('/api/v1/admin/users', {
+      const token = authService.getToken();
+      if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
+      const response = await fetch('/api/v1/admin/users', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -246,16 +165,16 @@ export const UsersManager: React.FC<{ actorName: string }> = ({ actorName }) => 
           },
           body: JSON.stringify(newForm),
         });
-      }
-    } catch {
-      // Fallback
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'تعذر إنشاء المستخدم على الخادم.');
+      await fetchApiUsers();
+      setIsCreateOpen(false);
+      setNewForm({ name: '', email: '', password: '', role: 'editor' });
+      alert(result.message || 'تم إنشاء المستخدم بنجاح.');
+    } catch (error: any) {
+      alert(error.message || 'تعذر الاتصال بالخادم.');
+      return;
     }
-
-    const updated = [newUser, ...users];
-    persistUsers(updated);
-    setIsCreateOpen(false);
-    setNewForm({ name: '', email: '', password: '', role: 'editor' });
-    alert(`تم إنشاء حساب ${newUser.role_ar}: ${newUser.name} بنجاح.`);
   };
 
   const handleToggleActive = async (user: ManagedUser) => {
@@ -273,47 +192,37 @@ export const UsersManager: React.FC<{ actorName: string }> = ({ actorName }) => 
 
     // Backend call
     try {
-      const token = localStorage.getItem('kha_auth_token');
-      if (token) {
-        const endpoint = willActivate
-          ? `/api/v1/admin/users/${user.id}/activate`
-          : `/api/v1/admin/users/${user.id}/deactivate`;
-        await fetch(endpoint, {
+      const token = authService.getToken();
+      if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
+      const endpoint = willActivate
+        ? `/api/v1/admin/users/${user.id}/activate`
+        : `/api/v1/admin/users/${user.id}/deactivate`;
+      const response = await fetch(endpoint, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
-      }
-    } catch {
-      // Fallback
+      if (!response.ok) throw new Error('تعذر تحديث حالة المستخدم.');
+      await fetchApiUsers();
+    } catch (error: any) {
+      alert(error.message || 'تعذر الاتصال بالخادم.');
+      return;
     }
-
-    const updated = users.map(u => {
-      if (u.id === user.id) {
-        return {
-          ...u,
-          is_active: willActivate,
-          deactivated_at: willActivate ? null : new Date().toISOString(),
-        };
-      }
-      return u;
-    });
-
-    persistUsers(updated);
   };
 
   const handleRevokeSessions = async (user: ManagedUser) => {
     if (!confirm(`هل تريد إبطال جميع الجلسات النشطة للمستخدم (${user.name})؟`)) return;
 
     try {
-      const token = localStorage.getItem('kha_auth_token');
-      if (token) {
-        await fetch(`/api/v1/admin/users/${user.id}/revoke-sessions`, {
+      const token = authService.getToken();
+      if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
+      const response = await fetch(`/api/v1/admin/users/${user.id}/revoke-sessions`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
-      }
-    } catch {
-      // Fallback
+      if (!response.ok) throw new Error('تعذر إبطال جلسات المستخدم.');
+    } catch (error: any) {
+      alert(error.message || 'تعذر الاتصال بالخادم.');
+      return;
     }
 
     alert(`تم إبطال جميع جلسات الدخول للمستخدم (${user.name}).`);
@@ -330,19 +239,18 @@ export const UsersManager: React.FC<{ actorName: string }> = ({ actorName }) => 
     }
 
     try {
-      const token = localStorage.getItem('kha_auth_token');
-      if (token) {
-        await fetch(`/api/v1/admin/users/${user.id}`, {
+      const token = authService.getToken();
+      if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
+      const response = await fetch(`/api/v1/admin/users/${user.id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
-      }
-    } catch {
-      // Fallback
+      if (!response.ok) throw new Error('تعذر حذف المستخدم على الخادم.');
+      await fetchApiUsers();
+    } catch (error: any) {
+      alert(error.message || 'تعذر الاتصال بالخادم.');
+      return;
     }
-
-    const updated = users.filter(u => u.id !== user.id);
-    persistUsers(updated);
     alert(`تم حذف الحساب بنجاح.`);
   };
 
