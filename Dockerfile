@@ -27,8 +27,12 @@ RUN if [ -f package-lock.json ]; then \
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chmod -R 777 storage bootstrap/cache
 
-# إنشاء Caddyfile وتوجيه الخادم مع تشغيل الهجرة تلقائياً
-RUN echo ":{\$PORT:-8080} {\n  root * /app/public\n  encode zstd br gzip\n  php_server\n}" > /etc/caddy/Caddyfile
+# إعادة كتابة Caddyfile بشكل إلزامي ونظيف
+RUN echo ":{\$PORT:-8080} {" > /etc/caddy/Caddyfile \
+    && echo "  root * /app/public" >> /etc/caddy/Caddyfile \
+    && echo "  encode zstd br gzip" >> /etc/caddy/Caddyfile \
+    && echo "  php_server" >> /etc/caddy/Caddyfile \
+    && echo "}" >> /etc/caddy/Caddyfile
 
-# تشغيل الـ Migrations ثم تشغيل خادم FrankenPHP
+# تشغيل الهجرة ثم تشغيل الخادم بالتكوين الصريح
 CMD sh -c "php artisan migrate --force && frankenphp run --config /etc/caddy/Caddyfile"
