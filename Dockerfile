@@ -1,4 +1,4 @@
-DockerfileFROM dunglas/frankenphp:php8.3-bookworm
+FROM DockerfileFROM dunglas/frankenphp:php8.3-bookworm
 
 # تثبيت الحزم الأساسية وأدوات النظام
 RUN apt-get update && apt-get install -y \
