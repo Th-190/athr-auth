@@ -1,6 +1,6 @@
-DockerfileFROM dunglas/frankenphp:php8.3-bookworm
+FROM dunglas/frankenphp:php8.3-bookworm
 
-# تثبيت الحزم الأساسية وأدوات النظام
+# تثبيت الحزم والمكتبات الأساسية لدعم PostgreSQL والمكونات
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -12,18 +12,22 @@ RUN apt-get update && apt-get install -y \
 # تثبيت أداة Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# ضبط جذر المستند إلى مجلد public الخاص بـ Laravel
+ENV DOCUMENT_ROOT=/app/public
+
 # تعيين مجلد العمل
 WORKDIR /app
 
 # نسخ ملفات المشروع
 COPY . .
 
-# تثبيت حزم PHP وتخطي الحزم التطويرية لزيادة السرعة
+# تثبيت حزم PHP والتحسين للإنتاج
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# ضبط الأذونات للمجلدات الأساسية
+# إنشاء المجلدات وضبط الصلاحيات
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chmod -R 777 storage bootstrap/cache
 
-# تشغيل خادم التطبيق عبر FrankenPHP
-CMD [ "php", "artisan", "serve", "--host=0.0.0.0", "--port=8080" ]
+# تشغيل خادم FrankenPHP مباشرة على الجذر المقترن بـ Laravel
+CMD [ "php", "artisan", "config:cache" ]
+CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
