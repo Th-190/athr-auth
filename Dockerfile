@@ -16,10 +16,12 @@ WORKDIR /app
 
 COPY . .
 
+# نسخ ملف التكوين المخصص للمنفذ
+COPY Caddyfile /etc/caddy/Caddyfile
+
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chmod -R 777 storage bootstrap/cache
 
-# تعديل منفذ الاستماع في ملف Caddyfile ليتطابق مع منفذ Railway تلقائياً، ثم تشغيل الخادم
-CMD sh -c "sed -i 's/:80/:${PORT:-8080}/g' /etc/caddy/Caddyfile && frankenphp run --config /etc/caddy/Caddyfile"
+CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
