@@ -16,12 +16,16 @@ WORKDIR /app
 
 COPY . .
 
-# نسخ ملف التكوين لتوجيه المنفذ والمسار بشكل صحيح
-COPY Caddyfile /etc/caddy/Caddyfile
-
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chmod -R 777 storage bootstrap/cache
 
-CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
+# كتابة ملف Caddyfile مخصص يوجه المسار للعام ويضبط المنفذ مباشرة أثناء التشغيل
+RUN echo ':{$PORT:-8080} {' > /etc/caddy/Caddyfile \
+    && echo '    root * /app/public' >> /etc/caddy/Caddyfile \
+    && echo '    encode zstd br gzip' >> /etc/caddy/Caddyfile \
+    && echo '    php_server' >> /etc/caddy/Caddyfile \
+    && echo '}' >> /etc/caddy/Caddyfile
+
+CMD [ "frankenphp", "run", "--config", /etc/caddy/Caddyfile ]
