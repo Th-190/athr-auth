@@ -1,1 +1,12 @@
 
+{
+    # تمكين الإنتاج وتعطيل السجلات الزائدة
+    admin off
+    auto_https off
+}
+
+:{$PORT:-8080} {
+    root * /app/public
+    encode zstd br gzip
+    php_server
+}
