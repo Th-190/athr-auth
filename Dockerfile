@@ -1,27 +1,35 @@
-FROM dunglas/frankenphp:php8.3-bookworm
 
-RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libpq-dev \
-    libicu-dev \
-    libzip-dev \
-    && docker-php-ext-install pdo pdo_pgsql zip intl
+FROM dunglas/frankenphp:latest
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-ENV DOCUMENT_ROOT=/app/public
+RUN install-php-extensions \
+    pdo_pgsql \
+    intl \
+    zip \
+    opcache
 
 WORKDIR /app
 
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader
 
-RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
-    && chmod -R 777 storage bootstrap/cache
+RUN mkdir -p \
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
 
-# إنشاء Caddyfile وتوجيه Root إلى /app/public
-RUN echo ":{\$PORT:-8080} {\n  root * /app/public\n  encode zstd br gzip\n  php_server\n}" > /etc/caddy/Caddyfile
+COPY Caddyfile /etc/caddy/Caddyfile
 
-CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+ENV APP_ENV=production
+ENV APP_DEBUG=false
+ENV SERVER_NAME=:8080
+
+EXPOSE 8080
+
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
