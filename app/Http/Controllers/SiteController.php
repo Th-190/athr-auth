@@ -298,63 +298,6 @@ class SiteController extends Controller
     }
 
     /**
-     * GeoJSON export for GIS mapping tools (QGIS, ArcGIS).
-     * Enforces the single published-only rule and canonical coordinate serializer.
-     */
-    public function exportGeoJson(): JsonResponse
-    {
-        $sites = Site::publishedAndPublic()->get();
-
-        $features = $sites->map(function (Site $site) {
-            return (new \App\Http\Resources\SiteResource($site))->toGeoJsonFeature();
-        })->filter()->values();
-
-        return response()->json([
-            'type' => 'FeatureCollection',
-            'features' => $features,
-        ]);
-    }
-
-    /**
-     * Public Sitemap.xml generator honoring the published-only rule.
-     */
-    public function sitemap(): \Illuminate\Http\Response
-    {
-        $sites = Site::publishedAndPublic()->select(['id', 'slug', 'updated_at'])->get();
-        $urls = $sites->map(function ($s) {
-            $loc = url("/sites/{$s->slug}");
-            $lastmod = $s->updated_at?->toAtomString() ?? now()->toAtomString();
-            return "  <url>\n    <loc>{$loc}</loc>\n    <lastmod>{$lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>";
-        })->implode("\n");
-
-        $homeUrl = url('/');
-        $now = now()->toAtomString();
-        $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n  <url>\n    <loc>{$homeUrl}</loc>\n    <lastmod>{$now}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n{$urls}\n</urlset>";
-
-        return response($xml, 200, ['Content-Type' => 'application/xml; charset=utf-8']);
-    }
-
-    /**
-     * Public RSS/Atom feed generator honoring the published-only rule.
-     */
-    public function rss(): \Illuminate\Http\Response
-    {
-        $sites = Site::publishedAndPublic()->latest('published_at')->limit(50)->get();
-        $items = $sites->map(function ($s) {
-            $title = htmlspecialchars($s->name_ar, ENT_XML1);
-            $link = url("/sites/{$s->slug}");
-            $desc = htmlspecialchars($s->summary_ar ?? '', ENT_XML1);
-            $pubDate = ($s->published_at ?? $s->created_at)->toRfc2822String();
-            return "  <item>\n    <title>{$title}</title>\n    <link>{$link}</link>\n    <guid>{$link}</guid>\n    <pubDate>{$pubDate}</pubDate>\n    <description>{$desc}</description>\n  </item>";
-        })->implode("\n");
-
-        $appUrl = url('/');
-        $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\">\n<channel>\n  <title>أثر كربلاء | Karbala Heritage Archive</title>\n  <link>{$appUrl}</link>\n  <description>أحدث المعالم والمواقع التاريخية المسجلة في أرشيف أثر كربلاء</description>\n  <language>ar</language>\n{$items}\n</channel>\n</rss>";
-
-        return response($xml, 200, ['Content-Type' => 'application/rss+xml; charset=utf-8']);
-    }
-
-    /**
      * Publish site (Staff/Admin).
      */
     public function publish(Request $request, string $id): JsonResponse
