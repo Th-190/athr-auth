@@ -19,6 +19,7 @@ import { UsersManager } from './cms/UsersManager';
 import { VerificationManager } from './cms/VerificationManager';
 import { SettingsManager } from './cms/SettingsManager';
 import { AuditLogManager } from './cms/AuditLogManager';
+import { HeritageEditorialManager } from './cms/HeritageEditorialManager';
 import { authService } from '../../services/authService';
 import {
   LayoutDashboard,
@@ -44,6 +45,7 @@ import {
   Compass,
   AlertCircle,
   FolderGit2,
+  FileEdit,
 } from 'lucide-react';
 
 interface AdminConsoleProps {
@@ -66,6 +68,7 @@ const SECTION_ICONS: Record<AdminSection, React.ReactNode> = {
   navigation: <MenuIcon className="w-4 h-4" />,
   verification: <FileCheck className="w-4 h-4" />,
   editorial: <FolderGit2 className="w-4 h-4" />,
+  heritage_editorial: <FileEdit className="w-4 h-4" />,
   users: <Users className="w-4 h-4" />,
   settings: <SettingsIcon className="w-4 h-4" />,
   audit: <History className="w-4 h-4" />,
@@ -308,6 +311,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
           {section === 'navigation' && <NavigationFooterManager actorName={actorName} />}
           {section === 'verification' && <VerificationManager actorName={actorName} />}
           {section === 'editorial' && <VerificationManager actorName={actorName} />}
+          {section === 'heritage_editorial' && <HeritageEditorialManager />}
           {section === 'users' && <UsersManager actorName={actorName} />}
           {section === 'settings' && <SettingsManager actorName={actorName} />}
           {section === 'audit' && <AuditLogManager />}

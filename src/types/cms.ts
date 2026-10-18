@@ -131,4 +131,5 @@ export type AdminSection =
   | 'verification'
   | 'settings'
   | 'audit'
-  | 'editorial';
+  | 'editorial'
+  | 'heritage_editorial';

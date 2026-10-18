@@ -23,20 +23,19 @@ class SiteController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Site::query()
-            ->with(['siteType', 'historicalPeriod', 'area', 'province', 'images' => fn ($images) => $images->where('visibility', true)->whereNotNull('web_storage_path')])
+            ->with(['siteType', 'historicalPeriod', 'area.subDistrict.district', 'province', 'names', 'sources', 'images' => fn ($images) => $images->publiclyUsable()])
             ->publishedAndPublic();
 
         // Text Search with Arabic normalization
-        if ($search = $request->input('q')) {
+        if ($search = trim((string) $request->input('q', ''))) {
             $normalized = ArabicSearchNormalizer::normalize($search);
-            $query->where(function ($q) use ($normalized, $search) {
-                $q->where('name_ar', 'ILIKE', "%{$search}%")
-                  ->orWhere('name_en', 'ILIKE', "%{$search}%")
-                  ->orWhere('summary_ar', 'ILIKE', "%{$search}%")
-                  ->orWhere('slug', 'ILIKE', "%{$search}%")
-                  ->orWhereHas('names', function ($nameQ) use ($search) {
-                      $nameQ->where('name', 'ILIKE', "%{$search}%");
-                  });
+            $pattern = '%'.$normalized.'%';
+            $query->where(function ($q) use ($pattern) {
+                $q->whereRaw('LOWER(name_ar) LIKE LOWER(?)', [$pattern])
+                  ->orWhereRaw('LOWER(name_en) LIKE LOWER(?)', [$pattern])
+                  ->orWhereRaw('LOWER(short_description) LIKE LOWER(?)', [$pattern])
+                  ->orWhereRaw('LOWER(slug) LIKE LOWER(?)', [$pattern])
+                  ->orWhereHas('names', fn ($nameQ) => $nameQ->whereRaw('LOWER(name) LIKE LOWER(?)', [$pattern]));
             });
         }
 
@@ -57,20 +56,23 @@ class SiteController extends Controller
 
         // Filter by Category Chips: [جميع المواقع, مراقد دينية, آثار تاريخية, أماكن تراثية كربلائية]
         if ($category = $request->input('category')) {
-            if ($category === 'religious' || $category === 'مراقد دينية') {
-                $query->where(function ($q) {
-                    $q->whereIn('site_type_id', ['type_religious', 'type_churches'])
-                      ->orWhere('name_ar', 'LIKE', '%مرقد%')
-                      ->orWhere('name_ar', 'LIKE', '%مقام%')
-                      ->orWhere('name_ar', 'LIKE', '%مزار%')
-                      ->orWhere('name_ar', 'LIKE', '%مسجد%')
-                      ->orWhere('name_ar', 'LIKE', '%كنيسة%');
-                });
-            } elseif ($category === 'historical' || $category === 'آثار تاريخية') {
-                $query->whereIn('site_type_id', ['type_palaces_forts', 'type_tells', 'type_defensive']);
-            } elseif ($category === 'heritage' || $category === 'أماكن تراثية كربلائية') {
-                $query->whereIn('site_type_id', ['type_caravansaries', 'type_hydraulic', 'type_bazaars', 'type_vernacular', 'type_crafts']);
+            $slugs = match ($category) {
+                'religious', 'مراقد دينية' => ['religious-and-shrines', 'churches-and-monasteries'],
+                'historical', 'آثار تاريخية' => ['palaces-and-forts', 'archaeological-tells', 'defensive-walls-gates'],
+                'heritage', 'أماكن تراثية كربلائية' => ['caravansaries', 'hydraulic-and-springs', 'bazaars-and-commercial', 'vernacular-houses', 'craft-workshops-kilns'],
+                default => null,
+            };
+            if ($slugs) {
+                $query->whereHas('siteType', fn ($typeQuery) => $typeQuery->whereIn('slug', $slugs));
+            } elseif (ctype_digit((string) $category)) {
+                $query->where('site_type_id', (int) $category);
+            } else {
+                $query->whereHas('siteType', fn ($typeQuery) => $typeQuery->where('slug', $category));
             }
+        }
+
+        if ($designation = trim((string) $request->input('designation', ''))) {
+            $query->whereRaw('LOWER(heritage_designation) LIKE LOWER(?)', ['%'.$designation.'%']);
         }
 
         // PostGIS Spatial Bounding filter (min_lat, min_lng, max_lat, max_lng)
@@ -92,13 +94,16 @@ class SiteController extends Controller
         if ($areaId = $request->input('area_id')) {
             $query->where('area_id', $areaId);
         }
+        if ($districtId = $request->input('district_id')) {
+            $query->whereHas('area.subDistrict', fn ($subDistrict) => $subDistrict->where('district_id', $districtId));
+        }
 
         // Featured only
         if ($request->boolean('featured')) {
             $query->where('featured', true);
         }
 
-        $perPage = min((int) $request->input('per_page', 15), 50);
+        $perPage = min(max((int) $request->input('per_page', 15), 1), 50);
         $sites = $query->paginate($perPage);
 
         // Sanitize all outputs via SiteResource (single source of truth for coordinates)
@@ -122,12 +127,13 @@ class SiteController extends Controller
             'names',
             'sources',
             'claims.evidence.source',
-            'images' => fn ($images) => $images->where('visibility', true)->whereNotNull('web_storage_path'),
+            'images' => fn ($images) => $images->publiclyUsable(),
             'events',
             'timeline',
             'verifications.verifier',
             'revisions.user',
-            'relations.relatedSite',
+            'relations' => fn ($relations) => $relations->whereHas('relatedSite', fn ($related) => $related->publishedAndPublic()),
+            'relations.relatedSite' => fn ($related) => $related->publishedAndPublic(),
         ])
         ->where(function ($q) use ($slug) {
             $q->where('slug', $slug)->orWhere('id', $slug);
@@ -158,17 +164,29 @@ class SiteController extends Controller
             'name_en' => 'nullable|string|max:255',
             'summary_ar' => 'required|string|max:1000',
             'description_ar' => 'nullable|string',
+            'historical_description' => 'nullable|string',
+            'architectural_description' => 'nullable|string',
+            'cultural_significance' => 'nullable|string',
+            'historical_significance' => 'nullable|string',
+            'current_condition' => 'nullable|string',
+            'location_description' => 'nullable|string',
             'site_type_id' => 'required|exists:site_types,id',
             'historical_period_id' => 'required|exists:historical_periods,id',
             'province_id' => 'required|exists:provinces,id',
-            'area_id' => 'nullable|exists:areas,id',
+            'area_id' => 'required|exists:areas,id',
             'location_precision' => 'required|in:exact,approximate,restricted,unknown',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
+            'latitude' => 'nullable|required_with:longitude|numeric|between:-90,90',
+            'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
         ]);
 
         $validated['slug'] = Str::slug($validated['name_en'] ?? $validated['name_ar']).'-'.Str::random(5);
-        $validated['inventory_number'] = 'KHA-'.date('Y').'-'.strtoupper(Str::random(4));
+        $validated['permanent_id'] = 'KHA-'.date('Y').'-'.strtoupper(Str::random(4));
+        $validated['short_description'] = $validated['summary_ar'];
+        $validated['description'] = $validated['description_ar'] ?? '';
+        foreach (['historical_description', 'architectural_description', 'cultural_significance', 'historical_significance', 'current_condition', 'location_description'] as $field) {
+            $validated[$field] = $validated[$field] ?? '';
+        }
+        unset($validated['summary_ar'], $validated['description_ar']);
         $validated['publication_status'] = 'draft';
         $validated['verification_status'] = 'unverified';
         $validated['created_by'] = $request->user()?->id;
@@ -216,29 +234,70 @@ class SiteController extends Controller
             'site_type_id' => 'sometimes|exists:site_types,id',
             'historical_period_id' => 'sometimes|exists:historical_periods,id',
             'location_precision' => 'sometimes|in:exact,approximate,restricted,unknown',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
+            'latitude' => 'nullable|required_with:longitude|numeric|between:-90,90',
+            'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
             'revision_notes' => 'required|string|max:500',
         ]);
+
+        if (array_key_exists('summary_ar', $validated)) {
+            $validated['short_description'] = $validated['summary_ar'];
+            unset($validated['summary_ar']);
+        }
+        if (array_key_exists('description_ar', $validated)) {
+            $validated['description'] = $validated['description_ar'] ?? '';
+            unset($validated['description_ar']);
+        }
 
         DB::transaction(function () use ($site, $validated, $request) {
             $notes = $validated['revision_notes'];
             unset($validated['revision_notes']);
 
-            // Create revision snapshot before update
-            SiteRevision::create([
-                'site_id' => $site->id,
-                'user_id' => $request->user()?->id,
-                'snapshot' => $site->toJson(),
-                'change_summary' => $notes,
-            ]);
-
             $lat = $validated['latitude'] ?? null;
             $lng = $validated['longitude'] ?? null;
+            $coordinatesProvided = array_key_exists('latitude', $validated) || array_key_exists('longitude', $validated);
             unset($validated['latitude'], $validated['longitude']);
 
+            if ($coordinatesProvided) {
+                $oldCoordinates = ['latitude' => $site->latitude, 'longitude' => $site->longitude];
+                $newCoordinates = [
+                    'latitude' => $lat === null ? null : (float) $lat,
+                    'longitude' => $lng === null ? null : (float) $lng,
+                ];
+                if ($oldCoordinates !== $newCoordinates) {
+                    SiteRevision::create([
+                        'site_id' => $site->id,
+                        'field_name' => 'coordinates',
+                        'old_value' => json_encode($oldCoordinates),
+                        'new_value' => json_encode($newCoordinates),
+                        'changed_by' => $request->user()?->id,
+                        'reason' => $notes,
+                        'verification_status_at_time' => $site->verification_status->value,
+                    ]);
+                }
+            }
+
+            foreach ($validated as $field => $newValue) {
+                $oldValue = $site->getAttribute($field);
+                if ($oldValue instanceof \BackedEnum) {
+                    $oldValue = $oldValue->value;
+                }
+                if ($oldValue === $newValue) {
+                    continue;
+                }
+
+                SiteRevision::create([
+                    'site_id' => $site->id,
+                    'field_name' => $field,
+                    'old_value' => is_scalar($oldValue) ? (string) $oldValue : json_encode($oldValue),
+                    'new_value' => is_scalar($newValue) ? (string) $newValue : json_encode($newValue),
+                    'changed_by' => $request->user()?->id,
+                    'reason' => $notes,
+                    'verification_status_at_time' => $site->verification_status->value,
+                ]);
+            }
+
             // Scholarly Quality Standard: Substantive edits reset verification status to unverified
-            $substantiveFields = ['name_ar', 'summary_ar', 'description_ar', 'site_type_id', 'historical_period_id'];
+            $substantiveFields = ['name_ar', 'short_description', 'description', 'site_type_id', 'historical_period_id'];
             $isSubstantive = false;
             foreach ($substantiveFields as $field) {
                 if (isset($validated[$field]) && $validated[$field] !== $site->{$field}) {
@@ -257,6 +316,9 @@ class SiteController extends Controller
 
             if ($lat !== null && $lng !== null) {
                 $site->setCoordinates($lat, $lng);
+                $site->save();
+            } elseif ($coordinatesProvided) {
+                $site->setAttribute('coordinates', null);
                 $site->save();
             }
 
@@ -448,8 +510,7 @@ class SiteController extends Controller
     {
         $sites = Site::query()
             ->publishedAndPublic()
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
+            ->whereNotNull('coordinates')
             ->get();
 
         $features = [];

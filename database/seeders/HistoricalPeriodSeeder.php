@@ -82,6 +82,30 @@ class HistoricalPeriodSeeder extends Seeder
                 'sort_order' => 6,
                 'needs_editor_confirmation' => true,
             ],
+            [
+                'name_ar' => 'تاريخ معاصر للمؤسسات',
+                'name_en' => 'Modern institutional history',
+                'slug' => 'institutional-present',
+                'start_year_label' => 'القرن العشرون فصاعداً',
+                'end_year_label' => 'الحاضر',
+                'start_year_numeric' => 1900,
+                'end_year_numeric' => null,
+                'description' => 'سياق زمني للمؤسسات الثقافية الحديثة؛ لا يُستخدم لتأريخ مقتنيات المتحف تلقائياً.',
+                'sort_order' => 7,
+                'needs_editor_confirmation' => false,
+            ],
+            [
+                'name_ar' => 'فترة غير محددة',
+                'name_en' => 'Undetermined period',
+                'slug' => 'period-undetermined',
+                'start_year_label' => 'غير محدد',
+                'end_year_label' => 'غير محدد',
+                'start_year_numeric' => null,
+                'end_year_numeric' => null,
+                'description' => 'تستخدم عندما لا تسمح المراجع المتاحة بإسناد الموقع إلى فترة تاريخية محددة.',
+                'sort_order' => 8,
+                'needs_editor_confirmation' => false,
+            ],
         ];
 
         foreach ($periods as $period) {

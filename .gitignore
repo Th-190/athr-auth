@@ -6,3 +6,12 @@ coverage/
 *.log
 .env*
 !.env.example
+
+database/*.sqlite
+database/*.sqlite-*
+/storage/framework/
+/storage/logs/*.log
+/storage/app/private/**
+/storage/app/originals/**
+/storage/app/downloads/**
+/storage/app/public/derivatives/**

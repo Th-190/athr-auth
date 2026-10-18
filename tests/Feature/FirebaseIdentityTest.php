@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\FirebaseTokenVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Laravel\Sanctum\PersonalAccessToken;
 use Mockery;
 use Tests\TestCase;
 
@@ -26,31 +27,54 @@ class FirebaseIdentityTest extends TestCase
             'firebase' => ['sign_in_provider' => 'google.com'],
         ];
         $verifier = Mockery::mock(FirebaseTokenVerifier::class);
-        $verifier->shouldReceive('verify')->twice()->with('valid-firebase-token')->andReturn($claims);
+        $verifier->shouldReceive('verify')->twice()->andReturn($claims);
         $this->app->instance(FirebaseTokenVerifier::class, $verifier);
 
         $first = $this->postJson('/api/v1/auth/google', [
-            'id_token' => 'valid-firebase-token',
+            'id_token' => 'device-one-firebase-token',
             'email' => 'attacker@example.com',
             'google_id' => 'attacker-controlled-id',
         ])->assertOk();
         $firstUserId = $first->json('user.id');
         $first->assertJsonPath('user.email', 'account@example.com');
 
-        $second = $this->postJson('/api/v1/auth/google', ['id_token' => 'valid-firebase-token'])->assertOk();
+        $second = $this->postJson('/api/v1/auth/google', ['id_token' => 'device-two-firebase-token'])->assertOk();
         $this->assertSame($firstUserId, $second->json('user.id'));
         $this->assertSame(1, User::where('google_id', 'firebase-google-subject-123')->count());
         $this->assertDatabaseHas('users', ['id' => $firstUserId, 'google_id' => 'firebase-google-subject-123']);
     }
 
+    public function test_expired_sanctum_session_tokens_are_rejected(): void
+    {
+        config(['sanctum.expiration' => 1]);
+        $role = Role::firstOrCreate(['name' => 'viewer'], ['name_ar' => 'مشاهد']);
+        $user = User::create([
+            'name' => 'Session User',
+            'email' => 'session-expiry@example.test',
+            'password' => 'safe-test-password',
+            'role_id' => $role->id,
+            'email_verified_at' => now(),
+            'is_active' => true,
+        ]);
+        $plainToken = $user->createToken('expired-test-session')->plainTextToken;
+        PersonalAccessToken::findToken($plainToken)->forceFill(['created_at' => now()->subMinutes(2)])->save();
+
+        $this->withToken($plainToken)->getJson('/api/v1/auth/me')->assertUnauthorized();
+    }
+
     public function test_firebase_verifier_checks_signature_audience_and_verified_email(): void
     {
         config(['services.firebase.project_id' => 'archive-test-project']);
-        $key = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_RSA, 'private_key_bits' => 2048]);
-        $request = openssl_csr_new(['commonName' => 'firebase-test'], $key);
-        $certificate = openssl_csr_sign($request, null, $key, 1);
+        $opensslConfig = base_path('tests/fixtures/openssl.cnf');
+        $key = openssl_pkey_new([
+            'config' => $opensslConfig,
+            'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            'private_key_bits' => 2048,
+        ]);
+        $request = openssl_csr_new(['commonName' => 'firebase-test'], $key, ['config' => $opensslConfig]);
+        $certificate = openssl_csr_sign($request, null, $key, 1, ['config' => $opensslConfig]);
         openssl_x509_export($certificate, $certificatePem);
-        openssl_pkey_export($key, $privateKeyPem);
+        $this->assertTrue(openssl_pkey_export($key, $privateKeyPem, null, ['config' => $opensslConfig]));
         $kid = 'test-key-1';
         Http::fake(['https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com' => Http::response([$kid => $certificatePem])]);
 
@@ -71,6 +95,8 @@ class FirebaseIdentityTest extends TestCase
         foreach ([
             array_merge($payload, ['email_verified' => false]),
             array_merge($payload, ['aud' => 'another-project']),
+            array_merge($payload, ['iss' => 'https://securetoken.google.com/another-project']),
+            array_merge($payload, ['exp' => time() - 1]),
         ] as $invalidClaims) {
             $rejected = false;
             try {

@@ -4,223 +4,139 @@ namespace Database\Seeders;
 
 use App\Enums\LocationPrecision;
 use App\Enums\PublicationStatus;
+use App\Enums\ReliabilityLevel;
+use App\Enums\SourceType;
 use App\Enums\VerificationStatus;
 use App\Models\Area;
 use App\Models\HistoricalPeriod;
+use App\Models\MuseumArtifact;
 use App\Models\MuseumProfile;
 use App\Models\Province;
-use App\Models\ResearchLead;
 use App\Models\Site;
 use App\Models\SiteName;
 use App\Models\SiteType;
-use App\Models\User;
+use App\Models\Source;
 use Illuminate\Database\Seeder;
 
 class MuseumSeeder extends Seeder
 {
     public function run(): void
     {
-        $province = Province::where('code', 'KHA')->first();
-        $area = Area::first();
-        $museumType = SiteType::where('slug', 'museums')->first() ?? SiteType::first();
-        $period = HistoricalPeriod::first();
-        $user = User::first();
+        $province = Province::where('code', 'KHA')->firstOrFail();
+        $area = Area::whereHas('subDistrict.district', fn ($query) => $query
+            ->where('province_id', $province->id)
+            ->where('slug', 'karbala-center'))
+            ->firstOrFail();
+        $museumType = SiteType::where('slug', 'museums')->firstOrFail();
+        $period = HistoricalPeriod::where('slug', 'institutional-present')->firstOrFail();
 
-        // 1. متحف العتبة الحسينية المقدسة
-        $m1 = Site::firstOrCreate(
+        $source = Source::firstOrCreate(
+            ['url' => 'https://museum.imamhussain.org/'],
+            [
+                'source_type' => SourceType::OFFICIAL_SITE,
+                'title' => 'الموقع الرسمي لمتحف العتبة الحسينية المقدسة',
+                'author' => 'متحف العتبة الحسينية المقدسة',
+                'publisher' => 'العتبة الحسينية المقدسة',
+                'description' => 'موقع المؤسسة الرسمي؛ يستعمل لإسناد وصف المؤسسة والمعلومات التي تنشرها عن مجموعاتها. تفاصيل الزيارة قابلة للتغيير وتحتاج تحققاً قبل العرض.',
+                'language' => 'ar',
+                'reliability_level' => ReliabilityLevel::PRIMARY,
+            ]
+        );
+
+        $site = Site::firstOrCreate(
             ['permanent_id' => 'KHA-MUS-001'],
             [
                 'name_ar' => 'متحف العتبة الحسينية المقدسة',
-                'name_en' => 'Holy Shrine of Imam Hussain Museum',
-                'slug' => 'imam-hussain-shrine-museum',
-                'short_description' => 'متحف توثيقي تخصصي في كربلاء المقدسة',
-                'description' => 'متحف متخصص في عرض المقتنيات والنفائس التاريخية والتراثية في كربلاء.',
-                'historical_description' => 'تاريخ تأسيس وتوثيق المتحف والمقتنيات التاريخية',
-                'architectural_description' => 'العمارة والتصميم الداخلي للقاعات والمعارض',
-                'cultural_significance' => 'قيمة تراثية وثقافية عالية لأهالي وزوار كربلاء',
-                'historical_significance' => 'توثيق شواهد التاريخ الإسلامي والتراث الكربلائي',
-                'current_condition' => 'مفتوح للزيارة وصيانته مستمرة وفق المعايير المتحفية',
-                'location_description' => 'كربلاء المقدسة',
-                'province_id' => $province?->id,
-                'area_id' => $area?->id,
-                'site_type_id' => $museumType?->id,
-                'historical_period_id' => $period?->id,
-                'publication_status' => PublicationStatus::DRAFT,
+                'name_en' => 'Imam Hussein Holy Shrine Museum',
+                'slug' => 'imam-hussein-shrine-museum',
+                'short_description' => 'متحف تابع للعتبة الحسينية المقدسة؛ تفاصيل المجموعات والزيارة تُعرض وفق ما تنشره المؤسسة وبعد المراجعة التحريرية.',
+                'description' => 'تذكر الصفحة الرسمية أن المتحف تأسس سنة 2009، وتعرض مقتنيات مصنفة تشمل الأسلحة والمخطوطات وغيرها. هذا السجل قيد المراجعة، ولا يعني وصف المؤسسة أن كل بيانات القطع قد تحققت مستقلاً.',
+                'historical_description' => 'تذكر الصفحة الرسمية للمتحف تأسيسه سنة 2009. يلزم توثيق مستقل لتفاصيل مراحل التأسيس.',
+                'architectural_description' => 'لم تُضف تفاصيل معمارية لعدم توفر توثيق كافٍ في المصدر المستخدم.',
+                'cultural_significance' => 'مؤسسة متحفية تديرها العتبة الحسينية المقدسة وتوثق مقتنيات تعرضها على موقعها الرسمي.',
+                'historical_significance' => 'لا تُسند هذه الخانة قيمة أثرية للمؤسسة؛ تُراجع طبيعة مجموعاتها ومقتنياتها ضمن المصدر الرسمي.',
+                'current_condition' => 'معلومات الحالة التشغيلية وساعات الزيارة غير معتمدة في هذا السجل؛ يرجى الرجوع إلى الموقع الرسمي.',
+                'location_description' => 'كربلاء المقدسة، العراق. الإحداثيات والعنوان التفصيلي غير مثبتين في هذا السجل.',
+                'approximate_date' => 'تذكر المؤسسة سنة التأسيس 2009؛ يحتاج التاريخ إلى مراجعة تحريرية قبل النشر.',
+                'province_id' => $province->id,
+                'area_id' => $area->id,
+                'site_type_id' => $museumType->id,
+                'historical_period_id' => $period->id,
+                'publication_status' => PublicationStatus::PENDING_REVIEW,
                 'verification_status' => VerificationStatus::UNVERIFIED,
-                'location_precision' => LocationPrecision::APPROXIMATE,
+                'verification_notes' => 'مصدر المؤسسة الأولي مسجل. يلزم محرر مخول مراجعة أوصاف المؤسسة والمجموعات قبل النشر.',
+                'location_precision' => LocationPrecision::UNKNOWN,
                 'is_demo' => false,
                 'ai_assisted' => false,
-                'created_by' => $user?->id,
             ]
         );
+
+        $site->sources()->syncWithoutDetaching([$source->id => [
+            'relevance' => 'direct',
+            'editor_note' => 'مصدر المؤسسة الرسمي؛ لا يثبت وحده بيانات تشغيلية متغيرة خارج ما ينشره الموقع وقت المراجعة.',
+        ]]);
+
         SiteName::firstOrCreate([
-            'site_id' => $m1->id,
-            'name' => 'متحف الإمام الحسين',
+            'site_id' => $site->id,
+            'name' => 'متحف الإمام الحسين (عليه السلام)',
             'name_type' => 'alternate',
             'language' => 'ar',
         ]);
-        MuseumProfile::firstOrCreate(['site_id' => $m1->id], [
-            'operator_name' => 'العتبة الحسينية المقدسة',
-            'operator_type' => 'shrine_run_endowment',
-            'official_website' => 'https://imamhussain.org',
-            'address_text' => 'داخل الصحن الحسيني الشريف، مركز كربلاء القديمة',
-        ]);
 
-        // 2. متحف العتبة العباسية المقدسة
-        $m2 = Site::firstOrCreate(
-            ['permanent_id' => 'KHA-MUS-002'],
+        $profile = MuseumProfile::firstOrCreate(
+            ['site_id' => $site->id],
             [
-                'name_ar' => 'متحف العتبة العباسية المقدسة',
-                'name_en' => 'Al-Kafeel Museum of Treasures and Manuscripts',
-                'slug' => 'al-kafeel-museum',
-                'short_description' => 'متحف توثيقي تخصصي في كربلاء المقدسة',
-                'description' => 'متحف متخصص في عرض المقتنيات والنفائس التاريخية والتراثية في كربلاء.',
-                'historical_description' => 'تاريخ تأسيس وتوثيق المتحف والمقتنيات التاريخية',
-                'architectural_description' => 'العمارة والتصميم الداخلي للقاعات والمعارض',
-                'cultural_significance' => 'قيمة تراثية وثقافية عالية لأهالي وزوار كربلاء',
-                'historical_significance' => 'توثيق شواهد التاريخ الإسلامي والتراث الكربلائي',
-                'current_condition' => 'مفتوح للزيارة وصيانته مستمرة وفق المعايير المتحفية',
-                'location_description' => 'كربلاء المقدسة',
-                'province_id' => $province?->id,
-                'area_id' => $area?->id,
-                'site_type_id' => $museumType?->id,
-                'historical_period_id' => $period?->id,
-                'publication_status' => PublicationStatus::DRAFT,
-                'verification_status' => VerificationStatus::UNVERIFIED,
-                'location_precision' => LocationPrecision::APPROXIMATE,
-                'is_demo' => false,
-                'ai_assisted' => false,
-                'created_by' => $user?->id,
-            ]
-        );
-        SiteName::firstOrCreate([
-            'site_id' => $m2->id,
-            'name' => 'متحف الكفيل للنفائس والمخطوطات',
-            'name_type' => 'official',
-            'language' => 'ar',
-        ]);
-        MuseumProfile::firstOrCreate(['site_id' => $m2->id], [
-            'operator_name' => 'العتبة العباسية المقدسة',
-            'operator_type' => 'shrine_run_endowment',
-            'official_website' => 'https://museum.alkafeel.net/',
-            'address_text' => 'الصحن العباسي المطهر، كربلاء',
-        ]);
-
-        // 3. متحف ذاكرة الإسلام
-        Site::firstOrCreate(
-            ['permanent_id' => 'KHA-MUS-003'],
-            [
-                'name_ar' => 'متحف ذاكرة الإسلام',
-                'name_en' => 'Memory of Islam Museum',
-                'slug' => 'memory-of-islam-museum',
-                'short_description' => 'متحف توثيقي تخصصي في كربلاء المقدسة',
-                'description' => 'متحف متخصص في عرض المقتنيات والنفائس التاريخية والتراثية في كربلاء.',
-                'historical_description' => 'تاريخ تأسيس وتوثيق المتحف والمقتنيات التاريخية',
-                'architectural_description' => 'العمارة والتصميم الداخلي للقاعات والمعارض',
-                'cultural_significance' => 'قيمة تراثية وثقافية عالية لأهالي وزوار كربلاء',
-                'historical_significance' => 'توثيق شواهد التاريخ الإسلامي والتراث الكربلائي',
-                'current_condition' => 'مفتوح للزيارة وصيانته مستمرة وفق المعايير المتحفية',
-                'location_description' => 'كربلاء المقدسة',
-                'province_id' => $province?->id,
-                'area_id' => $area?->id,
-                'site_type_id' => $museumType?->id,
-                'historical_period_id' => $period?->id,
-                'publication_status' => PublicationStatus::DRAFT,
-                'verification_status' => VerificationStatus::UNVERIFIED,
-                'location_precision' => LocationPrecision::APPROXIMATE,
-                'is_demo' => false,
-                'ai_assisted' => false,
-                'created_by' => $user?->id,
+                'operator_name' => 'العتبة الحسينية المقدسة',
+                'operator_type' => 'shrine_run_endowment',
+                'official_website' => 'https://museum.imamhussain.org/',
+                'address_text' => 'كربلاء المقدسة، العراق؛ العنوان التفصيلي غير موثق في هذا السجل.',
+                'visiting_info' => null,
+                'visiting_info_source_id' => null,
+                'visit_info_verified_at' => null,
+                'accessibility_notes' => null,
+                'founding_year' => '2009',
+                'founding_year_precision' => 'exact',
+                'collection_summary' => 'يعرض الموقع الرسمي فئات منها السيوف والدروع والخناجر والبنادق والمخطوطات. أوصاف القطع منسوبة إلى المؤسسة وتحتاج مراجعة تحريرية قبل النشر.',
             ]
         );
 
-        // 4. متحف سعيد هويدي
-        Site::firstOrCreate(
-            ['permanent_id' => 'KHA-MUS-004'],
+        $artifacts = [
             [
-                'name_ar' => 'متحف سعيد هويدي',
-                'name_en' => 'Saeed Huwaidi Museum',
-                'slug' => 'saeed-huwaidi-museum',
-                'short_description' => 'متحف توثيقي تخصصي في كربلاء المقدسة',
-                'description' => 'متحف متخصص في عرض المقتنيات والنفائس التاريخية والتراثية في كربلاء.',
-                'historical_description' => 'تاريخ تأسيس وتوثيق المتحف والمقتنيات التاريخية',
-                'architectural_description' => 'العمارة والتصميم الداخلي للقاعات والمعارض',
-                'cultural_significance' => 'قيمة تراثية وثقافية عالية لأهالي وزوار كربلاء',
-                'historical_significance' => 'توثيق شواهد التاريخ الإسلامي والتراث الكربلائي',
-                'current_condition' => 'مفتوح للزيارة وصيانته مستمرة وفق المعايير المتحفية',
-                'location_description' => 'كربلاء المقدسة',
-                'province_id' => $province?->id,
-                'area_id' => $area?->id,
-                'site_type_id' => $museumType?->id,
-                'historical_period_id' => $period?->id,
-                'publication_status' => PublicationStatus::DRAFT,
-                'verification_status' => VerificationStatus::UNVERIFIED,
-                'location_precision' => LocationPrecision::APPROXIMATE,
-                'is_demo' => false,
-                'ai_assisted' => false,
-                'created_by' => $user?->id,
-            ]
-        );
-
-        // 5. متحف تراث كربلاء
-        Site::firstOrCreate(
-            ['permanent_id' => 'KHA-MUS-005'],
+                'title_ar' => 'درع جلائري مصنوع من الجلد المضغوط',
+                'title_en' => null,
+                'category' => 'دروع',
+                'description' => 'عنوان مقتنى منشور في قائمة الموقع الرسمي؛ لم تُضف بيانات تاريخ أو منشأ غير متاحة في صفحة المصدر.',
+                'material' => 'جلد مضغوط، بحسب عنوان المقتنى المنشور',
+            ],
             [
-                'name_ar' => 'متحف تراث كربلاء',
-                'name_en' => 'Karbala Heritage Museum',
-                'slug' => 'karbala-heritage-museum',
-                'short_description' => 'متحف توثيقي تخصصي في كربلاء المقدسة',
-                'description' => 'متحف متخصص في عرض المقتنيات والنفائس التاريخية والتراثية في كربلاء.',
-                'historical_description' => 'تاريخ تأسيس وتوثيق المتحف والمقتنيات التاريخية',
-                'architectural_description' => 'العمارة والتصميم الداخلي للقاعات والمعارض',
-                'cultural_significance' => 'قيمة تراثية وثقافية عالية لأهالي وزوار كربلاء',
-                'historical_significance' => 'توثيق شواهد التاريخ الإسلامي والتراث الكربلائي',
-                'current_condition' => 'مفتوح للزيارة وصيانته مستمرة وفق المعايير المتحفية',
-                'location_description' => 'كربلاء المقدسة',
-                'province_id' => $province?->id,
-                'area_id' => $area?->id,
-                'site_type_id' => $museumType?->id,
-                'historical_period_id' => $period?->id,
-                'publication_status' => PublicationStatus::DRAFT,
-                'verification_status' => VerificationStatus::UNVERIFIED,
-                'location_precision' => LocationPrecision::APPROXIMATE,
-                'is_demo' => false,
-                'ai_assisted' => false,
-                'created_by' => $user?->id,
-            ]
-        );
+                'title_ar' => 'خنجر يماني من الفضة',
+                'title_en' => null,
+                'category' => 'خناجر',
+                'description' => 'يذكر الموقع الرسمي أن صناعة الخنجر تعود إلى بداية القرن العشرين؛ لا يتضمن هذا السجل سياقاً أثرياً غير منشور.',
+                'material' => 'فضة، بحسب وصف الموقع الرسمي',
+                'estimated_date' => 'بداية القرن العشرين، بحسب وصف المؤسسة',
+                'origin' => 'منسوب إلى اليمن في عنوان ووصف المقتنى لدى المؤسسة',
+            ],
+            [
+                'title_ar' => 'مسدس فرنسي من طراز Mle 1892',
+                'title_en' => 'French Mle 1892 pistol',
+                'category' => 'مسدسات',
+                'description' => 'يصفه الموقع الرسمي بأنه صنع في ورش مدينة سانت إتيان بفرنسا؛ لا تُضاف هنا قصة اقتناء أو سياق آخر.',
+                'material' => null,
+                'estimated_date' => 'الطراز Mle 1892، كما يسميه الموقع الرسمي؛ تاريخ هذه القطعة غير محدد هنا.',
+                'origin' => 'ورش سانت إتيان، فرنسا، بحسب وصف المؤسسة',
+            ],
+        ];
 
-        // Research leads (internal, non-public)
-        ResearchLead::firstOrCreate([
-            'name' => 'متحف العتبة الحسينية - توثيق الروايات',
-            'lead_url' => 'https://ar.wikipedia.org/wiki/قائمة_متاحف_العراق',
-            'note' => 'قائمة ويكيبيديا لمتاحف العراق، مصدر ثانوي يتطلب تدقيقاً ميدانياً من إعلام العتبة.',
-            'created_by' => 'owner_lead',
-            'status' => 'under_investigation',
-        ]);
-
-        ResearchLead::firstOrCreate([
-            'name' => 'متحف الكفيل للنفائس والمخطوطات',
-            'lead_url' => 'https://museum.alkafeel.net/',
-            'note' => 'موقع رسمي تابع للعتبة العباسية، سجل ذاتي النشر يتطلب توثيق ساعات الزيارة والقطع.',
-            'created_by' => 'owner_lead',
-            'status' => 'under_investigation',
-        ]);
-
-        ResearchLead::firstOrCreate([
-            'name' => 'متحف ذاكرة الإسلام',
-            'lead_url' => 'https://karbala.gov.iq/news/3426',
-            'note' => 'خبر رسمي على بوابة محافظة كربلاء، بحاجة للتحقق من الجهة المشغلة وطبيعة المعروضات.',
-            'created_by' => 'owner_lead',
-            'status' => 'lead',
-        ]);
-
-        ResearchLead::firstOrCreate([
-            'name' => 'متحف سعيد هويدي الشخصي / التراثي',
-            'lead_url' => null,
-            'note' => 'متحف خاص أو مجموعة فولكلورية لم يُعثر على توثيق رسمي لها بعد في السجلات الحكومية.',
-            'created_by' => 'owner_lead',
-            'status' => 'lead',
-        ]);
+        foreach ($artifacts as $artifact) {
+            MuseumArtifact::firstOrCreate(
+                ['museum_profile_id' => $profile->id, 'title_ar' => $artifact['title_ar']],
+                $artifact + [
+                    'source_id' => $source->id,
+                    'publication_status' => PublicationStatus::PENDING_REVIEW->value,
+                    'verification_status' => VerificationStatus::UNVERIFIED->value,
+                ]
+            );
+        }
     }
 }

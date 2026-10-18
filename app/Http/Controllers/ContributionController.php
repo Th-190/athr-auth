@@ -7,6 +7,8 @@ use App\Models\Site;
 use App\Models\SiteContribution;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use App\Enums\ContributionType;
 
 class ContributionController extends Controller
 {
@@ -21,7 +23,7 @@ class ContributionController extends Controller
     {
         $validated = $request->validate([
             'site_id' => 'required|exists:sites,id',
-            'type' => 'required|in:correction,new_source,photo,field_observation',
+            'type' => ['required', Rule::enum(ContributionType::class)],
             'contributor_name' => 'required|string|max:255',
             'contributor_email' => 'required|email|max:255',
             'affiliation' => 'nullable|string|max:255',
@@ -39,9 +41,9 @@ class ContributionController extends Controller
             'contributor_name' => $validated['contributor_name'],
             'contributor_email' => $validated['contributor_email'],
             'contributor_affiliation' => $validated['affiliation'] ?? null,
-            'notes' => $validated['notes'],
-            'proposed_changes' => json_encode($validated['proposed_changes'] ?? []),
-            'status' => 'pending',
+            'description' => $validated['notes'],
+            'proposed_changes' => $validated['proposed_changes'] ?? [],
+            'status' => 'pending_review',
         ]);
 
         $this->auditLogAction->execute(
@@ -72,14 +74,14 @@ class ContributionController extends Controller
         }
 
         $role = strtolower($user->role?->name ?? '');
-        $query = SiteContribution::with(['site:id,name_ar,slug,inventory_number', 'user:id,name']);
+        $query = SiteContribution::with(['site:id,name_ar,slug,permanent_id', 'user:id,name']);
 
         // Authorization Gate (M6): Contributors see only their own contributions
         if (!in_array($role, ['admin', 'super_admin', 'editor'])) {
             $query->where('user_id', $user->id);
         }
 
-        $status = $request->input('status', 'pending');
+        $status = $request->input('status', 'pending_review');
         $contributions = $query
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->latest()
@@ -108,7 +110,7 @@ class ContributionController extends Controller
         $contribution->update([
             'status' => $validated['status'],
             'reviewed_by' => $user->id,
-            'review_notes' => $validated['review_notes'],
+            'admin_decision_reason' => $validated['review_notes'],
             'reviewed_at' => now(),
         ]);
 

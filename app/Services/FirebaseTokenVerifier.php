@@ -10,7 +10,7 @@ class FirebaseTokenVerifier
 {
     private const GOOGLE_CERT_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 
-    /** @return array{uid:string,email:string,name:string,avatar:?string,email_verified:bool,firebase:array} */
+    /** @return array{uid:string,email:string,name:string,avatar:?string,email_verified:bool,firebase:array<string,mixed>} */
     public function verify(string $jwt, ?string $expectedProjectId = null): array
     {
         $projectId = $expectedProjectId ?: config('services.firebase.project_id');

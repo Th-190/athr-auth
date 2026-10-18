@@ -61,6 +61,9 @@ class MediaController extends Controller
             'photographer' => 'nullable|string|max:255',
             'license' => 'nullable|string|max:100',
             'rights_status' => ['sometimes', Rule::enum(RightsStatus::class)],
+            'source_url' => 'nullable|url|max:2000',
+            'permission_details' => 'nullable|string|max:2000',
+            'usage_restrictions' => 'nullable|string|max:2000',
             'caption_ar' => 'nullable|string|max:500',
             'alt_text' => 'nullable|string|max:500',
         ]);
@@ -120,9 +123,12 @@ class MediaController extends Controller
                     'caption' => $request->input('caption_ar', $site->name_ar),
                     'alt_text' => $request->input('alt_text'),
                     'original_storage_path' => $originalPath,
-                    'photographer' => $request->input('photographer', 'أرشيف أثر كربلاء'),
+                    'photographer' => $request->input('photographer'),
                     'license' => $request->input('license'),
                     'rights_status' => $request->input('rights_status') ?: RightsStatus::UNKNOWN->value,
+                    'source_url' => $request->input('source_url'),
+                    'permission_details' => $request->input('permission_details'),
+                    'visibility' => false,
                     'mime_type' => $realMime,
                     'file_size_bytes' => $file->getSize(),
                     'created_by' => $request->user()?->id,
@@ -147,13 +153,6 @@ class MediaController extends Controller
             return response()->json(['message' => 'تعذر تخزين الصورة بأمان. يرجى المحاولة لاحقاً.'], 503);
         }
 
-        try {
-            ProcessImageDerivativeJob::dispatch($originalPath, $site->slug, (string) $ulid);
-        } catch (\Throwable $e) {
-            // Keep the durable original and database row. Operators can retry failed jobs.
-            report($e);
-        }
-
         $this->auditLogAction->execute(
             action: 'media.uploaded',
             entityType: 'SiteImage',
@@ -164,7 +163,7 @@ class MediaController extends Controller
         );
 
         return response()->json([
-            'message' => 'تم استلام الصورة وتخزينها بأمان، وجارٍ توليد المشتقات',
+            'message' => 'تم حفظ الأصل الخاص؛ تبقى الصورة مخفية حتى مراجعة حقوق استخدامها واعتمادها.',
             'image' => $siteImage,
         ], 201);
     }
@@ -186,6 +185,10 @@ class MediaController extends Controller
             'caption_ar' => 'sometimes|string|max:500',
             'photographer' => 'nullable|string|max:255',
             'rights_status' => ['sometimes', Rule::enum(RightsStatus::class)],
+            'source_url' => 'nullable|url|max:2000',
+            'permission_details' => 'nullable|string|max:2000',
+            'usage_restrictions' => 'nullable|string|max:2000',
+            'visibility' => 'sometimes|boolean',
             'license' => 'nullable|string|max:100',
             'copyright_notice' => 'nullable|string|max:500',
             'credit_line' => 'nullable|string|max:500',
@@ -209,6 +212,36 @@ class MediaController extends Controller
             unset($validated['is_primary']);
         }
 
+        $rightsStatus = $validated['rights_status'] ?? $image->rights_status->value;
+        $willBeVisible = array_key_exists('visibility', $validated) ? (bool) $validated['visibility'] : $image->visibility;
+        if ($willBeVisible) {
+            $sourceUrl = $validated['source_url'] ?? $image->source_url;
+            $photographer = $validated['photographer'] ?? $image->photographer;
+            $creditLine = $validated['credit_line'] ?? $image->credit_line;
+            $license = $validated['license'] ?? $image->license;
+            $permissionDetails = $validated['permission_details'] ?? $image->permission_details;
+            $rightsReady = filled($sourceUrl)
+                && (filled($photographer) || filled($creditLine))
+                && match ($rightsStatus) {
+                    RightsStatus::PUBLIC_DOMAIN->value => true,
+                    RightsStatus::CREATIVE_COMMONS->value => filled($license),
+                    RightsStatus::COPYRIGHTED_PERMITTED->value => filled($license) && filled($permissionDetails),
+                    default => false,
+                };
+
+            if (!$rightsReady) {
+                return response()->json([
+                    'message' => 'لا يمكن إظهار الصورة قبل توثيق مصدرها وبيانات نسبتها وترخيصها أو إذن استخدامها.',
+                ], 422);
+            }
+            $validated['rights_reviewed_by'] = $request->user()->id;
+            $validated['rights_reviewed_at'] = now();
+        } else {
+            $validated['visibility'] = false;
+            $validated['rights_reviewed_by'] = null;
+            $validated['rights_reviewed_at'] = null;
+        }
+
         // Authorization Gate (M5): If changing site_id, user must have edit permission on target site
         if ($request->filled('site_id') && (int) $request->input('site_id') !== (int) $image->site_id) {
             $targetSite = Site::findOrFail($request->input('site_id'));
@@ -219,12 +252,55 @@ class MediaController extends Controller
             }
         }
 
-        DB::transaction(function () use ($image, $validated) {
+        $derivativePathsToRevoke = [];
+        $downloadPathToRevoke = null;
+        if (!$willBeVisible) {
+            $derivativePathsToRevoke = array_filter([
+                $image->web_storage_path,
+                $image->thumb_storage_path,
+            ]);
+            $downloadPathToRevoke = $image->download_storage_path;
+            $validated['web_storage_path'] = null;
+            $validated['thumb_storage_path'] = null;
+            $validated['download_storage_path'] = null;
+        }
+
+        DB::transaction(function () use ($image, $validated, $willBeVisible) {
             if (($validated['featured'] ?? false) && $image->site_id) {
                 SiteImage::where('site_id', $image->site_id)->where('id', '!=', $image->id)->update(['featured' => false]);
             }
             $image->update($validated);
+            if (!$willBeVisible) {
+                $image->hashes()->whereIn('file_version', ['web', 'thumbnail', 'download'])->delete();
+            }
         });
+
+        // Remove previously public objects on rights revocation. The database
+        // stops publishing their URLs first, so storage errors fail closed in API responses.
+        foreach ($derivativePathsToRevoke as $path) {
+            try {
+                Storage::disk('derivatives')->delete($path);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+        if ($downloadPathToRevoke) {
+            try {
+                Storage::disk('downloads')->delete($downloadPathToRevoke);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        $image->refresh();
+        if ($image->visibility && !$image->web_storage_path) {
+            try {
+                ProcessImageDerivativeJob::dispatch($image->original_storage_path, $image->site->slug, $image->ulid);
+            } catch (\Throwable $e) {
+                report($e);
+                return response()->json(['message' => 'تم حفظ مراجعة الحقوق، لكن تعذر إرسال مهمة معالجة الصورة.'], 503);
+            }
+        }
 
         $this->auditLogAction->execute(
             action: 'media.updated',
@@ -254,10 +330,31 @@ class MediaController extends Controller
             ], 403);
         }
 
-        // Check if image is featured
-        $isFeatured = Site::where('id', $image->site_id)->where('featured', true)->exists();
+        $derivativePaths = array_filter([$image->web_storage_path, $image->thumb_storage_path]);
+        $downloadPath = $image->download_storage_path;
 
-        $image->delete();
+        DB::transaction(function () use ($image): void {
+            $image->hashes()->whereIn('file_version', ['web', 'thumbnail', 'download'])->delete();
+            $image->delete();
+        });
+
+        $storageFailed = false;
+        foreach ($derivativePaths as $path) {
+            try {
+                $storageFailed = !Storage::disk('derivatives')->delete($path) || $storageFailed;
+            } catch (\Throwable $e) {
+                report($e);
+                $storageFailed = true;
+            }
+        }
+        if ($downloadPath) {
+            try {
+                $storageFailed = !Storage::disk('downloads')->delete($downloadPath) || $storageFailed;
+            } catch (\Throwable $e) {
+                report($e);
+                $storageFailed = true;
+            }
+        }
 
         $this->auditLogAction->execute(
             action: 'media.deleted',
@@ -268,8 +365,14 @@ class MediaController extends Controller
             ipAddress: $request->ip()
         );
 
+        if ($storageFailed) {
+            return response()->json([
+                'message' => 'حُذفت الصورة من سجل الوسائط، لكن تعذر إزالة أحد الملفات. يجب إتمام إزالة الملف وتطهير CDN قبل اعتباره محذوفاً.',
+            ], 503);
+        }
+
         return response()->json([
-            'message' => 'تم حذف الصورة من مكتبة الوسائط بنجاح',
+            'message' => 'تم حذف الصورة من مكتبة الوسائط وإزالة النسخ المشتقة.',
         ]);
     }
 
@@ -302,7 +405,7 @@ class MediaController extends Controller
 
         // Published-Only Rule: Public visitors cannot download images of unapproved/draft/archived sites
         $isStaff = $request->user() && in_array(strtolower($request->user()->role?->name ?? ''), ['admin', 'super_admin', 'editor']);
-        if (!$isStaff && (!$image->site || !$image->site->isPubliclyAccessible())) {
+        if (!$isStaff && (!$image->site || !$image->site->isPubliclyAccessible() || !$image->hasPublicRightsApproval())) {
             abort(404, 'الملف أو المعلم التراثي المرتبط به غير متاح للتحميل العام.');
         }
 

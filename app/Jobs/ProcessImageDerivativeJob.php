@@ -13,6 +13,11 @@ class ProcessImageDerivativeJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 3;
+
+    /** @var list<int> */
+    public array $backoff = [30, 120, 300];
+
     public function __construct(
         public string $originalStoragePath,
         public string $siteSlug,
@@ -22,8 +27,12 @@ class ProcessImageDerivativeJob implements ShouldQueue
     public function handle(): void
     {
         $image = SiteImage::where('ulid', $this->imageUlid)->firstOrFail();
+        if (!$image->hasClearedRightsForPublic()) {
+            return;
+        }
+
         $source = Storage::disk('originals')->get($this->originalStoragePath);
-        $bitmap = imagecreatefromstring($source);
+        $bitmap = @imagecreatefromstring($source);
         if (!$bitmap) {
             throw new RuntimeException('Unsupported image data; derivative generation failed.');
         }
@@ -63,6 +72,21 @@ class ProcessImageDerivativeJob implements ShouldQueue
             throw new RuntimeException('Private download derivative storage failed.');
         }
 
+        // Rights can be revoked while a worker is processing. Re-check the current
+        // database state before publishing any derivative paths to API responses.
+        $image->refresh();
+        if (!$image->hasClearedRightsForPublic()) {
+            foreach ([['derivatives', $webPath], ['derivatives', $thumbPath], ['downloads', $downloadPath]] as [$disk, $path]) {
+                try {
+                    Storage::disk($disk)->delete($path);
+                } catch (\Throwable) {
+                    // A takedown must not fail open; the database still does not expose these paths.
+                }
+            }
+            $image->hashes()->whereIn('file_version', ['web', 'thumbnail', 'download'])->delete();
+            return;
+        }
+
         $image->update([
             'width' => $width,
             'height' => $height,
@@ -78,7 +102,7 @@ class ProcessImageDerivativeJob implements ShouldQueue
 
     private function resizeFromBytes(string $bytes, int $maxDimension): \GdImage
     {
-        $image = imagecreatefromstring($bytes);
+        $image = @imagecreatefromstring($bytes);
         if (!$image) {
             throw new RuntimeException('Could not read generated web image.');
         }

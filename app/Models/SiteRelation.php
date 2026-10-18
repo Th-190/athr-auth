@@ -12,11 +12,13 @@ class SiteRelation extends Model
 
     protected $guarded = ['id'];
 
+    /** @return BelongsTo<Site, $this> */
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }
 
+    /** @return BelongsTo<Site, $this> */
     public function relatedSite(): BelongsTo
     {
         return $this->belongsTo(Site::class, 'related_site_id');

@@ -22,10 +22,18 @@ php artisan config:cache
 Run a separate Railway service from the same image for the database queue worker, with the same database and R2 environment variables:
 
 ```sh
-php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+php artisan queue:work database --sleep=3 --tries=3 --timeout=90 --max-time=3600
 ```
 
-The worker must run the same release as the web service so uploaded originals are turned into public web/thumb derivatives and private watermarked download derivatives. Do not use `migrate:fresh`, `db:wipe`, or database reset commands on production.
+The Docker image installs `pcntl` so the queue worker can enforce its timeout. The database queue uses a 120-second `retry_after`; keep the worker timeout shorter than this value. The worker must run the same release as the web service so uploaded originals are turned into web/thumb derivatives in a dedicated public derivatives bucket and private watermarked download derivatives. The R2 bucket attached to `CDN_URL` exposes every object in that derivatives bucket, so never store originals or private downloads in it. When image rights are revoked, the app deletes derivative objects and stops publishing their paths; clear any already cached Cloudflare copies as part of rights takedown. Do not use `migrate:fresh`, `db:wipe`, or database reset commands on production.
+
+## Rights revocation and rollback
+
+The R2 bucket attached to `CDN_URL` exposes every object in that derivatives bucket, so never store originals or private downloads in it. On the first release with rights-review fields, the migration hides every legacy visible image because those records have no server-side rights-review decision. The release operator must remove all legacy web and thumbnail objects from the dedicated derivatives bucket and purge their CDN URLs before treating them as private; only reprocess images after an editor records a fresh rights approval. When image rights are revoked or an image is deleted, the app removes public paths from the database and attempts to delete derivative objects; rights revocation also clears review approval. **The release operator must then purge each affected web and thumbnail URL from Cloudflare Cache (purge by exact URL or the narrowest matching cache tag), and verify the CDN URLs return 404 from an uncached request.** Until the purge is confirmed, previously cached copies may still be publicly accessible. Keep purge credentials in the operator's secret manager; do not put them in the repository or frontend environment.
+
+The application image requires PHP 8.3 with `pdo_pgsql`, `intl`, `zip`, `gd`, `pcntl`, `fileinfo`, and OpenSSL support. The queue worker must use the same image as the web service and run with database connectivity and the R2 credentials needed by image jobs. `GD` performs derivative resizing and watermarked downloads; the current job does not require an external image binary.
+
+Before the migration release, take a provider-managed PostgreSQL backup and confirm a restore to a disposable database. Apply only additive migrations using `php artisan migrate --force`; never use `migrate:fresh`, `db:wipe`, or database reset commands on production. If the release fails, roll back the application image first. Do not run migration rollback against production without reviewing that migration's `down()` operation and restoring from the verified backup if it could discard data.
 
 ## Local checks
 

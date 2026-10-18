@@ -239,7 +239,7 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
         </div>
 
         {/* Featured Museum Plate Presentation */}
-        {featuredImg && (
+        {featuredImg ? (
           <div className="bg-white border border-[#EBE6DF] rounded overflow-hidden shadow-2xs">
             <div className="relative aspect-16/9 bg-stone-950 overflow-hidden">
               <img
@@ -263,6 +263,12 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
                 <span>الترخيص: {featuredImg.rights_status}</span>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="aspect-16/9 max-w-4xl border border-dashed border-stone-300 rounded bg-[#F7F4EE] flex flex-col items-center justify-center text-center px-6">
+            <Landmark className="w-9 h-9 text-stone-400 mb-3" aria-hidden="true" />
+            <p className="text-sm font-medium text-stone-700">لا تتوفر صورة منشورة لهذا المعلم بعد</p>
+            <p className="text-xs text-stone-500 mt-1">تُنشر الصور بعد التحقق من مصدرها وحقوق استخدامها.</p>
           </div>
         )}
       </section>
@@ -443,6 +449,31 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
                 {museumProfile?.collection_summary || 'غير موثّق بعد'}
               </p>
             </div>
+
+            {Boolean(museumProfile?.artifacts?.length) && (
+              <div className="md:col-span-2 space-y-3">
+                <h3 className="font-serif font-bold text-stone-900">مقتنيات منشورة بعد المراجعة</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {museumProfile?.artifacts?.map(artifact => (
+                    <article key={artifact.id} className="bg-white p-4 rounded-lg border border-stone-200 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <h4 className="font-bold text-stone-900">{artifact.title_ar}</h4>
+                        {artifact.category && <span className="text-[11px] text-[#78350F] bg-amber-50 border border-amber-200 rounded px-2 py-1 shrink-0">{artifact.category}</span>}
+                      </div>
+                      {artifact.title_en && <p className="text-xs text-stone-500" dir="ltr">{artifact.title_en}</p>}
+                      {artifact.description && <p className="text-sm text-stone-700 leading-relaxed">{artifact.description}</p>}
+                      <dl className="grid grid-cols-2 gap-2 text-xs text-stone-600">
+                        {artifact.material && <div><dt className="font-semibold">المادة</dt><dd>{artifact.material}</dd></div>}
+                        {artifact.estimated_date && <div><dt className="font-semibold">التأريخ المنشور</dt><dd>{artifact.estimated_date}</dd></div>}
+                        {artifact.origin && <div><dt className="font-semibold">المنشأ المنشور</dt><dd>{artifact.origin}</dd></div>}
+                        {artifact.archaeological_context && <div><dt className="font-semibold">السياق</dt><dd>{artifact.archaeological_context}</dd></div>}
+                      </dl>
+                      {artifact.source_url && <a href={artifact.source_url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[36px] items-center text-xs text-[#78350F] underline">المصدر المؤسسي</a>}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Accessibility Notes */}
             <div className="md:col-span-2 space-y-1 bg-[#FAF8F5] p-3.5 rounded-lg border border-stone-200">

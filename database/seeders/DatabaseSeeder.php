@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             HistoricalPeriodSeeder::class,
             DemoDataSeeder::class,
             MuseumSeeder::class,
+            HeritageSitesSeeder::class,
             SiteModelSeeder::class,
         ]);
     }

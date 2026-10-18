@@ -137,25 +137,50 @@ class ArchiveDatabase {
       page += 1;
     } while (page <= lastPage);
 
+    const museumResponse = await fetch('/api/v1/museums?per_page=50', { headers: { Accept: 'application/json' } });
+    if (!museumResponse.ok) throw new Error('Could not load published museum records.');
+    const museumPayload = await museumResponse.json();
+    const museums: any[] = Array.isArray(museumPayload.data) ? museumPayload.data : [];
+
     const mappedSites: Site[] = [];
     const mappedImages: SiteImage[] = [];
+    const mappedProfiles: MuseumProfile[] = [];
+    const mappedSources = new Map<string, Source>();
     for (const item of sites) {
       const coordinates = item.coordinates || {};
+      const siteTypeSlug = item.site_type?.slug;
+      const periodSlug = item.historical_period?.slug;
+      const siteTypeId = this.state.siteTypes.find(type => type.slug === siteTypeSlug)?.id || String(item.site_type_id || '');
+      const periodId = this.state.historicalPeriods.find(period => period.slug === periodSlug)?.id || String(item.historical_period_id || '');
+      const provinceId = item.province?.code === 'KHA' ? 'prov_karbala' : String(item.province_id || '');
+      const districtId = DISTRICTS.find(district => district.name_ar === item.district?.name_ar)?.id || String(item.district?.id || '');
       mappedSites.push({
         id: String(item.id), permanent_id: item.inventory_number || String(item.id), slug: item.slug,
-        name_ar: item.name_ar, name_en: item.name_en || '', alternate_names: [],
-        short_description: item.summary_ar || '', description: item.description_ar || '', historical_description: '',
-        architectural_description: '', cultural_significance: '', historical_significance: '', current_condition: '',
-        location_description: '', province_id: String(item.province_id || ''), district_id: '', area_id: String(item.area_id || ''),
-        site_type_id: String(item.site_type_id || ''), historical_period_id: String(item.historical_period_id || ''),
+        name_ar: item.name_ar, name_en: item.name_en || '',
+        alternate_names: (item.names || []).map((name: any) => ({ name: name.name, lang: name.language || 'ar' })),
+        short_description: item.summary_ar || '', description: item.description_ar || '',
+        historical_description: item.historical_description || '', architectural_description: item.architectural_description || '',
+        cultural_significance: item.cultural_significance || '', historical_significance: item.historical_significance || '',
+        current_condition: item.current_condition || '', location_description: item.location_description || '',
+        province_id: provinceId, district_id: districtId, area_id: String(item.area_id || ''),
+        site_type_id: siteTypeId, historical_period_id: periodId,
         lat: Number(coordinates.latitude || 0), lng: Number(coordinates.longitude || 0),
         location_precision: item.location_precision || 'unknown', publication_status: item.publication_status,
         verification_status: item.verification_status, verification_notes: '', verified_by: '',
         verified_at: item.verified_at || '', last_reviewed_at: item.updated_at || '', created_by: '', updated_by: '',
         published_at: item.published_at, is_demo: Boolean(item.is_demo), is_lost_or_vanished: false,
         is_under_research: false, ai_assisted: Boolean(item.ai_assisted), view_count: Number(item.view_count || 0),
-        featured: Boolean(item.featured), source_count: 0, image_count: (item.images || []).length,
+        featured: Boolean(item.featured), source_count: (item.sources || []).length, image_count: (item.images || []).length,
       });
+      for (const source of item.sources || []) {
+        mappedSources.set(String(source.id), {
+          id: String(source.id), source_type: source.source_type, title: source.title, author: source.author,
+          publisher: source.publisher || '', year: source.year || '', url: source.url || '',
+          page_reference: source.pivot?.page_reference || '', excerpt: source.pivot?.excerpt || '',
+          reliability_level: source.reliability_level, reliability_notes: source.reliability_notes || '',
+          language: source.language || 'ar',
+        } as Source);
+      }
       for (const image of item.images || []) {
         mappedImages.push({
           id: String(image.id), site_id: String(item.id), title: image.title || image.caption || item.name_ar,
@@ -171,14 +196,50 @@ class ArchiveDatabase {
       }
     }
 
+    for (const museum of museums) {
+      const profile = museum.museum_profile;
+      if (profile) {
+        mappedProfiles.push({
+          id: String(profile.id), site_id: String(museum.id), operator_name: profile.operator_name || null,
+          operator_type: profile.operator_type || null, official_website: profile.official_website || null,
+          address_text: profile.address_text || null, visiting_info: profile.visiting_info || null,
+          visiting_info_source_id: profile.visiting_info_source_id ? String(profile.visiting_info_source_id) : null,
+          visit_info_verified_at: profile.visit_info_verified_at || null,
+          accessibility_notes: profile.accessibility_notes || null, founding_year: profile.founding_year || null,
+          founding_year_precision: profile.founding_year_precision || 'unknown',
+          collection_summary: profile.collection_summary || null,
+          artifacts: (profile.artifacts || []).map((artifact: any) => ({
+            id: String(artifact.id), title_ar: artifact.title_ar, title_en: artifact.title_en || null,
+            category: artifact.category || null, description: artifact.description || null,
+            material: artifact.material || null, estimated_date: artifact.estimated_date || null,
+            origin: artifact.origin || null, archaeological_context: artifact.archaeological_context || null,
+            source_url: artifact.source?.url || null,
+          })),
+        });
+      }
+      for (const source of museum.sources || []) {
+        mappedSources.set(String(source.id), {
+          id: String(source.id), source_type: source.source_type, title: source.title, author: source.author,
+          publisher: source.publisher || '', year: source.year || '', url: source.url || '',
+          page_reference: source.pivot?.page_reference || '', excerpt: source.pivot?.excerpt || '',
+          reliability_level: source.reliability_level, reliability_notes: source.reliability_notes || '',
+          language: source.language || 'ar',
+        } as Source);
+      }
+    }
+
     this.state.sites = mappedSites;
     this.state.images = mappedImages;
+    this.state.museumProfiles = mappedProfiles;
+    this.state.sources = [...mappedSources.values()];
     this.notify();
   }
 
   public clearPublishedCache(): void {
     this.state.sites = [];
     this.state.images = [];
+    this.state.museumProfiles = [];
+    this.state.sources = [];
     this.notify();
   }
 
@@ -187,6 +248,16 @@ class ArchiveDatabase {
   }
 
   private loadDatabase(): ArchiveDatabaseState {
+    if (!import.meta.env.DEV) {
+      const empty = this.seedState();
+      return {
+        ...empty,
+        sites: [], images: [], sources: [], claims: [], timelines: [], revisions: [], auditLogs: [],
+        contributions: [], reports: [], encyclopedia: [], collections: [], museumProfiles: [],
+        siteRelations: [], researchLeads: [], siteModels: [],
+      };
+    }
+
     try {
       const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('karbala_heritage_archive_db_v2');
       if (saved) {
@@ -199,7 +270,9 @@ class ArchiveDatabase {
 
         return {
           sites: mergedSites,
-          images: parsed.images || SITE_IMAGES,
+          // Legacy browser storage may still contain unreviewed bundled images.
+          // Images enter the archive only through the reviewed backend API.
+          images: [],
           sources: parsed.sources || SOURCES,
           claims: parsed.claims || SITE_CLAIMS,
           timelines: parsed.timelines || SITE_TIMELINES,
@@ -272,7 +345,7 @@ class ArchiveDatabase {
   public resetToSeeds(): void {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem('karbala_heritage_archive_db_v2');
-    this.state = this.seedState();
+    this.state = this.loadDatabase();
     this.persist();
   }
 

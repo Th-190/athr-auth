@@ -7,6 +7,7 @@ use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\ContributionController;
 use App\Http\Controllers\EncyclopediaController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\HeritageEditorialController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MuseumController;
@@ -36,6 +37,17 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
     });
 
+    // Editorial API is available to active editors and administrators; each record action
+    // is also authorized by its model policy in the controller.
+    Route::prefix('admin/editorial')->middleware('staff')->group(function () {
+        Route::get('/filters', [HeritageEditorialController::class, 'filters'])->name('api.v1.editorial.filters');
+        Route::get('/', [HeritageEditorialController::class, 'index'])->name('api.v1.editorial.index');
+        Route::put('/sites/{site}', [HeritageEditorialController::class, 'updateSite'])->name('api.v1.editorial.sites.update');
+        Route::put('/artifacts/{artifact}', [HeritageEditorialController::class, 'updateArtifact'])->name('api.v1.editorial.artifacts.update');
+        Route::post('/{kind}/{id}/decision', [HeritageEditorialController::class, 'decide'])->name('api.v1.editorial.decision');
+        Route::put('/images/{id}/rights', [MediaController::class, 'updateMetadata'])->name('api.v1.editorial.images.rights');
+    });
+
     // Public Taxonomies
     Route::get('/taxonomies', [TaxonomyController::class, 'index'])->name('api.v1.taxonomies.index');
     Route::get('/taxonomies/types', [TaxonomyController::class, 'siteTypes'])->name('api.v1.taxonomies.types');
@@ -59,6 +71,12 @@ Route::prefix('v1')->group(function () {
     Route::post('/contributions', [ContributionController::class, 'store'])
         ->middleware('throttle:10,1')
         ->name('api.v1.contributions.store');
+    Route::get('/admin/contributions', [ContributionController::class, 'index'])
+        ->middleware('auth:sanctum')
+        ->name('api.v1.admin.contributions.index');
+    Route::put('/admin/contributions/{contribution}/review', [ContributionController::class, 'review'])
+        ->middleware('staff')
+        ->name('api.v1.admin.contributions.review');
 
     // Media Downloads (Watermarked & Logged, rate limited to 30 per minute per IP)
     Route::get('/media/{id}/download', [MediaController::class, 'download'])
@@ -135,8 +153,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('api.v1.admin.audit.index');
 
         // Contributions & Leads Review
-        Route::get('/contributions', [ContributionController::class, 'index'])->name('api.v1.admin.contributions.index');
-        Route::put('/contributions/{contribution}/review', [ContributionController::class, 'review'])->name('api.v1.admin.contributions.review');
         Route::get('/leads', [MuseumController::class, 'leads'])->name('api.v1.admin.leads.index');
         Route::post('/leads', [MuseumController::class, 'storeLead'])->name('api.v1.admin.leads.store');
     });

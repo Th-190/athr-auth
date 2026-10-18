@@ -9,6 +9,7 @@ use App\Observers\SiteObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -16,6 +17,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @property float|null $latitude
+ * @property float|null $longitude
+ * @method static Builder<Site> publishedAndPublic()
+ */
 #[ObservedBy([SiteObserver::class])]
 class Site extends Model
 {
@@ -38,11 +44,33 @@ class Site extends Model
         'published_at' => 'datetime',
     ];
 
+    /** @return Attribute<string, string> */
+    protected function inventoryNumber(): Attribute
+    {
+        return Attribute::make(get: fn () => $this->permanent_id);
+    }
+
+    /** @return Attribute<string, string> */
+    protected function summaryAr(): Attribute
+    {
+        return Attribute::make(get: fn () => $this->short_description);
+    }
+
+    /** @return Attribute<string, string> */
+    protected function descriptionAr(): Attribute
+    {
+        return Attribute::make(get: fn () => $this->description);
+    }
+
     /**
      * Scope: Published and Publicly Accessible Records Only.
      * Enforces the single source of truth for public visibility across the application.
      */
-    public function scopePublishedAndPublic(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    /**
+     * @param Builder<Site> $query
+     * @return Builder<Site>
+     */
+    public function scopePublishedAndPublic(Builder $query): Builder
     {
         return $query->where('publication_status', PublicationStatus::PUBLISHED->value ?? 'published')
                      ->whereNull('deleted_at');
@@ -64,6 +92,7 @@ class Site extends Model
      * Derived Accessor: Latitude
      * Extracts latitude from the underlying PostGIS geography(Point,4326) column.
      */
+    /** @return Attribute<float|null, float|null> */
     protected function latitude(): Attribute
     {
         return Attribute::make(
@@ -81,6 +110,7 @@ class Site extends Model
      * Derived Accessor: Longitude
      * Extracts longitude from the underlying PostGIS geography(Point,4326) column.
      */
+    /** @return Attribute<float|null, float|null> */
     protected function longitude(): Attribute
     {
         return Attribute::make(
@@ -105,6 +135,10 @@ class Site extends Model
         $lng = $this->longitude;
 
         if ($lat === null || $lng === null) {
+            return null;
+        }
+
+        if ($this->location_precision === LocationPrecision::UNKNOWN) {
             return null;
         }
 
@@ -143,7 +177,7 @@ class Site extends Model
     public function setCoordinates(float $latitude, float $longitude): self
     {
         if (DB::getDriverName() === 'pgsql') {
-            $this->coordinates = DB::raw("ST_SetSRID(ST_MakePoint({$longitude}, {$latitude}), 4326)::geography");
+            $this->setAttribute('coordinates', DB::raw("ST_SetSRID(ST_MakePoint({$longitude}, {$latitude}), 4326)::geography"));
         }
         return $this;
     }
@@ -152,26 +186,31 @@ class Site extends Model
     // Relationships
     // ==========================================
 
+    /** @return BelongsTo<Province, $this> */
     public function province(): BelongsTo
     {
         return $this->belongsTo(Province::class);
     }
 
+    /** @return BelongsTo<Area, $this> */
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
     }
 
+    /** @return BelongsTo<SiteType, $this> */
     public function siteType(): BelongsTo
     {
         return $this->belongsTo(SiteType::class);
     }
 
+    /** @return BelongsTo<HistoricalPeriod, $this> */
     public function historicalPeriod(): BelongsTo
     {
         return $this->belongsTo(HistoricalPeriod::class);
     }
 
+    /** @return HasMany<SiteName, $this> */
     public function names(): HasMany
     {
         return $this->hasMany(SiteName::class);
@@ -194,6 +233,7 @@ class Site extends Model
         return $this->hasMany(SiteClaim::class);
     }
 
+    /** @return HasMany<SiteImage, $this> */
     public function images(): HasMany
     {
         return $this->hasMany(SiteImage::class)->orderBy('sort_order');
@@ -230,11 +270,13 @@ class Site extends Model
             ->where('reportable_type', self::class);
     }
 
+    /** @return HasMany<SiteRelation, $this> */
     public function relations(): HasMany
     {
         return $this->hasMany(SiteRelation::class);
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\HasOne<MuseumProfile, $this> */
     public function museumProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(MuseumProfile::class);

@@ -8,7 +8,7 @@ use App\Enums\VerificationStatus;
 use App\Http\Resources\SiteResource;
 use App\Models\AccessInvitation;
 use App\Models\Area;
-use App\Models\Contribution;
+use App\Models\SiteContribution;
 use App\Models\HistoricalPeriod;
 use App\Models\Province;
 use App\Models\Role;
@@ -20,6 +20,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class AdversarialSecurityRound2Test extends TestCase
@@ -71,26 +72,57 @@ class AdversarialSecurityRound2Test extends TestCase
                 'sort_order'       => 1,
             ]
         );
-        $province = Province::firstOrCreate(['slug' => 'karbala-prov'], ['name_ar' => 'كربلاء المقدسة', 'name_en' => 'Karbala']);
+        $province = Province::firstOrCreate(
+            ['slug' => 'karbala-prov'],
+            ['code' => 'KRB', 'name_ar' => 'كربلاء المقدسة', 'name_en' => 'Karbala']
+        );
 
+        $suffix = strtoupper(\Illuminate\Support\Str::random(10));
         $site = Site::create([
-            'slug' => 'test-site-' . uniqid(),
-            'inventory_number' => 'KHA-TEST-' . strtoupper(uniqid()),
+            'slug' => 'test-site-' . strtolower($suffix),
+            'permanent_id' => 'KHA-TEST-' . $suffix,
             'name_ar' => 'موقع اختباري أثري',
             'name_en' => 'Test Archaeological Site',
-            'summary_ar' => 'ملخص توثيقي للموقع التراثي للاختبار الأمني',
+            'short_description' => 'ملخص توثيقي للموقع التراثي للاختبار الأمني',
+            'description' => 'بيانات اختبارية فقط.',
+            'historical_description' => 'بيانات اختبارية فقط.',
+            'architectural_description' => 'بيانات اختبارية فقط.',
+            'cultural_significance' => 'بيانات اختبارية فقط.',
+            'historical_significance' => 'بيانات اختبارية فقط.',
+            'current_condition' => 'بيانات اختبارية فقط.',
+            'location_description' => 'بيانات اختبارية فقط.',
             'site_type_id' => $type->id,
             'historical_period_id' => $period->id,
             'province_id' => $province->id,
+            'area_id' => $this->createTestArea($province)->id,
             'publication_status' => $publicationStatus,
             'verification_status' => 'verified',
             'location_precision' => $precision,
-            'latitude' => $lat,
-            'longitude' => $lng,
             'published_at' => $publicationStatus === 'published' ? now() : null,
         ]);
 
+        if ($precision !== 'unknown') {
+            $site->setCoordinates($lat, $lng)->save();
+        }
+
         return $site;
+    }
+
+    protected function createTestArea(Province $province): Area
+    {
+        $district = \App\Models\District::firstOrCreate(
+            ['province_id' => $province->id, 'slug' => 'test-district'],
+            ['name_ar' => 'قضاء اختباري', 'name_en' => 'Test District']
+        );
+        $subDistrict = \App\Models\SubDistrict::firstOrCreate(
+            ['district_id' => $district->id, 'slug' => 'test-sub-district'],
+            ['name_ar' => 'ناحية اختبارية', 'name_en' => 'Test Subdistrict']
+        );
+
+        return Area::firstOrCreate(
+            ['sub_district_id' => $subDistrict->id, 'slug' => 'test-area'],
+            ['name_ar' => 'منطقة اختبارية', 'name_en' => 'Test Area']
+        );
     }
 
     // =========================================================================
@@ -139,21 +171,22 @@ class AdversarialSecurityRound2Test extends TestCase
         $this->getJson("/api/v1/sites/{$draft->slug}")->assertStatus(404);
         $this->getJson("/api/v1/sites/{$archived->slug}")->assertStatus(404);
 
-        // 3. GeoJSON export only includes published
-        $geoResponse = $this->getJson('/api/v1/sites/export/geojson');
-        $geoResponse->assertStatus(200);
-        $geoFeatures = collect($geoResponse->json('features'));
-        $featureSiteIds = $geoFeatures->pluck('properties.id');
-        $this->assertTrue($featureSiteIds->contains($published->id));
-        $this->assertFalse($featureSiteIds->contains($draft->id));
-        $this->assertFalse($featureSiteIds->contains($archived->id));
+        // PostGIS-backed endpoints require a real PostgreSQL geography column.
+        if (DB::getDriverName() === 'pgsql') {
+            $geoResponse = $this->getJson('/api/v1/sites/export/geojson');
+            $geoResponse->assertStatus(200);
+            $geoFeatures = collect($geoResponse->json('features'));
+            $featureSiteIds = $geoFeatures->pluck('properties.id');
+            $this->assertTrue($featureSiteIds->contains($published->id));
+            $this->assertFalse($featureSiteIds->contains($draft->id));
+            $this->assertFalse($featureSiteIds->contains($archived->id));
 
-        // 4. Sitemap.xml only includes published
-        $sitemapResponse = $this->get('/sitemap.xml');
-        $sitemapResponse->assertStatus(200);
-        $this->assertStringContainsString($published->slug, $sitemapResponse->getContent());
-        $this->assertStringNotContainsString($draft->slug, $sitemapResponse->getContent());
-        $this->assertStringNotContainsString($archived->slug, $sitemapResponse->getContent());
+            $sitemapResponse = $this->get('/sitemap.xml');
+            $sitemapResponse->assertStatus(200);
+            $this->assertStringContainsString($published->slug, $sitemapResponse->getContent());
+            $this->assertStringNotContainsString($draft->slug, $sitemapResponse->getContent());
+            $this->assertStringNotContainsString($archived->slug, $sitemapResponse->getContent());
+        }
 
         // 5. RSS.xml only includes published
         $rssResponse = $this->get('/rss.xml');
@@ -168,6 +201,10 @@ class AdversarialSecurityRound2Test extends TestCase
     // =========================================================================
     public function test_coordinate_rule_enforces_precision_in_all_serializers(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            $this->markTestSkipped('Coordinate privacy and GeoJSON serialization require PostgreSQL/PostGIS.');
+        }
+
         $rawLat = 32.616035;
         $rawLng = 44.032375;
 
@@ -216,13 +253,22 @@ class AdversarialSecurityRound2Test extends TestCase
         // Create sample site image in storage
         $storedPath = 'sites/test-image/download.jpg';
         Storage::disk('downloads')->put($storedPath, 'fake-jpeg-binary-stream');
+        $rightsReviewer = $this->createTestUser('admin');
 
         $publishedImage = SiteImage::create([
             'site_id' => $publishedSite->id,
             'ulid' => (string) \Illuminate\Support\Str::ulid(),
             'title' => 'Test image',
             'original_storage_path' => 'sites/test-image/original.bin',
+            'web_storage_path' => 'sites/test-image/web.jpg',
             'download_storage_path' => $storedPath,
+            'rights_status' => 'creative_commons',
+            'license' => 'CC BY-SA 4.0',
+            'source_url' => 'https://example.org/test-image',
+            'photographer' => 'مصوّر تجريبي',
+            'rights_reviewed_by' => $rightsReviewer->id,
+            'rights_reviewed_at' => now(),
+            'visibility' => true,
             'mime_type' => 'image/jpeg',
             'file_size_bytes' => 24,
             'featured' => true,
@@ -256,6 +302,48 @@ class AdversarialSecurityRound2Test extends TestCase
         $notFoundRes->assertStatus(404);
     }
 
+    public function test_deleting_media_removes_derivatives_and_private_downloads_but_keeps_the_immutable_original(): void
+    {
+        Storage::fake('originals');
+        Storage::fake('derivatives');
+        Storage::fake('downloads');
+
+        $admin = $this->createTestUser('admin');
+        $site = $this->createSampleSite('published');
+        $originalPath = 'sites/delete-audit/original.bin';
+        $webPath = 'sites/delete-audit/web.jpg';
+        $thumbPath = 'sites/delete-audit/thumb.jpg';
+        $downloadPath = 'sites/delete-audit/download.jpg';
+        Storage::disk('originals')->put($originalPath, 'private-original');
+        Storage::disk('derivatives')->put($webPath, 'public-web-image');
+        Storage::disk('derivatives')->put($thumbPath, 'public-thumbnail');
+        Storage::disk('downloads')->put($downloadPath, 'private-watermarked-download');
+
+        $image = SiteImage::create([
+            'site_id' => $site->id,
+            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'title' => 'Deletion audit image',
+            'original_storage_path' => $originalPath,
+            'web_storage_path' => $webPath,
+            'thumb_storage_path' => $thumbPath,
+            'download_storage_path' => $downloadPath,
+            'rights_status' => 'public_domain',
+            'source_url' => 'https://example.org/archive-image',
+            'photographer' => 'باحث تجريبي',
+            'rights_reviewed_by' => $admin->id,
+            'rights_reviewed_at' => now(),
+            'visibility' => true,
+        ]);
+
+        $this->actingAs($admin)->deleteJson("/api/v1/admin/media/{$image->id}")->assertOk();
+
+        $this->assertSoftDeleted('site_images', ['id' => $image->id]);
+        Storage::disk('originals')->assertExists($originalPath);
+        Storage::disk('derivatives')->assertMissing($webPath);
+        Storage::disk('derivatives')->assertMissing($thumbPath);
+        Storage::disk('downloads')->assertMissing($downloadPath);
+    }
+
     public function test_public_site_api_returns_only_visible_published_derivatives(): void
     {
         Storage::fake('derivatives');
@@ -272,7 +360,12 @@ class AdversarialSecurityRound2Test extends TestCase
             'original_storage_path' => "sites/{$site->slug}/original/private.bin",
             'web_storage_path' => $webPath,
             'thumb_storage_path' => $thumbPath,
-            'rights_status' => 'unknown',
+            'rights_status' => 'creative_commons',
+            'license' => 'CC BY-SA 4.0',
+            'source_url' => 'https://example.org/attributed-image',
+            'photographer' => 'باحث تجريبي',
+            'rights_reviewed_by' => $this->createTestUser('admin')->id,
+            'rights_reviewed_at' => now(),
             'visibility' => true,
             'mime_type' => 'image/jpeg',
         ]);
@@ -296,6 +389,43 @@ class AdversarialSecurityRound2Test extends TestCase
         $this->assertArrayNotHasKey('download_storage_path', $images[0]);
     }
 
+    public function test_site_create_and_update_map_api_fields_to_the_existing_schema(): void
+    {
+        $admin = $this->createTestUser('admin');
+        $reference = $this->createSampleSite('draft');
+
+        $created = $this->actingAs($admin)->postJson('/api/v1/admin/sites', [
+            'name_ar' => 'موقع اختبار قاعدة البيانات',
+            'name_en' => 'Database Schema Test Site',
+            'summary_ar' => 'ملخص اختبار مطابق للمخطط',
+            'description_ar' => 'وصف اختبار مطابق للمخطط',
+            'site_type_id' => $reference->site_type_id,
+            'historical_period_id' => $reference->historical_period_id,
+            'province_id' => $reference->province_id,
+            'area_id' => $reference->area_id,
+            'location_precision' => 'unknown',
+        ])->assertCreated();
+
+        $siteId = $created->json('site.id');
+        $this->assertDatabaseHas('sites', [
+            'id' => $siteId,
+            'short_description' => 'ملخص اختبار مطابق للمخطط',
+            'description' => 'وصف اختبار مطابق للمخطط',
+        ]);
+
+        $this->actingAs($admin)->putJson("/api/v1/admin/sites/{$siteId}", [
+            'summary_ar' => 'ملخص محدث مطابق للمخطط',
+            'revision_notes' => 'تحديث لاختبار سجل المراجعة',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('sites', ['id' => $siteId, 'short_description' => 'ملخص محدث مطابق للمخطط']);
+        $this->assertDatabaseHas('site_revisions', [
+            'site_id' => $siteId,
+            'field_name' => 'short_description',
+            'reason' => 'تحديث لاختبار سجل المراجعة',
+        ]);
+    }
+
     public function test_authorized_upload_persists_original_and_generates_shared_derivatives(): void
     {
         Storage::fake('originals');
@@ -313,12 +443,82 @@ class AdversarialSecurityRound2Test extends TestCase
 
         $image = SiteImage::findOrFail($response->json('image.id'));
         Storage::disk('originals')->assertExists($image->original_storage_path);
+        $this->assertFalse($image->visibility);
+        $this->assertNull($image->web_storage_path);
+
+        $this->actingAs($admin)->putJson("/api/v1/admin/media/{$image->id}", [
+            'visibility' => true,
+            'rights_status' => 'creative_commons',
+            'license' => 'CC BY-SA 4.0',
+            'source_url' => 'https://example.org/attributed-image',
+            'photographer' => 'باحث تجريبي',
+        ])->assertOk();
+
+        $image->refresh();
+        $this->assertTrue($image->hasPublicRightsApproval());
         Storage::disk('derivatives')->assertExists($image->web_storage_path);
         Storage::disk('derivatives')->assertExists($image->thumb_storage_path);
         Storage::disk('downloads')->assertExists($image->download_storage_path);
         $this->assertSame(Storage::disk('derivatives')->url($image->web_storage_path), $image->web_url);
         $this->assertDatabaseHas('media_hashes', ['site_image_id' => $image->id, 'file_version' => 'original']);
         $this->assertDatabaseHas('media_hashes', ['site_image_id' => $image->id, 'file_version' => 'thumbnail']);
+
+        $webPath = $image->web_storage_path;
+        $thumbPath = $image->thumb_storage_path;
+        $downloadPath = $image->download_storage_path;
+        $this->actingAs($admin)->putJson("/api/v1/admin/media/{$image->id}", [
+            'visibility' => false,
+        ])->assertOk();
+
+        $image->refresh();
+        $this->assertFalse($image->hasPublicRightsApproval());
+        $this->assertNull($image->web_storage_path);
+        $this->assertNull($image->thumb_storage_path);
+        $this->assertNull($image->download_storage_path);
+        Storage::disk('derivatives')->assertMissing($webPath);
+        Storage::disk('derivatives')->assertMissing($thumbPath);
+        Storage::disk('downloads')->assertMissing($downloadPath);
+    }
+
+    public function test_corrupt_image_derivative_job_fails_for_queue_retry_without_publishing_paths(): void
+    {
+        Storage::fake('originals');
+        Storage::fake('derivatives');
+        Storage::fake('downloads');
+
+        $site = $this->createSampleSite('published');
+        $admin = $this->createTestUser('admin');
+        $originalPath = 'sites/retry-audit/original.bin';
+        Storage::disk('originals')->put($originalPath, 'not-an-image');
+        $image = SiteImage::create([
+            'site_id' => $site->id,
+            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'title' => 'Corrupt retry test image',
+            'original_storage_path' => $originalPath,
+            'rights_status' => 'public_domain',
+            'source_url' => 'https://example.org/archive-image',
+            'photographer' => 'باحث تجريبي',
+            'rights_reviewed_by' => $admin->id,
+            'rights_reviewed_at' => now(),
+            'visibility' => true,
+        ]);
+        $job = new \App\Jobs\ProcessImageDerivativeJob($originalPath, $site->slug, $image->ulid);
+
+        $this->assertSame(3, $job->tries);
+        $this->assertSame([30, 120, 300], $job->backoff);
+        try {
+            $job->handle();
+            $this->fail('Corrupt image data must fail derivative processing so the queue can retry it.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('derivative generation failed', $exception->getMessage());
+        }
+
+        $image->refresh();
+        $this->assertNull($image->web_storage_path);
+        $this->assertNull($image->thumb_storage_path);
+        $this->assertNull($image->download_storage_path);
+        Storage::disk('derivatives')->assertDirectoryEmpty('sites/'.$site->slug);
+        Storage::disk('downloads')->assertDirectoryEmpty('sites/'.$site->slug);
     }
 
     // =========================================================================
@@ -345,20 +545,22 @@ class AdversarialSecurityRound2Test extends TestCase
         $contribUpload->assertStatus(403);
 
         // 2. M6: Contributor can create contribution and only see their own
-        $myContrib = Contribution::create([
+        $myContrib = SiteContribution::create([
             'user_id' => $contributor->id,
+            'type' => 'suggest_correction',
             'title' => 'مساهمة توثيقية رقم 1',
             'description' => 'وصف المساهمة التراثية',
-            'status' => 'pending',
+            'status' => 'pending_review',
             'contributor_name' => $contributor->name,
             'contributor_email' => $contributor->email,
         ]);
 
-        $otherContrib = Contribution::create([
+        $otherContrib = SiteContribution::create([
             'user_id' => $contributorB->id,
+            'type' => 'suggest_correction',
             'title' => 'مساهمة الباحث الثاني',
             'description' => 'وصف مساهمة الباحث الثاني',
-            'status' => 'pending',
+            'status' => 'pending_review',
             'contributor_name' => $contributorB->name,
             'contributor_email' => $contributorB->email,
         ]);

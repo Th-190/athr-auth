@@ -72,7 +72,7 @@ return new class extends Migration
 
         // PostgreSQL PostGIS geography point & GIN index for search_text
         if (DB::getDriverName() === 'pgsql') {
-            DB::statement('ALTER TABLE sites ADD COLUMN coordinates geography(Point, 4326) NOT NULL;');
+            DB::statement('ALTER TABLE sites ADD COLUMN coordinates geography(Point, 4326) NULL;');
             DB::statement('CREATE INDEX sites_coordinates_gist ON sites USING GIST (coordinates);');
             DB::statement('CREATE INDEX sites_search_text_trgm_gin ON sites USING GIN (search_text gin_trgm_ops);');
         }

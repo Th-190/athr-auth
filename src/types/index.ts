@@ -345,6 +345,20 @@ export interface MuseumProfile {
   founding_year: string | null;
   founding_year_precision: FoundingYearPrecision | null;
   collection_summary: string | null;
+  artifacts?: MuseumArtifact[];
+}
+
+export interface MuseumArtifact {
+  id: string;
+  title_ar: string;
+  title_en: string | null;
+  category: string | null;
+  description: string | null;
+  material: string | null;
+  estimated_date: string | null;
+  origin: string | null;
+  archaeological_context: string | null;
+  source_url?: string | null;
 }
 
 export interface SiteRelation {

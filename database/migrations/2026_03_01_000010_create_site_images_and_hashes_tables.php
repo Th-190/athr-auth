@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('image_role')->default('current_view'); // ImageRole enum
             $table->integer('sort_order')->default(0);
             $table->boolean('featured')->default(false);
-            $table->boolean('visibility')->default(true);
+            $table->boolean('visibility')->default(false);
             $table->boolean('ai_assisted')->default(false);
 
             // Storage paths

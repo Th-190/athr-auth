@@ -13,11 +13,13 @@ class Area extends Model
 
     protected $guarded = ['id'];
 
+    /** @return BelongsTo<SubDistrict, $this> */
     public function subDistrict(): BelongsTo
     {
         return $this->belongsTo(SubDistrict::class);
     }
 
+    /** @return HasMany<Site, $this> */
     public function sites(): HasMany
     {
         return $this->hasMany(Site::class);

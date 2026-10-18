@@ -35,6 +35,21 @@ class SiteResource extends JsonResource
             'name_en'             => $site->name_en,
             'summary_ar'          => $site->summary_ar,
             'description_ar'      => $site->description_ar,
+            'description_en'      => $site->description_en,
+            'historical_description' => $site->historical_description,
+            'historical_description_en' => $site->historical_description_en,
+            'architectural_description' => $site->architectural_description,
+            'architectural_description_en' => $site->architectural_description_en,
+            'cultural_significance' => $site->cultural_significance,
+            'historical_significance' => $site->historical_significance,
+            'current_condition' => $site->current_condition,
+            'current_condition_en' => $site->current_condition_en,
+            'location_description' => $site->location_description,
+            'location_description_en' => $site->location_description_en,
+            'approximate_date' => $site->approximate_date,
+            'heritage_designation' => $site->heritage_designation,
+            'heritage_designation_url' => $site->heritage_designation_url,
+            'designation_year' => $site->designation_year,
             'site_type_id'        => $site->site_type_id,
             'historical_period_id'=> $site->historical_period_id,
             'province_id'         => $site->province_id,
@@ -59,13 +74,16 @@ class SiteResource extends JsonResource
             $data['site_type'] = $site->siteType?->only(['id', 'name_ar', 'name_en', 'slug']);
         }
         if ($site->relationLoaded('historicalPeriod')) {
-            $data['historical_period'] = $site->historicalPeriod?->only(['id', 'name_ar', 'name_en', 'era']);
+            $data['historical_period'] = $site->historicalPeriod?->only(['id', 'name_ar', 'name_en', 'slug']);
         }
         if ($site->relationLoaded('province')) {
-            $data['province'] = $site->province?->only(['id', 'name_ar', 'name_en']);
+            $data['province'] = $site->province?->only(['id', 'name_ar', 'name_en', 'code', 'slug']);
         }
         if ($site->relationLoaded('area')) {
-            $data['area'] = $site->area?->only(['id', 'name_ar', 'name_en']);
+            $data['area'] = $site->area?->only(['id', 'name_ar', 'name_en', 'slug']);
+            if ($site->area?->relationLoaded('subDistrict') && $site->area->subDistrict?->relationLoaded('district')) {
+                $data['district'] = $site->area->subDistrict->district?->only(['id', 'name_ar', 'name_en', 'slug']);
+            }
         }
         if ($site->relationLoaded('images')) {
             $data['images']        = $site->images;
@@ -79,6 +97,9 @@ class SiteResource extends JsonResource
         }
         if ($site->relationLoaded('sources')) {
             $data['sources'] = $site->sources;
+        }
+        if ($site->relationLoaded('museumProfile')) {
+            $data['museum_profile'] = $site->museumProfile;
         }
         if ($site->relationLoaded('events')) {
             $data['events'] = $site->events;

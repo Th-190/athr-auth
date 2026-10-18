@@ -16,14 +16,23 @@ class SiteContribution extends Model
     protected $casts = [
         'type' => ContributionType::class,
         'allow_public_credit' => 'boolean',
+        'proposed_changes' => 'array',
         'reviewed_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Site, $this> */
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }
 
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');

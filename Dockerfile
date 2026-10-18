@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpng-dev \
     libwebp-dev \
     && docker-php-ext-configure gd --with-jpeg --with-webp \
-    && docker-php-ext-install pdo_pgsql intl zip gd \
+    && docker-php-ext-install pdo_pgsql intl zip gd pcntl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
