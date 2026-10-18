@@ -21,11 +21,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chmod -R 777 storage bootstrap/cache
 
-# كتابة ملف Caddyfile مخصص يوجه المسار للعام ويضبط المنفذ مباشرة أثناء التشغيل
-RUN echo ':{$PORT:-8080} {' > /etc/caddy/Caddyfile \
-    && echo '    root * /app/public' >> /etc/caddy/Caddyfile \
-    && echo '    encode zstd br gzip' >> /etc/caddy/Caddyfile \
-    && echo '    php_server' >> /etc/caddy/Caddyfile \
-    && echo '}' >> /etc/caddy/Caddyfile
+# إنشاء Caddyfile وتوجيه Root إلى /app/public
+RUN echo ":{\$PORT:-8080} {\n  root * /app/public\n  encode zstd br gzip\n  php_server\n}" > /etc/caddy/Caddyfile
 
-CMD [ "frankenphp", "run", "--config", /etc/caddy/Caddyfile ]
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
