@@ -11,6 +11,8 @@ RUN install-php-extensions \
     pcntl \
     redis
 
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 WORKDIR /app
 
 COPY . .
@@ -21,17 +23,18 @@ RUN composer install \
     --prefer-dist \
     --optimize-autoloader
 
-RUN if [ -f package.json ]; then \
+RUN if [ -f package-lock.json ]; then \
         curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-        apt-get install -y nodejs && \
+        apt-get update && apt-get install -y nodejs && \
         npm ci && npm run build; \
     fi
 
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
-    && mkdir -p storage/framework/cache \
-       storage/framework/sessions \
-       storage/framework/views \
-       bootstrap/cache \
+RUN mkdir -p \
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 COPY Caddyfile /etc/caddy/Caddyfile
