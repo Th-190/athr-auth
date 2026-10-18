@@ -16,7 +16,7 @@ WORKDIR /app
 
 COPY . .
 
-# نسخ ملف التكوين المخصص للمنفذ
+# نسخ ملف التكوين لتوجيه المنفذ والمسار بشكل صحيح
 COPY Caddyfile /etc/caddy/Caddyfile
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
