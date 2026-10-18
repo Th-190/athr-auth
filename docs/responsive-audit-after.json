@@ -1,0 +1,5297 @@
+{
+  "phase": "after",
+  "timestamp": "2026-10-13T12:23:08.025Z",
+  "viewportsChecked": 9,
+  "results": [
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "home",
+      "pageName": "الرئيسية (Home)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 11,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "INPUT",
+            "width": 250,
+            "height": 40
+          },
+          {
+            "text": "🏛️جميع المواقع",
+            "width": 104,
+            "height": 29
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_home.png"
+    },
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "registry",
+      "pageName": "سجل المواقع (Site List)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 41,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "BUTTON",
+            "width": 28,
+            "height": 28
+          },
+          {
+            "text": "BUTTON",
+            "width": 28,
+            "height": 28
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_registry.png"
+    },
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "site_detail",
+      "pageName": "بطاقة المعلم (Site Record)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 12,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "العودة إلى سجل المواقع",
+            "width": 144,
+            "height": 16
+          },
+          {
+            "text": "حفظ في قائمتي",
+            "width": 108,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_site_detail.png"
+    },
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "map",
+      "pageName": "الخريطة (Map)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_map.png"
+    },
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "museums",
+      "pageName": "المتاحف (Museums)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_museums.png"
+    },
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "contribute",
+      "pageName": "المساهمة (Contribute)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "إغلاق",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "اقتراح توثيق موقع أو تل أثري ج",
+            "width": 278,
+            "height": 39
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_contribute.png"
+    },
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "login",
+      "pageName": "تسجيل الدخول (Login)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 7,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "إغلاق النافذة",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_login.png"
+    },
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "admin_sites",
+      "pageName": "لوحة التحكم - السجلات (Admin Sites)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_admin_sites.png"
+    },
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "admin_leads",
+      "pageName": "لوحة التحكم - المرشحون للبحث (Admin Leads)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_admin_leads.png"
+    },
+    {
+      "viewport": "phone-360x640",
+      "dimensions": "360x640",
+      "device": "Small Phone",
+      "pageId": "admin_audit",
+      "pageName": "لوحة التحكم - سجل التدقيق (Admin Audit)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 360,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-360x640_admin_audit.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "home",
+      "pageName": "الرئيسية (Home)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 11,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "INPUT",
+            "width": 280,
+            "height": 40
+          },
+          {
+            "text": "🏛️جميع المواقع",
+            "width": 104,
+            "height": 29
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_home.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "registry",
+      "pageName": "سجل المواقع (Site List)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 42,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "BUTTON",
+            "width": 28,
+            "height": 28
+          },
+          {
+            "text": "BUTTON",
+            "width": 28,
+            "height": 28
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_registry.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "site_detail",
+      "pageName": "بطاقة المعلم (Site Record)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 12,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "العودة إلى سجل المواقع",
+            "width": 144,
+            "height": 16
+          },
+          {
+            "text": "حفظ في قائمتي",
+            "width": 108,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_site_detail.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "map",
+      "pageName": "الخريطة (Map)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_map.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "museums",
+      "pageName": "المتاحف (Museums)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_museums.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "contribute",
+      "pageName": "المساهمة (Contribute)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 15,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "إغلاق",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "اقتراح توثيق موقع أو تل أثري ج",
+            "width": 308,
+            "height": 39
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_contribute.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "login",
+      "pageName": "تسجيل الدخول (Login)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 7,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "إغلاق النافذة",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_login.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "admin_sites",
+      "pageName": "لوحة التحكم - السجلات (Admin Sites)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_admin_sites.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "admin_leads",
+      "pageName": "لوحة التحكم - المرشحون للبحث (Admin Leads)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_admin_leads.png"
+    },
+    {
+      "viewport": "phone-390x844",
+      "dimensions": "390x844",
+      "device": "iPhone 12/13/14",
+      "pageId": "admin_audit",
+      "pageName": "لوحة التحكم - سجل التدقيق (Admin Audit)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 390,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 6,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-390x844_admin_audit.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "home",
+      "pageName": "الرئيسية (Home)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 11,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "INPUT",
+            "width": 320,
+            "height": 40
+          },
+          {
+            "text": "🏛️جميع المواقع",
+            "width": 104,
+            "height": 29
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_home.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "registry",
+      "pageName": "سجل المواقع (Site List)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 42,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "BUTTON",
+            "width": 28,
+            "height": 28
+          },
+          {
+            "text": "BUTTON",
+            "width": 28,
+            "height": 28
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_registry.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "site_detail",
+      "pageName": "بطاقة المعلم (Site Record)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 12,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "العودة إلى سجل المواقع",
+            "width": 144,
+            "height": 16
+          },
+          {
+            "text": "حفظ في قائمتي",
+            "width": 108,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_site_detail.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "map",
+      "pageName": "الخريطة (Map)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 10,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "+",
+            "width": 30,
+            "height": 30
+          },
+          {
+            "text": "−",
+            "width": 30,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_map.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "museums",
+      "pageName": "المتاحف (Museums)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 10,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "+",
+            "width": 30,
+            "height": 30
+          },
+          {
+            "text": "−",
+            "width": 30,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_museums.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "contribute",
+      "pageName": "المساهمة (Contribute)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 19,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "+",
+            "width": 30,
+            "height": 30
+          },
+          {
+            "text": "−",
+            "width": 30,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_contribute.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "login",
+      "pageName": "تسجيل الدخول (Login)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 11,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "+",
+            "width": 30,
+            "height": 30
+          },
+          {
+            "text": "−",
+            "width": 30,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_login.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "admin_sites",
+      "pageName": "لوحة التحكم - السجلات (Admin Sites)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 10,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "+",
+            "width": 30,
+            "height": 30
+          },
+          {
+            "text": "−",
+            "width": 30,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_admin_sites.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "admin_leads",
+      "pageName": "لوحة التحكم - المرشحون للبحث (Admin Leads)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 10,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "+",
+            "width": 30,
+            "height": 30
+          },
+          {
+            "text": "−",
+            "width": 30,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_admin_leads.png"
+    },
+    {
+      "viewport": "phone-430x932",
+      "dimensions": "430x932",
+      "device": "iPhone Pro Max",
+      "pageId": "admin_audit",
+      "pageName": "لوحة التحكم - سجل التدقيق (Admin Audit)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 501,
+        "clientWidth": 430,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 10,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 38
+          },
+          {
+            "text": "بحث…/",
+            "width": 40,
+            "height": 28
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          },
+          {
+            "text": "+",
+            "width": 30,
+            "height": 30
+          },
+          {
+            "text": "−",
+            "width": 30,
+            "height": 30
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "phone-430x932_admin_audit.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "home",
+      "pageName": "الرئيسية (Home)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 14,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_home.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "registry",
+      "pageName": "سجل المواقع (Site List)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 44,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_registry.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "site_detail",
+      "pageName": "بطاقة المعلم (Site Record)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 14,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_site_detail.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "map",
+      "pageName": "الخريطة (Map)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 12,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_map.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "museums",
+      "pageName": "المتاحف (Museums)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 12,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_museums.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "contribute",
+      "pageName": "المساهمة (Contribute)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 21,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_contribute.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "login",
+      "pageName": "تسجيل الدخول (Login)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_login.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "admin_sites",
+      "pageName": "لوحة التحكم - السجلات (Admin Sites)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 12,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_admin_sites.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "admin_leads",
+      "pageName": "لوحة التحكم - المرشحون للبحث (Admin Leads)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 12,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_admin_leads.png"
+    },
+    {
+      "viewport": "ipad-portrait-768x1024",
+      "dimensions": "768x1024",
+      "device": "iPad Portrait",
+      "pageId": "admin_audit",
+      "pageName": "لوحة التحكم - سجل التدقيق (Admin Audit)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 768,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 12,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-portrait-768x1024_admin_audit.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "home",
+      "pageName": "الرئيسية (Home)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1250,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 21,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 44,
+            "height": 22
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_home.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "registry",
+      "pageName": "سجل المواقع (Site List)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1250,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 49,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 74,
+            "height": 22
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_registry.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "site_detail",
+      "pageName": "بطاقة المعلم (Site Record)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1244,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 19,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_site_detail.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "map",
+      "pageName": "الخريطة (Map)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1248,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_map.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "museums",
+      "pageName": "المتاحف (Museums)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1248,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_museums.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "contribute",
+      "pageName": "المساهمة (Contribute)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1248,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 22,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_contribute.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "login",
+      "pageName": "تسجيل الدخول (Login)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1248,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 14,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_login.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "admin_sites",
+      "pageName": "لوحة التحكم - السجلات (Admin Sites)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1248,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_admin_sites.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "admin_leads",
+      "pageName": "لوحة التحكم - المرشحون للبحث (Admin Leads)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1248,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_admin_leads.png"
+    },
+    {
+      "viewport": "ipad-landscape-1024x768",
+      "dimensions": "1024x768",
+      "device": "iPad Landscape",
+      "pageId": "admin_audit",
+      "pageName": "لوحة التحكم - سجل التدقيق (Admin Audit)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 1248,
+        "clientWidth": 1024,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "ipad-landscape-1024x768_admin_audit.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "home",
+      "pageName": "الرئيسية (Home)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 18,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_home.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "registry",
+      "pageName": "سجل المواقع (Site List)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 44,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_registry.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "site_detail",
+      "pageName": "بطاقة المعلم (Site Record)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 14,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_site_detail.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "map",
+      "pageName": "الخريطة (Map)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 22,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_map.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "museums",
+      "pageName": "المتاحف (Museums)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 22,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_museums.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "contribute",
+      "pageName": "المساهمة (Contribute)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 31,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_contribute.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "login",
+      "pageName": "تسجيل الدخول (Login)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 23,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_login.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "admin_sites",
+      "pageName": "لوحة التحكم - السجلات (Admin Sites)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 22,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_admin_sites.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "admin_leads",
+      "pageName": "لوحة التحكم - المرشحون للبحث (Admin Leads)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 22,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_admin_leads.png"
+    },
+    {
+      "viewport": "tablet-820x1180",
+      "dimensions": "820x1180",
+      "device": "iPad Air/Pro",
+      "pageId": "admin_audit",
+      "pageName": "لوحة التحكم - سجل التدقيق (Admin Audit)",
+      "overflow": {
+        "hasOverflow": true,
+        "scrollWidth": 842,
+        "clientWidth": 820,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 22,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "بحث…/",
+            "width": 97,
+            "height": 30
+          },
+          {
+            "text": "اكتشف موقعًا",
+            "width": 115,
+            "height": 30
+          },
+          {
+            "text": "0",
+            "width": 49,
+            "height": 29
+          },
+          {
+            "text": "ساهم في التوثيق",
+            "width": 117,
+            "height": 28
+          },
+          {
+            "text": "تسجيل الدخول",
+            "width": 122,
+            "height": 30
+          },
+          {
+            "text": "فتح القائمة الرئيسية",
+            "width": 32,
+            "height": 32
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "tablet-820x1180_admin_audit.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "home",
+      "pageName": "الرئيسية (Home)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 21,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 44,
+            "height": 22
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_home.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "registry",
+      "pageName": "سجل المواقع (Site List)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 49,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 74,
+            "height": 22
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_registry.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "site_detail",
+      "pageName": "بطاقة المعلم (Site Record)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 19,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_site_detail.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "map",
+      "pageName": "الخريطة (Map)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_map.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "museums",
+      "pageName": "المتاحف (Museums)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_museums.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "contribute",
+      "pageName": "المساهمة (Contribute)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 22,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_contribute.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "login",
+      "pageName": "تسجيل الدخول (Login)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 14,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_login.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "admin_sites",
+      "pageName": "لوحة التحكم - السجلات (Admin Sites)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_admin_sites.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "admin_leads",
+      "pageName": "لوحة التحكم - المرشحون للبحث (Admin Leads)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_admin_leads.png"
+    },
+    {
+      "viewport": "desktop-1280x800",
+      "dimensions": "1280x800",
+      "device": "Compact Desktop / Mac 13\"",
+      "pageId": "admin_audit",
+      "pageName": "لوحة التحكم - سجل التدقيق (Admin Audit)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 13,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1280x800_admin_audit.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "home",
+      "pageName": "الرئيسية (Home)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 21,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 44,
+            "height": 22
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_home.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "registry",
+      "pageName": "سجل المواقع (Site List)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 49,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 74,
+            "height": 22
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_registry.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "site_detail",
+      "pageName": "بطاقة المعلم (Site Record)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 19,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_site_detail.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "map",
+      "pageName": "الخريطة (Map)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 17,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_map.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "museums",
+      "pageName": "المتاحف (Museums)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 17,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_museums.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "contribute",
+      "pageName": "المساهمة (Contribute)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 26,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_contribute.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "login",
+      "pageName": "تسجيل الدخول (Login)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 18,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_login.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "admin_sites",
+      "pageName": "لوحة التحكم - السجلات (Admin Sites)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 17,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_admin_sites.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "admin_leads",
+      "pageName": "لوحة التحكم - المرشحون للبحث (Admin Leads)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 17,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_admin_leads.png"
+    },
+    {
+      "viewport": "desktop-1440x900",
+      "dimensions": "1440x900",
+      "device": "Standard Laptop",
+      "pageId": "admin_audit",
+      "pageName": "لوحة التحكم - سجل التدقيق (Admin Audit)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 17,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1440x900_admin_audit.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "home",
+      "pageName": "الرئيسية (Home)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 27,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 44,
+            "height": 22
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_home.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "registry",
+      "pageName": "سجل المواقع (Site List)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 49,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 74,
+            "height": 22
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_registry.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "site_detail",
+      "pageName": "بطاقة المعلم (Site Record)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 19,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_site_detail.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "map",
+      "pageName": "الخريطة (Map)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 20,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_map.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "museums",
+      "pageName": "المتاحف (Museums)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 20,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_museums.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "contribute",
+      "pageName": "المساهمة (Contribute)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 29,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_contribute.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "login",
+      "pageName": "تسجيل الدخول (Login)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 21,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_login.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "admin_sites",
+      "pageName": "لوحة التحكم - السجلات (Admin Sites)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 20,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_admin_sites.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "admin_leads",
+      "pageName": "لوحة التحكم - المرشحون للبحث (Admin Leads)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 20,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_admin_leads.png"
+    },
+    {
+      "viewport": "desktop-1920x1080",
+      "dimensions": "1920x1080",
+      "device": "FHD Desktop",
+      "pageId": "admin_audit",
+      "pageName": "لوحة التحكم - سجل التدقيق (Admin Audit)",
+      "overflow": {
+        "hasOverflow": false,
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "wideElementsCount": 0,
+        "wideElements": [],
+        "smallTapTargetsCount": 20,
+        "smallTapTargets": [
+          {
+            "text": "راحة القراءة",
+            "width": 71,
+            "height": 15
+          },
+          {
+            "text": "أثر كربلاءKarbala Heritage Arc",
+            "width": 202,
+            "height": 43
+          },
+          {
+            "text": "الرئيسية",
+            "width": 38,
+            "height": 16
+          },
+          {
+            "text": "الآثار والمعالم",
+            "width": 68,
+            "height": 16
+          },
+          {
+            "text": "الخريطة",
+            "width": 41,
+            "height": 22
+          },
+          {
+            "text": "تصفّح الأقسام",
+            "width": 90,
+            "height": 16
+          },
+          {
+            "text": "المصادر",
+            "width": 37,
+            "height": 16
+          },
+          {
+            "text": "عن المشروع",
+            "width": 60,
+            "height": 16
+          }
+        ]
+      },
+      "consoleErrorsCount": 0,
+      "consoleErrors": [],
+      "screenshot": "desktop-1920x1080_admin_audit.png"
+    }
+  ]
+}

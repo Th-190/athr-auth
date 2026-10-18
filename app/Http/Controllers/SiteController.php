@@ -1,0 +1,588 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Actions\CreateAuditLogAction;
+use App\Models\Site;
+use App\Models\SiteRevision;
+use App\Services\ArabicSearchNormalizer;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class SiteController extends Controller
+{
+    public function __construct(
+        protected CreateAuditLogAction $auditLogAction
+    ) {}
+
+    /**
+     * List heritage sites with search, spatial bounding, and taxonomy filters.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $query = Site::query()
+            ->with(['siteType', 'historicalPeriod', 'area', 'province', 'images'])
+            ->publishedAndPublic();
+
+        // Text Search with Arabic normalization
+        if ($search = $request->input('q')) {
+            $normalized = ArabicSearchNormalizer::normalize($search);
+            $query->where(function ($q) use ($normalized, $search) {
+                $q->where('name_ar', 'ILIKE', "%{$search}%")
+                  ->orWhere('name_en', 'ILIKE', "%{$search}%")
+                  ->orWhere('summary_ar', 'ILIKE', "%{$search}%")
+                  ->orWhere('slug', 'ILIKE', "%{$search}%")
+                  ->orWhereHas('names', function ($nameQ) use ($search) {
+                      $nameQ->where('name', 'ILIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter by Site Type
+        if ($typeId = $request->input('site_type_id')) {
+            $query->where('site_type_id', $typeId);
+        }
+
+        // Filter by Historical Period
+        if ($periodId = $request->input('historical_period_id')) {
+            $query->where('historical_period_id', $periodId);
+        }
+
+        // Filter by Verification Status
+        if ($verification = $request->input('verification_status')) {
+            $query->where('verification_status', $verification);
+        }
+
+        // Filter by Category Chips: [جميع المواقع, مراقد دينية, آثار تاريخية, أماكن تراثية كربلائية]
+        if ($category = $request->input('category')) {
+            if ($category === 'religious' || $category === 'مراقد دينية') {
+                $query->where(function ($q) {
+                    $q->whereIn('site_type_id', ['type_religious', 'type_churches'])
+                      ->orWhere('name_ar', 'LIKE', '%مرقد%')
+                      ->orWhere('name_ar', 'LIKE', '%مقام%')
+                      ->orWhere('name_ar', 'LIKE', '%مزار%')
+                      ->orWhere('name_ar', 'LIKE', '%مسجد%')
+                      ->orWhere('name_ar', 'LIKE', '%كنيسة%');
+                });
+            } elseif ($category === 'historical' || $category === 'آثار تاريخية') {
+                $query->whereIn('site_type_id', ['type_palaces_forts', 'type_tells', 'type_defensive']);
+            } elseif ($category === 'heritage' || $category === 'أماكن تراثية كربلائية') {
+                $query->whereIn('site_type_id', ['type_caravansaries', 'type_hydraulic', 'type_bazaars', 'type_vernacular', 'type_crafts']);
+            }
+        }
+
+        // PostGIS Spatial Bounding filter (min_lat, min_lng, max_lat, max_lng)
+        if ($bounds = $request->input('bounds')) {
+            $parts = explode(',', $bounds);
+            if (count($parts) === 4 && DB::getDriverName() === 'pgsql') {
+                [$minLat, $minLng, $maxLat, $maxLng] = array_map('floatval', $parts);
+                $query->whereRaw(
+                    "coordinates && ST_MakeEnvelope(?, ?, ?, ?, 4326)::geography",
+                    [$minLng, $minLat, $maxLng, $maxLat]
+                );
+            }
+        }
+
+        // Filter by Area / District / Province
+        if ($provinceId = $request->input('province_id')) {
+            $query->where('province_id', $provinceId);
+        }
+        if ($areaId = $request->input('area_id')) {
+            $query->where('area_id', $areaId);
+        }
+
+        // Featured only
+        if ($request->boolean('featured')) {
+            $query->where('featured', true);
+        }
+
+        $perPage = min((int) $request->input('per_page', 15), 50);
+        $sites = $query->paginate($perPage);
+
+        // Sanitize all outputs via SiteResource (single source of truth for coordinates)
+        $transformed = $sites->through(function (Site $site) use ($request) {
+            return (new \App\Http\Resources\SiteResource($site))->toArray($request);
+        });
+
+        return response()->json($transformed);
+    }
+
+    /**
+     * Show single heritage site by slug or ID with relations.
+     */
+    public function show(string $slug): JsonResponse
+    {
+        $site = Site::with([
+            'siteType',
+            'historicalPeriod',
+            'province',
+            'area',
+            'names',
+            'sources',
+            'claims.evidence.source',
+            'images',
+            'events',
+            'timeline',
+            'verifications.verifier',
+            'revisions.user',
+            'relations.relatedSite',
+        ])
+        ->where(function ($q) use ($slug) {
+            $q->where('slug', $slug)->orWhere('id', $slug);
+        })
+        ->firstOrFail();
+
+        // Single published-only gate: Unapproved/Draft/Archived sites return 404 to public visitors
+        $isStaff = request()->user() && in_array(strtolower(request()->user()->role?->name ?? ''), ['admin', 'super_admin', 'editor']);
+        if (!$isStaff && !$site->isPubliclyAccessible()) {
+            abort(404, 'المعلم التراثي غير متاح أو في طور التدقيق الأرشيفي.');
+        }
+
+        $site->increment('view_count');
+
+        // Formatted exclusively through SiteResource serializer
+        return response()->json([
+            'data' => (new \App\Http\Resources\SiteResource($site))->toArray(request()),
+        ]);
+    }
+
+    /**
+     * Store new heritage site record.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name_ar' => 'required|string|max:255',
+            'name_en' => 'nullable|string|max:255',
+            'summary_ar' => 'required|string|max:1000',
+            'description_ar' => 'nullable|string',
+            'site_type_id' => 'required|exists:site_types,id',
+            'historical_period_id' => 'required|exists:historical_periods,id',
+            'province_id' => 'required|exists:provinces,id',
+            'area_id' => 'nullable|exists:areas,id',
+            'location_precision' => 'required|in:exact,approximate,restricted,unknown',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+        ]);
+
+        $validated['slug'] = Str::slug($validated['name_en'] ?? $validated['name_ar']).'-'.Str::random(5);
+        $validated['inventory_number'] = 'KHA-'.date('Y').'-'.strtoupper(Str::random(4));
+        $validated['publication_status'] = 'draft';
+        $validated['verification_status'] = 'unverified';
+        $validated['created_by'] = $request->user()?->id;
+
+        $site = DB::transaction(function () use ($validated, $request) {
+            $lat = $validated['latitude'] ?? null;
+            $lng = $validated['longitude'] ?? null;
+            unset($validated['latitude'], $validated['longitude']);
+
+            $site = Site::create($validated);
+
+            if ($lat !== null && $lng !== null) {
+                $site->setCoordinates($lat, $lng);
+                $site->save();
+            }
+
+            $this->auditLogAction->execute(
+                action: 'site.created',
+                entityType: 'Site',
+                entityId: (string) $site->id,
+                performedBy: (string) ($request->user()?->id ?? 'system'),
+                details: "تم توثيق موقع جديد: {$site->name_ar} ({$site->inventory_number})",
+                ipAddress: $request->ip()
+            );
+
+            return $site;
+        });
+
+        return response()->json([
+            'message' => 'تم حفظ الموقع بنجاح كمسودة بانتظار التدقيق والتحقيق الميداني',
+            'site' => $site,
+        ], 201);
+    }
+
+    /**
+     * Update existing site and log immutable revision.
+     */
+    public function update(Request $request, Site $site): JsonResponse
+    {
+        $validated = $request->validate([
+            'name_ar' => 'sometimes|string|max:255',
+            'name_en' => 'nullable|string|max:255',
+            'summary_ar' => 'sometimes|string|max:1000',
+            'description_ar' => 'nullable|string',
+            'site_type_id' => 'sometimes|exists:site_types,id',
+            'historical_period_id' => 'sometimes|exists:historical_periods,id',
+            'location_precision' => 'sometimes|in:exact,approximate,restricted,unknown',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'revision_notes' => 'required|string|max:500',
+        ]);
+
+        DB::transaction(function () use ($site, $validated, $request) {
+            $notes = $validated['revision_notes'];
+            unset($validated['revision_notes']);
+
+            // Create revision snapshot before update
+            SiteRevision::create([
+                'site_id' => $site->id,
+                'user_id' => $request->user()?->id,
+                'snapshot' => $site->toJson(),
+                'change_summary' => $notes,
+            ]);
+
+            $lat = $validated['latitude'] ?? null;
+            $lng = $validated['longitude'] ?? null;
+            unset($validated['latitude'], $validated['longitude']);
+
+            // Scholarly Quality Standard: Substantive edits reset verification status to unverified
+            $substantiveFields = ['name_ar', 'summary_ar', 'description_ar', 'site_type_id', 'historical_period_id'];
+            $isSubstantive = false;
+            foreach ($substantiveFields as $field) {
+                if (isset($validated[$field]) && $validated[$field] !== $site->{$field}) {
+                    $isSubstantive = true;
+                    break;
+                }
+            }
+            if ($isSubstantive && $site->verification_status === \App\Enums\VerificationStatus::VERIFIED) {
+                $site->verification_status = \App\Enums\VerificationStatus::UNVERIFIED;
+                $site->verified_at = null;
+                $site->verified_by = null;
+                $site->verification_notes = "تمت إعادة حالة التحقيق إلى غير موثق تلقائياً بسبب تعديل جوهري في المحتوى: {$notes}";
+            }
+
+            $site->update($validated);
+
+            if ($lat !== null && $lng !== null) {
+                $site->setCoordinates($lat, $lng);
+                $site->save();
+            }
+
+            $this->auditLogAction->execute(
+                action: 'site.updated',
+                entityType: 'Site',
+                entityId: (string) $site->id,
+                performedBy: (string) ($request->user()?->id ?? 'system'),
+                details: "تعديل بيانات الموقع: {$notes}",
+                ipAddress: $request->ip()
+            );
+        });
+
+        return response()->json([
+            'message' => 'تم تحديث بيانات الموقع وحفظ المراجعة في السجل التاريخي',
+            'site' => $site->fresh(),
+        ]);
+    }
+
+    /**
+     * Soft delete site.
+     */
+    public function destroy(Request $request, Site $site): JsonResponse
+    {
+        $site->delete();
+
+        $this->auditLogAction->execute(
+            action: 'site.deleted',
+            entityType: 'Site',
+            entityId: (string) $site->id,
+            performedBy: (string) ($request->user()?->id ?? 'system'),
+            details: "أرشفة وحذف الموقع: {$site->name_ar}",
+            ipAddress: $request->ip()
+        );
+
+        return response()->json([
+            'message' => 'تم أرشفة الموقع ونقله إلى سلة المحذوفات',
+        ]);
+    }
+
+    /**
+     * GeoJSON export for GIS mapping tools (QGIS, ArcGIS).
+     * Enforces the single published-only rule and canonical coordinate serializer.
+     */
+    public function exportGeoJson(): JsonResponse
+    {
+        $sites = Site::publishedAndPublic()->get();
+
+        $features = $sites->map(function (Site $site) {
+            return (new \App\Http\Resources\SiteResource($site))->toGeoJsonFeature();
+        })->filter()->values();
+
+        return response()->json([
+            'type' => 'FeatureCollection',
+            'features' => $features,
+        ]);
+    }
+
+    /**
+     * Public Sitemap.xml generator honoring the published-only rule.
+     */
+    public function sitemap(): \Illuminate\Http\Response
+    {
+        $sites = Site::publishedAndPublic()->select(['id', 'slug', 'updated_at'])->get();
+        $urls = $sites->map(function ($s) {
+            $loc = url("/sites/{$s->slug}");
+            $lastmod = $s->updated_at?->toAtomString() ?? now()->toAtomString();
+            return "  <url>\n    <loc>{$loc}</loc>\n    <lastmod>{$lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>";
+        })->implode("\n");
+
+        $homeUrl = url('/');
+        $now = now()->toAtomString();
+        $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n  <url>\n    <loc>{$homeUrl}</loc>\n    <lastmod>{$now}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n{$urls}\n</urlset>";
+
+        return response($xml, 200, ['Content-Type' => 'application/xml; charset=utf-8']);
+    }
+
+    /**
+     * Public RSS/Atom feed generator honoring the published-only rule.
+     */
+    public function rss(): \Illuminate\Http\Response
+    {
+        $sites = Site::publishedAndPublic()->latest('published_at')->limit(50)->get();
+        $items = $sites->map(function ($s) {
+            $title = htmlspecialchars($s->name_ar, ENT_XML1);
+            $link = url("/sites/{$s->slug}");
+            $desc = htmlspecialchars($s->summary_ar ?? '', ENT_XML1);
+            $pubDate = ($s->published_at ?? $s->created_at)->toRfc2822String();
+            return "  <item>\n    <title>{$title}</title>\n    <link>{$link}</link>\n    <guid>{$link}</guid>\n    <pubDate>{$pubDate}</pubDate>\n    <description>{$desc}</description>\n  </item>";
+        })->implode("\n");
+
+        $appUrl = url('/');
+        $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\">\n<channel>\n  <title>أثر كربلاء | Karbala Heritage Archive</title>\n  <link>{$appUrl}</link>\n  <description>أحدث المعالم والمواقع التاريخية المسجلة في أرشيف أثر كربلاء</description>\n  <language>ar</language>\n{$items}\n</channel>\n</rss>";
+
+        return response($xml, 200, ['Content-Type' => 'application/rss+xml; charset=utf-8']);
+    }
+
+    /**
+     * Publish site (Staff/Admin).
+     */
+    public function publish(Request $request, string $id): JsonResponse
+    {
+        $site = Site::findOrFail($id);
+        $site->publication_status = 'published';
+        $site->published_at = now();
+        $site->save();
+
+        $this->auditLogAction->execute(
+            action: 'site.published',
+            entityType: 'Site',
+            entityId: (string) $site->id,
+            performedBy: (string) ($request->user()?->name ?? 'محرر الأرشيف'),
+            details: "نشر الموقع رسمياً للجمهور: {$site->name_ar}",
+            ipAddress: $request->ip()
+        );
+
+        return response()->json([
+            'message' => "تم نشر الموقع ({$site->name_ar}) بنجاح وأصبح متاحاً للعموم.",
+            'site' => $site,
+        ]);
+    }
+
+    /**
+     * Unpublish site (revert to draft).
+     */
+    public function unpublish(Request $request, string $id): JsonResponse
+    {
+        $site = Site::findOrFail($id);
+        $site->publication_status = 'draft';
+        $site->save();
+
+        $this->auditLogAction->execute(
+            action: 'site.unpublished',
+            entityType: 'Site',
+            entityId: (string) $site->id,
+            performedBy: (string) ($request->user()?->name ?? 'محرر الأرشيف'),
+            details: "إلغاء نشر الموقع وتحويله إلى مسودة داخلية: {$site->name_ar}",
+            ipAddress: $request->ip()
+        );
+
+        return response()->json([
+            'message' => "تم إلغاء نشر الموقع ({$site->name_ar}) وحجبه عن الواجهة العامة.",
+            'site' => $site,
+        ]);
+    }
+
+    /**
+     * Archive site.
+     */
+    public function archive(Request $request, string $id): JsonResponse
+    {
+        $site = Site::findOrFail($id);
+        $site->publication_status = 'archived';
+        $site->save();
+
+        $this->auditLogAction->execute(
+            action: 'site.archived',
+            entityType: 'Site',
+            entityId: (string) $site->id,
+            performedBy: (string) ($request->user()?->name ?? 'محرر الأرشيف'),
+            details: "أرشفة السجل وإيقاف ظهوره للعموم: {$site->name_ar}",
+            ipAddress: $request->ip()
+        );
+
+        return response()->json([
+            'message' => "تمت أرشفة الموقع بنجاح.",
+            'site' => $site,
+        ]);
+    }
+
+    /**
+     * Restore soft-deleted site.
+     */
+    public function restore(Request $request, string $id): JsonResponse
+    {
+        $site = Site::withTrashed()->findOrFail($id);
+        $site->restore();
+        $site->publication_status = 'draft';
+        $site->save();
+
+        $this->auditLogAction->execute(
+            action: 'site.restored',
+            entityType: 'Site',
+            entityId: (string) $site->id,
+            performedBy: (string) ($request->user()?->name ?? 'محرر الأرشيف'),
+            details: "استرجاع الموقع المحذوف: {$site->name_ar}",
+            ipAddress: $request->ip()
+        );
+
+        return response()->json([
+            'message' => "تم استرجاع الموقع المحذوف بنجاح ونقله إلى المسودات.",
+            'site' => $site,
+        ]);
+    }
+
+    /**
+     * Update verification status with mandatory scholarly rationale.
+     */
+    public function verify(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'verification_status' => 'required|string|in:verified,partially_verified,unverified,disputed,unknown',
+            'reason' => 'required|string|min:10|max:1000',
+        ]);
+
+        $site = Site::findOrFail($id);
+        $oldStatus = $site->verification_status;
+        $oldLabel = $oldStatus instanceof \BackedEnum ? $oldStatus->value : (string) $oldStatus;
+
+        // Security / Integrity: AI-assisted content cannot become Verified without an authorized human verifier
+        if ($validated['verification_status'] === 'verified' && $site->ai_assisted && !$request->user()) {
+            return response()->json([
+                'message' => 'مرفوض: لا يمكن اعتماد المحتوى المستعان بالذكاء الاصطناعي كـ (موثق) دون مراجعة وتوقيع إنساني معتمد.',
+            ], 422);
+        }
+
+        $site->verification_status = $validated['verification_status'];
+        $site->verification_notes = $validated['reason'];
+        $site->verified_at = now();
+        $site->verified_by = $request->user()?->id;
+        $site->last_reviewed_at = now();
+        $site->save();
+
+        $newLabel = $site->verification_status instanceof \BackedEnum ? $site->verification_status->value : (string) $site->verification_status;
+
+        $this->auditLogAction->execute(
+            action: 'site.verification_updated',
+            entityType: 'Site',
+            entityId: (string) $site->id,
+            performedBy: (string) ($request->user()?->name ?? 'لجنة التحقيق'),
+            details: "تحديث حالة التحقيق من ({$oldLabel}) إلى ({$newLabel})، التعليل: {$validated['reason']}",
+            ipAddress: $request->ip()
+        );
+
+        return response()->json([
+            'message' => "تم تحديث حالة التحقيق العلمي وتوثيق التعليل في السجل بنجاح.",
+            'site' => $site,
+        ]);
+    }
+
+    /**
+     * Export public sites as GeoJSON FeatureCollection.
+     * Enforces the single published-only rule and SiteResource coordinate precision.
+     */
+    public function exportGeoJson(): JsonResponse
+    {
+        $sites = Site::query()
+            ->publishedAndPublic()
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get();
+
+        $features = [];
+        foreach ($sites as $site) {
+            $feature = (new \App\Http\Resources\SiteResource($site))->toGeoJsonFeature();
+            if ($feature) {
+                $features[] = $feature;
+            }
+        }
+
+        return response()->json([
+            'type' => 'FeatureCollection',
+            'features' => $features,
+        ]);
+    }
+
+    /**
+     * Public Sitemap.xml (strictly published and public sites only)
+     */
+    public function sitemap(): \Illuminate\Http\Response
+    {
+        $sites = Site::query()->publishedAndPublic()->get();
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        $xml .= '<url><loc>' . url('/') . '</loc><changefreq>daily</changefreq><priority>1.0</priority></url>';
+        $xml .= '<url><loc>' . url('/sites') . '</loc><changefreq>daily</changefreq><priority>0.9</priority></url>';
+        $xml .= '<url><loc>' . url('/museums') . '</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>';
+        $xml .= '<url><loc>' . url('/encyclopedia') . '</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>';
+
+        foreach ($sites as $site) {
+            $lastmod = ($site->updated_at ?? $site->published_at ?? now())->toAtomString();
+            $xml .= '<url>';
+            $xml .= '<loc>' . htmlspecialchars(url("/sites/{$site->slug}"), ENT_XML1) . '</loc>';
+            $xml .= '<lastmod>' . $lastmod . '</lastmod>';
+            $xml .= '<changefreq>weekly</changefreq>';
+            $xml .= '<priority>0.8</priority>';
+            $xml .= '</url>';
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200, ['Content-Type' => 'application/xml; charset=utf-8']);
+    }
+
+    /**
+     * Public RSS/Atom feed (strictly published and public sites only)
+     */
+    public function rss(): \Illuminate\Http\Response
+    {
+        $sites = Site::query()->publishedAndPublic()->latest('published_at')->limit(50)->get();
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml .= '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">';
+        $xml .= '<channel>';
+        $xml .= '<title>' . htmlspecialchars('أثر كربلاء | Karbala Heritage Archive', ENT_XML1) . '</title>';
+        $xml .= '<link>' . url('/') . '</link>';
+        $xml .= '<description>' . htmlspecialchars('الأرشيف الرقمي لمعالم كربلاء التاريخية والتراثية', ENT_XML1) . '</description>';
+        $xml .= '<language>ar-IQ</language>';
+        $xml .= '<lastBuildDate>' . now()->toRfc2822String() . '</lastBuildDate>';
+
+        foreach ($sites as $site) {
+            $pubDate = ($site->published_at ?? $site->created_at ?? now())->toRfc2822String();
+            $xml .= '<item>';
+            $xml .= '<title>' . htmlspecialchars($site->name_ar, ENT_XML1) . '</title>';
+            $xml .= '<link>' . htmlspecialchars(url("/sites/{$site->slug}"), ENT_XML1) . '</link>';
+            $xml .= '<guid isPermaLink="true">' . htmlspecialchars(url("/sites/{$site->slug}"), ENT_XML1) . '</guid>';
+            $xml .= '<description>' . htmlspecialchars($site->summary_ar ?? '', ENT_XML1) . '</description>';
+            $xml .= '<pubDate>' . $pubDate . '</pubDate>';
+            $xml .= '</item>';
+        }
+
+        $xml .= '</channel>';
+        $xml .= '</rss>';
+
+        return response($xml, 200, ['Content-Type' => 'application/rss+xml; charset=utf-8']);
+    }
+}
+

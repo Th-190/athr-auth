@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      pgsql:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: karbala_heritage_testing
+          POSTGRES_USER: sail
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_pgsql, pgsql, fileinfo
+          coverage: none
+
+      - name: Copy .env
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      - name: Install Composer Dependencies
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: Generate key
+        run: php artisan key:generate
+
+      - name: Directory Permissions
+        run: chmod -R 777 storage bootstrap/cache
+
+      - name: Run Migrations with PostGIS Extensions
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: karbala_heritage_testing
+          DB_USERNAME: sail
+          DB_PASSWORD: secret
+
+      - name: Check Code Style (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Static Analysis (Larastan)
+        run: vendor/bin/phpstan analyse
+
+      - name: Execute Tests (Pest)
+        run: vendor/bin/pest
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: karbala_heritage_testing
+          DB_USERNAME: sail
+          DB_PASSWORD: secret
+
+  frontend-responsive-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node Dependencies
+        run: npm ci || npm install
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build App
+        run: npm run build
+
+      - name: Run Dev Server in Background
+        run: |
+          npm run dev &
+          npx wait-on http://localhost:3000
+
+      - name: Run Responsive Regression Suite
+        run: npm run test:responsive

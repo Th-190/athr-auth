@@ -1,0 +1,8 @@
+{
+  "name": "أثر كربلاء | Karbala Heritage Archive",
+  "description": "الأرشيف الرقمي الموثّق للمواقع الأثرية والتاريخية والتراثية في محافظة كربلاء، العراق - توثيق رصين ومسنَد بالمصادر والتحقيق الميداني.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
