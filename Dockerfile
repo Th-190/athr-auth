@@ -21,5 +21,5 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chmod -R 777 storage bootstrap/cache
 
-# تشغيل خادم FrankenPHP مع ربطه بالمنفذ الذي تخصصه منصة Railway
-CMD [ "sh", "-c", "frankenphp run --config /etc/caddy/Caddyfile --listen :${PORT:-8080}" ]
+# تعديل منفذ الاستماع في ملف Caddyfile ليتطابق مع منفذ Railway تلقائياً، ثم تشغيل الخادم
+CMD sh -c "sed -i 's/:80/:${PORT:-8080}/g' /etc/caddy/Caddyfile && frankenphp run --config /etc/caddy/Caddyfile"
