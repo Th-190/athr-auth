@@ -118,7 +118,7 @@ class AuthController extends Controller
 
     private function isAdministrator(User $user): bool
     {
-        return (bool) $user->is_active && AdminAccess::isDesignatedAdministrator($user);
+        return AdminAccess::canManageAdministration($user);
     }
 
     private function twoFactorSecret(User $user): ?string

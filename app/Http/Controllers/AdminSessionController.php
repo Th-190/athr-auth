@@ -40,19 +40,21 @@ class AdminSessionController extends Controller
             ])->onlyInput('email')->setStatusCode(429);
         }
 
-        $designatedEmail = strtolower(trim((string) config('archive.admin_email')));
         $user = User::with('role')->whereRaw('LOWER(email) = ?', [$email])->first();
         $role = strtolower($user?->role?->name ?? '');
-        $allowedStaffLogin = $role === 'editor'
-            || ($designatedEmail !== '' && hash_equals($designatedEmail, $email)
-                && AdminAccess::isDesignatedAdministrator($user));
+        $designatedEmail = strtolower(trim((string) config('archive.admin_email')));
+        $allowedStaffLogin = $user !== null
+            && ($role === 'editor'
+                || AdminAccess::isSuperAdministrator($user)
+                || ($role === 'admin' && $designatedEmail !== '' && hash_equals($designatedEmail, $email)
+                    && AdminAccess::isDesignatedAdministrator($user)));
 
         $validUser = $user && $allowedStaffLogin
             && (bool) $user->is_active
             && Hash::check($validated['password'], $user->password);
 
-        // Editors retain staff access, but the designated identity is the only
-        // administrator account allowed to authenticate through this form.
+        // Editors and each active Super Admin authenticate independently. A legacy
+        // admin role remains limited to the configured recovery identity.
         if (!$validUser) {
             RateLimiter::hit($key, 60);
 

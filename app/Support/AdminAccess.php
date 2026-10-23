@@ -6,9 +6,16 @@ use App\Models\User;
 
 class AdminAccess
 {
+    public static function isSuperAdministrator(?User $user): bool
+    {
+        return $user !== null
+            && (bool) $user->is_active
+            && strtolower($user->role?->name ?? '') === 'super_admin';
+    }
+
     public static function isDesignatedAdministrator(?User $user): bool
     {
-        if (!$user || !in_array(strtolower($user->role?->name ?? ''), ['admin', 'super_admin'], true)) {
+        if (!$user || strtolower($user->role?->name ?? '') !== 'admin') {
             return false;
         }
 
@@ -34,7 +41,20 @@ class AdminAccess
 
         $role = strtolower($user->role?->name ?? '');
 
-        return $role === 'editor' || self::isDesignatedAdministrator($user);
+        return $role === 'editor' || self::isSuperAdministrator($user)
+            || ($role === 'admin' && self::isDesignatedAdministrator($user));
+    }
+
+    public static function canManageAdministration(?User $user): bool
+    {
+        if (!$user || !(bool) $user->is_active) {
+            return false;
+        }
+
+        $role = strtolower($user->role?->name ?? '');
+
+        return $role === 'super_admin'
+            || ($role === 'admin' && self::isDesignatedAdministrator($user));
     }
 }
 

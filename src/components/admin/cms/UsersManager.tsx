@@ -14,6 +14,7 @@ interface ManagedUser {
   email_verified: boolean;
   created_at: string;
   deactivated_at?: string | null;
+  has_2fa?: boolean;
 }
 
 interface AccessInvitation {
@@ -44,10 +45,11 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     name: '',
     email: '',
     password: '',
-    role: 'editor' as 'editor' | 'viewer',
+    role: 'editor' as 'editor' | 'viewer' | 'super_admin',
   });
-
-  const activeAdminsCount = users.filter(u => u.role === 'admin' && u.is_active).length;
+  const [activeSuperAdminCount, setActiveSuperAdminCount] = useState(0);
+  const [superAdminLimit, setSuperAdminLimit] = useState(3);
+  const [canManageSuperAdmins, setCanManageSuperAdmins] = useState(false);
 
   const fetchApiUsers = async () => {
     const token = authService.getToken();
@@ -57,11 +59,15 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     });
     if (!response.ok) throw new Error('تعذر تحميل المستخدمين من الخادم.');
     const data = await response.json();
+    setActiveSuperAdminCount(Number(data.active_super_admin_count ?? 0));
+    setSuperAdminLimit(Number(data.super_admin_limit ?? 3));
+    setCanManageSuperAdmins(Boolean(data.can_manage_super_admins));
     const list = data.users?.data || data.users || [];
     setUsers(Array.isArray(list) ? list.map((u: any) => ({
       id: u.id, name: u.name, email: u.email, role: u.role || 'viewer',
       role_ar: u.role_ar || 'مشاهد وباحث', is_active: u.is_active !== false,
       email_verified: Boolean(u.email_verified), created_at: u.created_at || '', deactivated_at: u.deactivated_at,
+      has_2fa: Boolean(u.has_2fa),
     })) : []);
   };
 
@@ -145,8 +151,9 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
       alert('يرجى ملء جميع الحقول المطلوبة.');
       return;
     }
-    if (newForm.password.length < 8) {
-      alert('كلمة المرور يجب أن لا تقل عن 8 أحرف.');
+    const minimumPasswordLength = newForm.role === 'super_admin' ? 12 : 8;
+    if (newForm.password.length < minimumPasswordLength) {
+      alert(`كلمة المرور يجب أن لا تقل عن ${minimumPasswordLength} أحرف.`);
       return;
     }
     if (users.some(u => u.email.toLowerCase() === newForm.email.toLowerCase())) {
@@ -167,7 +174,10 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
           body: JSON.stringify(newForm),
         });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || 'تعذر إنشاء المستخدم على الخادم.');
+      if (!response.ok) {
+        const validationMessage = Object.values(result.errors || {}).flat()[0];
+        throw new Error(validationMessage || result.message || 'تعذر إنشاء المستخدم على الخادم.');
+      }
       await fetchApiUsers();
       setIsCreateOpen(false);
       setNewForm({ name: '', email: '', password: '', role: 'editor' });
@@ -179,8 +189,8 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
   };
 
   const handleToggleActive = async (user: ManagedUser) => {
-    if (user.role === 'admin' && user.is_active && activeAdminsCount <= 1) {
-      alert('لا يمكن تعطيل آخر مدير نشط في النظام.');
+    if (user.role === 'super_admin' && user.is_active && activeSuperAdminCount <= 1) {
+      alert('لا يمكن تعطيل آخر حساب مدير عام نشط.');
       return;
     }
 
@@ -202,7 +212,11 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
-      if (!response.ok) throw new Error('تعذر تحديث حالة المستخدم.');
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        const validationMessage = Object.values(result.errors || {}).flat()[0];
+        throw new Error(result.message || validationMessage || 'تعذر تحديث حالة المستخدم.');
+      }
       await fetchApiUsers();
     } catch (error: any) {
       alert(error.message || 'تعذر الاتصال بالخادم.');
@@ -230,8 +244,8 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
   };
 
   const handleDeleteUser = async (user: ManagedUser) => {
-    if (user.role === 'admin' && activeAdminsCount <= 1) {
-      alert('لا يمكن حذف آخر مدير نشط في النظام.');
+    if (user.role === 'super_admin' && user.is_active && activeSuperAdminCount <= 1) {
+      alert('لا يمكن حذف آخر حساب مدير عام نشط.');
       return;
     }
 
@@ -275,9 +289,9 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-xs px-3 py-1.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-lg flex items-center gap-1.5">
+          <div className={`text-xs px-3 py-1.5 border rounded-lg flex items-center gap-1.5 ${activeSuperAdminCount >= superAdminLimit ? 'bg-rose-50 text-rose-900 border-rose-300' : 'bg-amber-50 text-amber-900 border-amber-200'}`}>
             <Shield className="w-3.5 h-3.5 text-amber-700" />
-            <span>المديرون النشطون: <strong>{activeAdminsCount}</strong></span>
+            <span>حسابات المدير العام النشطة: <strong>{activeSuperAdminCount} / {superAdminLimit}</strong></span>
           </div>
           <button onClick={() => setIsInviteOpen(true)} className={primaryBtn + ' flex items-center gap-1.5 bg-amber-800 hover:bg-amber-900'}>
             <Send className="w-4 h-4" />
@@ -335,7 +349,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
               />
             </div>
             <div className="flex gap-2">
-              {(['all', 'admin', 'editor', 'viewer'] as const).map(r => (
+              {(['all', 'super_admin', 'admin', 'editor', 'viewer'] as const).map(r => (
                 <button
                   key={r}
                   onClick={() => setRoleFilter(r)}
@@ -345,7 +359,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
                       : 'bg-white border border-[#E8E2D8] text-stone-600 hover:bg-stone-50'
                   }`}
                 >
-                  {r === 'all' ? 'الكل' : r === 'admin' ? 'المديرون' : r === 'editor' ? 'المحررون' : 'المشاهدون'}
+                  {r === 'all' ? 'الكل' : r === 'super_admin' ? 'المديرون العامون' : r === 'admin' ? 'مديرو الأرشيف' : r === 'editor' ? 'المحررون' : 'المشاهدون'}
                 </button>
               ))}
             </div>
@@ -366,7 +380,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
                 </thead>
                 <tbody className="divide-y divide-[#E8E2D8]">
                   {filtered.map(user => {
-                    const isOnlyAdmin = user.role === 'admin' && user.is_active && activeAdminsCount <= 1;
+                    const isOnlyAdmin = user.role === 'super_admin' && user.is_active && activeSuperAdminCount <= 1;
 
                     return (
                       <tr key={user.id} className="hover:bg-stone-50/80 transition-colors">
@@ -377,8 +391,10 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
                         <td className="py-3.5 px-4">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${
-                              user.role === 'admin'
-                                ? 'bg-purple-50 text-purple-800 border border-purple-200'
+                              user.role === 'super_admin'
+                                ? 'bg-[#78350F] text-white border border-[#5B260D]'
+                                : user.role === 'admin'
+                                ? 'bg-stone-100 text-stone-900 border border-stone-400'
                                 : user.role === 'editor'
                                 ? 'bg-amber-50 text-amber-800 border border-amber-200'
                                 : 'bg-stone-100 text-stone-700 border border-stone-200'
@@ -398,6 +414,11 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
                             <span className="inline-flex items-center gap-1 text-rose-700 text-xs">
                               <Ban className="w-3.5 h-3.5" />
                               <span>معطل</span>
+                            </span>
+                          )}
+                          {user.role === 'super_admin' && (
+                            <span className={`mt-1 block text-[11px] ${user.has_2fa ? 'text-emerald-800' : 'text-rose-800'}`}>
+                              المصادقة الثنائية: {user.has_2fa ? 'مفعّلة' : 'غير مفعّلة'}
                             </span>
                           )}
                         </td>
@@ -649,7 +670,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
                 <input
                   type="password"
                   required
-                  minLength={8}
+                  minLength={newForm.role === 'super_admin' ? 12 : 8}
                   className={inputClass}
                   placeholder="••••••••••••"
                   value={newForm.password}
@@ -665,8 +686,15 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
                 >
                   <option value="editor">محرر وباحث (تحرير المواقع والمقالات والوسائط)</option>
                   <option value="viewer">مشاهد وباحث (اطلاع وتدقيق داخلي)</option>
+                  {canManageSuperAdmins && <option value="super_admin">مدير عام (صلاحيات إدارية كاملة)</option>}
                 </select>
               </div>
+              {newForm.role === 'super_admin' && (
+                <div className={`rounded-lg border p-3 text-xs ${activeSuperAdminCount >= superAdminLimit ? 'border-rose-300 bg-rose-50 text-rose-900' : 'border-amber-300 bg-amber-50 text-amber-950'}`}>
+                  الحسابات النشطة: {activeSuperAdminCount} من {superAdminLimit}. كلمة المرور يجب أن تتكون من 12 حرفاً على الأقل.
+                  {activeSuperAdminCount >= superAdminLimit && ' اكتمل الحد؛ عطّل حساباً نشطاً قبل إضافة أو تفعيل حساب آخر.'}
+                </div>
+              )}
               <div className="p-3 bg-stone-50 rounded-lg text-xs text-stone-600 border border-stone-200">
                 ملاحظة: سيتم تفعيل الحساب فوراً وتوثيق عملية الإنشاء في سجل التدقيق غير القابل للتعديل.
               </div>

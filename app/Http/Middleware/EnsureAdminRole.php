@@ -36,8 +36,8 @@ class EnsureAdminRole
             ], 403);
         }
 
-        if (!AdminAccess::isDesignatedAdministrator($user)) {
-            return response()->json(['message' => 'مرفوض: هذا الحساب ليس المدير المحدد للأرشيف.'], 403);
+        if (!AdminAccess::canManageAdministration($user)) {
+            return response()->json(['message' => 'مرفوض: يلزم حساب مدير عام نشط.'], 403);
         }
 
         if (config('auth.require_admin_2fa', !app()->environment('testing'))) {

@@ -5,7 +5,9 @@ namespace App\Console\Commands;
 use App\Actions\CreateAuditLogAction;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\SuperAdminAccountLimit;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -13,7 +15,7 @@ class CreateAdminCommand extends Command
 {
     protected $signature = 'make:admin {--name= : The administrator display name}';
 
-    protected $description = 'Initialize or recover the single administrator designated by ARCHIVE_ADMIN_EMAIL';
+    protected $description = 'Initialize or recover the bootstrap Super Admin designated by ARCHIVE_ADMIN_EMAIL';
 
     public function handle(CreateAuditLogAction $auditLogAction): int
     {
@@ -48,40 +50,59 @@ class CreateAdminCommand extends Command
             return self::FAILURE;
         }
 
-        $role = Role::firstOrCreate(['name' => 'admin'], [
+        $role = Role::firstOrCreate(['name' => 'super_admin'], [
             'name_ar' => 'مدير الأرشيف',
-            'description' => 'الحساب الإداري الوحيد المحدد عبر ARCHIVE_ADMIN_EMAIL',
+            'description' => 'حساب المدير العام الأولي المحدد للاستعادة عبر ARCHIVE_ADMIN_EMAIL',
         ]);
         $user = User::withTrashed()->whereRaw('LOWER(email) = ?', [$email])->first();
-        if (!$user) {
-            $user = new User();
-            $user->email = $email;
-        } elseif ($user->trashed()) {
-            $user->restore();
-        }
+        try {
+            $user = DB::transaction(function () use ($user, $role, $name, $email, $password): User {
+                $superAdminRole = SuperAdminAccountLimit::lockRole();
+                $alreadyActiveSuperAdmin = $user
+                    && !$user->trashed()
+                    && (int) $user->role_id === (int) $superAdminRole->id
+                    && (bool) $user->is_active;
 
-        $user->forceFill([
-            'name' => $name,
-            'email' => $email,
-            'password' => Hash::make($password),
-            'role_id' => $role->id,
-            'email_verified_at' => $user->email_verified_at ?? now(),
-            'is_active' => true,
-            'deactivated_at' => null,
-        ])->save();
-        $user->tokens()->delete();
+                if (!$alreadyActiveSuperAdmin) {
+                    SuperAdminAccountLimit::ensureCapacity($superAdminRole, $user?->id);
+                }
+
+                if (!$user) {
+                    $user = new User();
+                    $user->email = $email;
+                } elseif ($user->trashed()) {
+                    $user->restore();
+                }
+
+                $user->forceFill([
+                    'name' => $name,
+                    'email' => $email,
+                    'password' => Hash::make($password),
+                    'role_id' => $role->id,
+                    'email_verified_at' => $user->email_verified_at ?? now(),
+                    'is_active' => true,
+                    'deactivated_at' => null,
+                ])->save();
+                $user->tokens()->delete();
+
+                return $user;
+            });
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->error($exception->errors()['role'][0] ?? 'تعذر تهيئة حساب المدير العام.');
+            return self::FAILURE;
+        }
 
         $auditLogAction->execute(
             action: 'admin.cli_initialized',
             entityType: 'User',
             entityId: (string) $user->id,
             performedBy: 'CLI deployment operator',
-            details: 'Initialized or recovered the designated archive administrator account.',
+            details: 'Initialized or recovered the bootstrap Super Admin account.',
             ipAddress: '127.0.0.1',
             performedById: $user->id
         );
 
-        $this->info('The designated administrator account is ready. The password was stored as a hash.');
+        $this->info('The bootstrap Super Admin account is ready. The password was stored as a hash.');
         return self::SUCCESS;
     }
 }

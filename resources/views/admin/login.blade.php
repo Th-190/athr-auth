@@ -24,10 +24,10 @@
 <main>
     <p>أثر كربلاء · بوابة إدارية</p>
     <h1>دخول هيئة الإدارة</h1>
-    <p>هذه الصفحة مخصصة للحساب الإداري المحدد ولأعضاء التحرير المخولين.</p>
+    <p>هذه الصفحة مخصصة لحسابات المدير العام النشطة وأعضاء التحرير المخولين.</p>
 
     @if (!$adminEmailConfigured)
-        <p class="notice">لم يُهيأ بريد المدير المحدد بعد. اطلب من مسؤول النشر ضبط ARCHIVE_ADMIN_EMAIL وتشغيل إجراء تهيئة المدير.</p>
+        <p class="notice">يلزم إعداد الحساب الأول فقط عبر مسؤول النشر باستخدام ARCHIVE_ADMIN_EMAIL وأمر التهيئة المحمي. بعد ذلك يسجل كل مدير عام الدخول ببريده وكلمة مروره.</p>
     @endif
 
     @if ($errors->any())
@@ -40,7 +40,7 @@
         <input id="email" name="email" type="email" autocomplete="username" value="{{ old('email') }}" required maxlength="255" autofocus>
         <label for="password">كلمة المرور</label>
         <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024">
-        <button type="submit" @disabled(!$adminEmailConfigured)>دخول الإدارة</button>
+        <button type="submit">دخول الإدارة</button>
     </form>
     <a class="back" href="/">العودة إلى الأرشيف العام</a>
 </main>

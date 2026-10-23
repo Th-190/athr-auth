@@ -37,7 +37,10 @@ class EnsureStaffRole
             ], 403);
         }
 
-        if (in_array($roleName, ['admin', 'super_admin'], true) && !AdminAccess::isDesignatedAdministrator($user)) {
+        if ($roleName === 'super_admin' && !AdminAccess::isSuperAdministrator($user)) {
+            return response()->json(['message' => 'مرفوض: حساب المدير العام غير نشط أو غير صالح.'], 403);
+        }
+        if ($roleName === 'admin' && !AdminAccess::isDesignatedAdministrator($user)) {
             return response()->json(['message' => 'مرفوض: هذا الحساب ليس المدير المحدد للأرشيف.'], 403);
         }
 
