@@ -7,7 +7,7 @@
 :{$PORT:8080} {
     root * /app/public
 
-    @laravel path /api /api/* /up /sitemap.xml /rss.xml /feed /web/action /web/action* /sanctum /sanctum/* *.php
+    @laravel path /api /api/* /up /admin /admin/* /sitemap.xml /rss.xml /feed /web/action /web/action* /sanctum /sanctum/* *.php
     handle @laravel {
         php_server
     }
