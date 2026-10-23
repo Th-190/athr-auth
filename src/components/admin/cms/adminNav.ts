@@ -9,21 +9,20 @@ export interface AdminNavItem {
 
 export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'dashboard', label: 'لوحة التحكم', group: 'عام' },
-  { id: 'sites', label: 'المواقع الأثرية والتراثية', group: 'المحتوى' },
-  { id: 'encyclopedia', label: 'المقالات والمعجم الموسوعي', group: 'المحتوى' },
-  { id: 'media', label: 'الصور ومكتبة الوسائط', group: 'المحتوى' },
-  { id: 'sources', label: 'المصادر والمراجع', group: 'المحتوى' },
+  { id: 'sites', label: 'تسجيل المواقع الأثرية', group: 'السجلات' },
+  { id: 'encyclopedia', label: 'المعجم التاريخي', group: 'السجلات' },
+  { id: 'media', label: 'الصور والوسائط', group: 'الأدلة والمراجع' },
+  { id: 'sources', label: 'المصادر والمراجع', group: 'الأدلة والمراجع' },
   { id: 'periods', label: 'الحقبات التاريخية', group: 'التصنيفات' },
   { id: 'types', label: 'أنواع المعالم', group: 'التصنيفات' },
   { id: 'areas', label: 'المناطق والمواقع', group: 'التصنيفات' },
   { id: 'homepage', label: 'إدارة الصفحة الرئيسية', group: 'الواجهة' },
   { id: 'navigation', label: 'التنقل والتذييل', group: 'الواجهة' },
-  { id: 'verification', label: 'تحقيق المحتوى', group: 'الجودة' },
-  { id: 'editorial', label: 'طابور التحرير والاستيراد', group: 'الجودة' },
-  { id: 'heritage_editorial', label: 'تحرير المواقع والمقتنيات', group: 'الجودة' },
+  { id: 'verification', label: 'التحقيق والتحقق', group: 'المراجعة والتوثيق' },
+  { id: 'heritage_editorial', label: 'تحرير السجلات والاستشهادات', group: 'السجلات' },
   { id: 'users', label: 'المستخدمون والمديرون', group: 'النظام', adminOnly: true },
   { id: 'settings', label: 'إعدادات الموقع', group: 'النظام', adminOnly: true },
-  { id: 'audit', label: 'سجل النشاط والتدقيق', group: 'النظام' },
+  { id: 'audit', label: 'سجل التدقيق والمراجعة', group: 'المراجعة والتوثيق' },
 ];
 
 export const ADMIN_SECTIONS = ADMIN_NAV.map(i => i.id);

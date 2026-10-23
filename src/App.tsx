@@ -15,7 +15,6 @@ import { SiteDetailView } from './components/views/SiteDetailView';
 import { SupportingViews } from './components/views/SupportingViews';
 import { AdminConsole } from './components/admin/AdminConsole';
 import { ArchiveMap } from './components/map/ArchiveMap';
-import { ContributeModal } from './components/common/ContributeModal';
 import { DesignSystemCatalog } from './components/foundation/DesignSystemCatalog';
 import { SecurityReviewConsole } from './components/admin/SecurityReviewConsole';
 import { BrandedErrorPage } from './components/views/BrandedErrorPages';
@@ -23,10 +22,7 @@ import { PolicyPages } from './components/views/PolicyPages';
 import { InstantSearchModal } from './components/common/InstantSearchModal';
 import { MyListModal } from './components/common/MyListModal';
 import { ReadingPreferencesModal, ReadingPreferences } from './components/common/ReadingPreferencesModal';
-import { AuthModal } from './components/auth/AuthModal';
-import { AdminUserRoleModal } from './components/auth/AdminUserRoleModal';
 import { authService, AuthUser } from './services/authService';
-import { RssFeedModal } from './components/common/RssFeedModal';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<string>(() => {
@@ -39,17 +35,13 @@ export default function App() {
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [, setArchiveTick] = useState(0);
 
-  // Authenticated user session managed via authService (Firebase Auth + Laravel RBAC)
+  // Authenticated user session managed by Laravel sessions and server-side RBAC.
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => authService.getCurrentUser());
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   // Modal visibility states
-  const [isContributeModalOpen, setIsContributeModalOpen] = useState(false);
   const [isInstantSearchOpen, setIsInstantSearchOpen] = useState(false);
   const [isMyListOpen, setIsMyListOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isRssModalOpen, setIsRssModalOpen] = useState(false);
 
   // Synchronize currentUser from authService
   useEffect(() => {
@@ -118,14 +110,7 @@ export default function App() {
     });
   };
 
-  const handleRoleChange = (role: UserRole) => {
-    // Kept for backward compatibility with existing tests
-    try {
-      localStorage.setItem('kha_auth_role', role);
-    } catch {
-      // Fallback
-    }
-  };
+
 
   // Keyboard shortcut: Press "/" to focus instant search
   useEffect(() => {
@@ -230,13 +215,9 @@ export default function App() {
         currentTab={currentTab}
         onNavigate={handleNavigate}
         currentUser={currentUser}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        onLogout={() => authService.logout()}
-        onOpenContributeModal={() => setIsContributeModalOpen(true)}
         onOpenInstantSearch={() => setIsInstantSearchOpen(true)}
         onOpenMyList={() => setIsMyListOpen(true)}
         onOpenPreferences={() => setIsPreferencesOpen(true)}
-        onOpenAdminModal={() => setIsAdminModalOpen(true)}
         onSelectSite={handleSelectSite}
         numeralSystem={preferences.numeralSystem}
       />
@@ -255,7 +236,6 @@ export default function App() {
           <HomeView
             onNavigate={handleNavigate}
             onSelectSite={handleSelectSite}
-            onOpenContributeModal={() => setIsContributeModalOpen(true)}
             numeralSystem={preferences.numeralSystem}
           />
         ) : currentTab === 'registry' ? (
@@ -268,7 +248,6 @@ export default function App() {
           <MuseumsIndexView
             onSelectSite={handleSelectSite}
             onNavigate={handleNavigate}
-            onOpenContributeModal={() => setIsContributeModalOpen(true)}
             currentUser={currentUser}
           />
         ) : currentTab === 'map' ? (
@@ -341,14 +320,8 @@ export default function App() {
       {/* Footer */}
       <Footer
         onNavigate={handleNavigate}
-        onOpenRssModal={() => setIsRssModalOpen(true)}
         numeralSystem={preferences.numeralSystem}
       />
-
-      {/* Global Contribution Modal */}
-      {isContributeModalOpen && (
-        <ContributeModal onClose={() => setIsContributeModalOpen(false)} />
-      )}
 
       {/* Feature 1: Instant Search Modal */}
       {isInstantSearchOpen && (
@@ -369,14 +342,6 @@ export default function App() {
         />
       )}
 
-      {/* Feature 5: RSS/Atom Feed Modal */}
-      {isRssModalOpen && (
-        <RssFeedModal
-          isOpen={isRssModalOpen}
-          onClose={() => setIsRssModalOpen(false)}
-        />
-      )}
-
       {/* Feature 6: Reading Comfort Preferences Modal */}
       {isPreferencesOpen && (
         <ReadingPreferencesModal
@@ -387,23 +352,6 @@ export default function App() {
         />
       )}
 
-      {/* Consolidated Firebase Auth Modal (GoogleAuthProvider) */}
-      {isAuthModalOpen && (
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          onLoginSuccess={user => setCurrentUser(user)}
-        />
-      )}
-
-      {/* Admin User Role Management Modal (RBAC Endpoint UI) */}
-      {isAdminModalOpen && (
-        <AdminUserRoleModal
-          isOpen={isAdminModalOpen}
-          onClose={() => setIsAdminModalOpen(false)}
-          onUserRoleUpdated={() => setCurrentUser(authService.getCurrentUser())}
-        />
-      )}
     </div>
   );
 }

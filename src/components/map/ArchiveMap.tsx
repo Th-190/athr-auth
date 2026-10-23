@@ -113,47 +113,45 @@ export const ArchiveMap: React.FC<ArchiveMapProps> = ({
 
       const marker = L.marker([lat, lng], { icon: customIcon });
 
-      const popupHtml = `
-        <div style="direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
-            <span style="font-size: 10px; color: #78350F; font-family: 'JetBrains Mono', monospace; font-weight: bold;">
-              ${site.permanent_id}
-            </span>
-            ${
-              isFuzzed
-                ? `<span style="font-size: 9px; background: #FEF2F2; color: #991B1B; padding: 1px 4px; border-radius: 2px; border: 1px solid #FECACA;">
-                    ${isRestricted ? 'إحداثيات محجوبة احترازياً' : 'إحداثيات تقريبية'}
-                   </span>`
-                : ''
-            }
-          </div>
-          <h4 style="font-size: 14px; font-weight: bold; margin: 0 0 4px 0; color: #1C1917; font-family: 'Amiri', serif;">
-            ${site.name_ar}
-          </h4>
-          <p style="font-size: 11px; color: #57534E; margin: 0 0 8px 0; line-height: 1.4;">
-            ${site.short_description.substring(0, 95)}...
-          </p>
-          <div style="display: flex; items-center; justify-content: space-between; border-top: 1px solid #E7E5E4; padding-top: 6px; font-size: 11px;">
-            <span style="color: #78716C;">
-              ${site.verification_status === 'verified' ? '✓ محقق ومسند' : 'قيد التحقيق'}
-            </span>
-            <button id="btn-view-${site.id}" style="color: #78350F; font-weight: bold; cursor: pointer; background: none; border: none; text-decoration: underline;">
-              عرض السجل الكامل ←
-            </button>
-          </div>
-        </div>
-      `;
+      // Use text nodes for record content. These fields are user-authored and
+      // must never be parsed as HTML inside a Leaflet popup.
+      const popup = document.createElement('div');
+      popup.dir = 'rtl';
+      popup.style.cssText = "text-align:right;font-family:'Cairo',sans-serif";
 
-      marker.bindPopup(popupHtml);
+      const metadata = document.createElement('div');
+      metadata.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px';
+      const accession = document.createElement('span');
+      accession.textContent = site.permanent_id;
+      accession.style.cssText = "font-size:10px;color:#78350F;font-family:'JetBrains Mono',monospace;font-weight:bold";
+      metadata.append(accession);
+      if (isFuzzed) {
+        const locationNote = document.createElement('span');
+        locationNote.textContent = isRestricted ? 'إحداثيات محجوبة احترازياً' : 'إحداثيات تقريبية';
+        locationNote.style.cssText = 'font-size:9px;background:#FEF2F2;color:#991B1B;padding:1px 4px;border-radius:2px;border:1px solid #FECACA';
+        metadata.append(locationNote);
+      }
 
-      marker.on('popupopen', () => {
-        const btn = document.getElementById(`btn-view-${site.id}`);
-        if (btn) {
-          btn.onclick = () => {
-            onSelectSite(site);
-          };
-        }
-      });
+      const title = document.createElement('h4');
+      title.textContent = site.name_ar;
+      title.style.cssText = "font-size:14px;font-weight:bold;margin:0 0 4px;color:#1C1917;font-family:'Amiri',serif";
+      const description = document.createElement('p');
+      description.textContent = site.short_description;
+      description.style.cssText = 'font-size:11px;color:#57534E;margin:0 0 8px;line-height:1.4';
+      const footer = document.createElement('div');
+      footer.style.cssText = 'display:flex;align-items:center;justify-content:space-between;border-top:1px solid #E7E5E4;padding-top:6px;font-size:11px';
+      const verification = document.createElement('span');
+      verification.textContent = site.verification_status === 'verified' ? '✓ محقق ومسند' : 'قيد التحقيق';
+      verification.style.color = '#78716C';
+      const viewButton = document.createElement('button');
+      viewButton.type = 'button';
+      viewButton.textContent = 'عرض السجل الكامل ←';
+      viewButton.setAttribute('aria-label', `عرض سجل ${site.name_ar}`);
+      viewButton.style.cssText = 'color:#78350F;font-weight:bold;cursor:pointer;background:none;border:0;text-decoration:underline';
+      viewButton.addEventListener('click', () => onSelectSite(site));
+      footer.append(verification, viewButton);
+      popup.append(metadata, title, description, footer);
+      marker.bindPopup(popup);
 
       marker.on('click', () => {
         onSelectSite(site);

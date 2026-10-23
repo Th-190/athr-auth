@@ -595,25 +595,12 @@ class AdversarialSecurityRound2Test extends TestCase
     // =========================================================================
     // 6. M4: Return URL strictly same-origin relative path
     // =========================================================================
-    public function test_m4_return_url_strictly_same_origin(): void
+    public function test_m4_legacy_google_authentication_route_is_removed(): void
     {
-        $admin = $this->createTestUser('admin');
-
-        // External URLs with protocol scheme
-        $extRes = $this->postJson('/api/v1/auth/google', [
-            'id_token' => 'mock_token',
+        $this->postJson('/api/v1/auth/google', [
+            'id_token' => 'mock-token',
             'return_url' => 'https://evil.attacker.com/steal-session',
-        ]);
-        // The return_url sanitizer converts external URLs to '/'
-        $this->assertNotEquals('https://evil.attacker.com/steal-session', $extRes->json('redirect_url'));
-
-        // Protocol-relative URL (//evil.com)
-        $protoRes = $this->postJson('/api/v1/auth/google', [
-            'id_token' => 'mock_token',
-            'return_url' => '//evil.com/phish',
-        ]);
-        $this->assertNotEquals('//evil.com/phish', $protoRes->json('redirect_url'));
-        $this->assertEquals('/', $protoRes->json('redirect_url') ?? '/');
+        ])->assertNotFound();
     }
 
     // =========================================================================
@@ -687,15 +674,15 @@ class AdversarialSecurityRound2Test extends TestCase
             'role_id' => $this->adminRole->id,
             'expires_days' => 14,
         ]);
-        $escalateRes->assertStatus(403);
+        $escalateRes->assertStatus(422);
 
-        // 3. Escalation Rule: Only Super Admin can invite Admin or Super Admin
+        // 3. Even a legacy super admin cannot create another admin account through invitations
         $superInviteRes = $this->actingAs($superAdmin)->postJson('/api/v1/admin/invitations', [
             'email' => 'legit.admin@example.com',
             'role_id' => $this->adminRole->id,
             'expires_days' => 14,
         ]);
-        $superInviteRes->assertStatus(201);
+        $superInviteRes->assertStatus(422);
 
         // 4. Nobody can change their own role (controller returns 422 for self-modification)
         $selfRoleRes = $this->actingAs($admin)->putJson("/api/v1/admin/users/{$admin->id}/role", [
@@ -704,7 +691,7 @@ class AdversarialSecurityRound2Test extends TestCase
         // The controller intentionally returns 422 (not 403) for self-role change to distinguish
         // it from privilege escalation (which returns 403). Both are rejection — self-change is 422.
         $selfRoleRes->assertStatus(422);
-        $this->assertStringContainsString('مرفوض', $selfRoleRes->json('message'));
+        $selfRoleRes->assertJsonValidationErrors('role');
 
         // 5. Admin can revoke pending invitation
         $revokeRes = $this->actingAs($admin)->postJson("/api/v1/admin/invitations/{$invitation->id}/revoke");

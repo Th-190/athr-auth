@@ -1,3 +1,4 @@
+import { apiFetch } from './apiFetch';
 /**
  * Laravel CMS API client. Failures are silent so the public archive
  * continues to operate from archiveStore when the backend is offline.
@@ -9,7 +10,7 @@ import { CmsConfig } from '../types/cms';
 async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
   const token = authService.getToken();
   try {
-    const res = await fetch(path, {
+    const res = await apiFetch(path, {
       ...init,
       headers: {
         Accept: 'application/json',

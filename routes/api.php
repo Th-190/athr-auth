@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\ContributionController;
 use App\Http\Controllers\EncyclopediaController;
+use App\Http\Controllers\EditorialAiController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\HeritageEditorialController;
 use App\Http\Controllers\InvitationController;
@@ -28,24 +29,32 @@ Route::prefix('v1')->group(function () {
     // System Health & Architecture Status
     Route::get('/health', HealthCheckController::class)->name('api.v1.health');
 
-    // Authentication & Session (Rate limited to prevent brute force / flooding)
-    Route::post('/auth/google', [AuthController::class, 'handleGoogleLogin'])
-        ->middleware('throttle:15,1')
-        ->name('api.v1.auth.google');
+    // Session authentication uses Laravel's web guard, CSRF token and HttpOnly cookie.
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
+        Route::post('/auth/2fa/setup', [AuthController::class, 'setupTwoFactor'])->middleware('throttle:5,1')->name('api.v1.auth.2fa.setup');
+        Route::post('/auth/2fa/confirm', [AuthController::class, 'confirmTwoFactor'])->middleware('throttle:5,1')->name('api.v1.auth.2fa.confirm');
+        Route::post('/auth/2fa/verify', [AuthController::class, 'verifyTwoFactor'])->middleware('throttle:5,1')->name('api.v1.auth.2fa.verify');
     });
 
     // Editorial API is available to active editors and administrators; each record action
     // is also authorized by its model policy in the controller.
     Route::prefix('admin/editorial')->middleware('staff')->group(function () {
+        Route::post('/ai-assist', EditorialAiController::class)->middleware('throttle:5,1')->name('api.v1.editorial.ai-assist');
         Route::get('/filters', [HeritageEditorialController::class, 'filters'])->name('api.v1.editorial.filters');
         Route::get('/', [HeritageEditorialController::class, 'index'])->name('api.v1.editorial.index');
         Route::put('/sites/{site}', [HeritageEditorialController::class, 'updateSite'])->name('api.v1.editorial.sites.update');
         Route::put('/artifacts/{artifact}', [HeritageEditorialController::class, 'updateArtifact'])->name('api.v1.editorial.artifacts.update');
         Route::post('/{kind}/{id}/decision', [HeritageEditorialController::class, 'decide'])->name('api.v1.editorial.decision');
         Route::put('/images/{id}/rights', [MediaController::class, 'updateMetadata'])->name('api.v1.editorial.images.rights');
+    });
+
+    Route::post('/admin/sites/{id}/verify', [SiteController::class, 'verify'])
+        ->middleware('staff')->name('api.v1.admin.sites.verify');
+    Route::middleware('staff')->group(function () {
+        Route::post('/admin/sites', [SiteController::class, 'store'])->name('api.v1.admin.sites.store');
+        Route::put('/admin/sites/{site}', [SiteController::class, 'update'])->name('api.v1.admin.sites.update');
     });
 
     // Public Taxonomies
@@ -67,10 +76,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/museums', [MuseumController::class, 'index'])->name('api.v1.museums.index');
     Route::get('/museums/{slug}', [MuseumController::class, 'show'])->name('api.v1.museums.show');
 
-    // Community Contributions & Reports (Rate limited to 10 per minute per IP)
-    Route::post('/contributions', [ContributionController::class, 'store'])
-        ->middleware('throttle:10,1')
-        ->name('api.v1.contributions.store');
+    // Anonymous visitors have read-only access. Contribution review remains staff-only.
     Route::get('/admin/contributions', [ContributionController::class, 'index'])
         ->middleware('auth:sanctum')
         ->name('api.v1.admin.contributions.index');
@@ -102,14 +108,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/invitations/{invitation}/revoke', [InvitationController::class, 'revoke'])->name('api.v1.admin.invitations.revoke');
 
         // Sites CRUD & Publishing Workflow
-        Route::post('/sites', [SiteController::class, 'store'])->name('api.v1.admin.sites.store');
-        Route::put('/sites/{site}', [SiteController::class, 'update'])->name('api.v1.admin.sites.update');
         Route::delete('/sites/{site}', [SiteController::class, 'destroy'])->name('api.v1.admin.sites.destroy');
-        Route::post('/sites/{id}/publish', [SiteController::class, 'publish'])->name('api.v1.admin.sites.publish');
         Route::post('/sites/{id}/unpublish', [SiteController::class, 'unpublish'])->name('api.v1.admin.sites.unpublish');
         Route::post('/sites/{id}/archive', [SiteController::class, 'archive'])->name('api.v1.admin.sites.archive');
         Route::post('/sites/{id}/restore', [SiteController::class, 'restore'])->name('api.v1.admin.sites.restore');
-        Route::post('/sites/{id}/verify', [SiteController::class, 'verify'])->name('api.v1.admin.sites.verify');
 
         // Claims & Evidence
         Route::post('/sites/{site}/claims', [ClaimController::class, 'store'])->name('api.v1.admin.claims.store');
@@ -118,6 +120,7 @@ Route::prefix('v1')->group(function () {
         // Encyclopedia / Articles CRUD
         Route::post('/encyclopedia', [EncyclopediaController::class, 'store'])->name('api.v1.admin.encyclopedia.store');
         Route::put('/encyclopedia/{id}', [EncyclopediaController::class, 'update'])->name('api.v1.admin.encyclopedia.update');
+        Route::post('/encyclopedia/{id}/publish', [EncyclopediaController::class, 'publish'])->name('api.v1.admin.encyclopedia.publish');
         Route::delete('/encyclopedia/{id}', [EncyclopediaController::class, 'destroy'])->name('api.v1.admin.encyclopedia.destroy');
 
         // Taxonomies Management (Types, Periods, Areas, Tags)

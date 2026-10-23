@@ -12,6 +12,8 @@ class EncyclopediaEntry extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = ['published_at' => 'datetime'];
+
     public function sites(): BelongsToMany
     {
         return $this->belongsToMany(Site::class, 'encyclopedia_sites');

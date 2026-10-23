@@ -1,17 +1,15 @@
 import React from 'react';
 import { archiveDB } from '../../db/archiveStore';
 import { formatNumeral } from '../../utils/arabic';
-import { Rss, Mail, Shield, BookOpen, FileText, ArrowUp } from 'lucide-react';
+import { Rss, ArrowUp } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (tab: string, param?: string) => void;
-  onOpenRssModal?: () => void;
   numeralSystem?: 'arabic' | 'latin';
 }
 
 export const Footer: React.FC<FooterProps> = ({
   onNavigate,
-  onOpenRssModal,
   numeralSystem = 'latin',
 }) => {
   const stats = archiveDB.getArchiveStatistics();
@@ -112,14 +110,12 @@ export const Footer: React.FC<FooterProps> = ({
                   سجل التعديلات وما استجدّ
                 </button>
               </li>
-              {onOpenRssModal && (
-                <li>
-                  <button onClick={onOpenRssModal} className="hover:text-amber-400 transition-colors inline-flex items-center gap-1 cursor-pointer">
-                    <Rss className="w-3.5 h-3.5 text-amber-500" />
-                    <span>تغذية التحديثات (RSS/Atom)</span>
-                  </button>
-                </li>
-              )}
+              <li>
+                <a href="/feed" className="hover:text-amber-400 transition-colors inline-flex items-center gap-1 min-h-[44px]">
+                  <Rss className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
+                  <span>تغذية التحديثات (RSS)</span>
+                </a>
+              </li>
             </ul>
           </div>
 

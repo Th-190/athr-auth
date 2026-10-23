@@ -55,6 +55,12 @@ class InvitationController extends Controller
         $targetRole     = Role::findOrFail($validated['role_id']);
         $targetRoleName = strtolower($targetRole->name);
 
+        if (in_array($targetRoleName, ['admin', 'super_admin'], true)) {
+            return response()->json([
+                'message' => 'لا تُمنح صلاحية المدير عبر الدعوات. استخدم إجراء تهيئة المدير المحمي.',
+            ], 422);
+        }
+
         // Escalation Rule 2: Only Super Admin can grant Admin or Super Admin
         if (in_array($targetRoleName, ['admin', 'super_admin'])) {
             if ($actorRole !== 'super_admin') {

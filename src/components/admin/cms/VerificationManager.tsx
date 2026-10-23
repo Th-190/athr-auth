@@ -1,8 +1,9 @@
+import { apiFetch } from '../../../services/apiFetch';
 import React, { useState } from 'react';
-import { archiveDB } from '../../../db/archiveStore';
 import { Site, VerificationStatus } from '../../../types';
 import { inputClass, labelClass, primaryBtn, ghostBtn } from './formStyles';
 import { VerificationBadge } from '../../common/VerificationBadge';
+import { authService } from '../../../services/authService';
 import {
   FileCheck,
   AlertTriangle,
@@ -19,9 +20,26 @@ import {
 } from 'lucide-react';
 
 export const VerificationManager: React.FC<{ actorName: string }> = ({ actorName }) => {
-  const [, setTick] = useState(0);
-  const sites = archiveDB.getAllSites(true);
-  const qualityAudit = archiveDB.runDataQualityAudit();
+  const [sites, setSites] = useState<Site[]>([]);
+  const [loadError, setLoadError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  React.useEffect(() => {
+    const token = authService.getToken();
+    if (!token) { setLoadError('سجّل الدخول لعرض سجلات التحقيق من قاعدة البيانات.'); setLoading(false); return; }
+    apiFetch('/api/v1/admin/editorial?kind=sites&per_page=50', { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } })
+      .then(async response => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || `تعذر تحميل السجلات (${response.status}).`);
+        setSites(body.data || []);
+      })
+      .catch(error => setLoadError(error instanceof Error ? error.message : 'تعذر تحميل السجلات.'))
+      .finally(() => setLoading(false));
+  }, []);
+  const qualityAudit = {
+    missingSources: sites.filter(site => !Array.isArray((site as any).sources) || (site as any).sources.length === 0),
+    aiAssistedPending: sites.filter(site => site.ai_assisted && site.verification_status !== 'verified'),
+  };
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('unverified');
@@ -37,7 +55,7 @@ export const VerificationManager: React.FC<{ actorName: string }> = ({ actorName
     setIsModalOpen(true);
   };
 
-  const handleSaveVerification = (e: React.FormEvent) => {
+  const handleSaveVerification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSite) return;
     if (!reason.trim()) {
@@ -45,32 +63,26 @@ export const VerificationManager: React.FC<{ actorName: string }> = ({ actorName
       return;
     }
 
-    const success = archiveDB.updateSiteVerification(selectedSite.id, newStatus, reason.trim(), actorName);
-    if (success) {
-      // Also try API call if token present
-      try {
-        const token = localStorage.getItem('kha_auth_token');
-        if (token) {
-          fetch(`/api/v1/admin/sites/${selectedSite.id}/verify`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-            },
-            body: JSON.stringify({
-              verification_status: newStatus,
-              verification_notes: reason.trim(),
-            }),
-          }).catch(() => {});
-        }
-      } catch {}
-
+    const token = authService.getToken();
+    if (!token) { setLoadError('انتهت الجلسة. سجّل الدخول مجدداً قبل الحفظ.'); return; }
+    setSaving(true);
+    try {
+      const response = await apiFetch(`/api/v1/admin/sites/${selectedSite.id}/verify`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ verification_status: newStatus, reason: reason.trim() }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.errors ? Object.values(body.errors).flat().join(' ') : body.message || `تعذر الحفظ (${response.status}).`);
+      setSites(current => current.map(site => String(site.id) === String(body.site.id) ? body.site : site));
       setIsModalOpen(false);
       setSelectedSite(null);
       setReason('');
-      setTick(t => t + 1);
       alert('تم تحديث حالة التحقيق العلمي وتوثيق المسوغ في سجل النشاط بنجاح.');
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'تعذر حفظ التحقيق.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -89,6 +101,7 @@ export const VerificationManager: React.FC<{ actorName: string }> = ({ actorName
 
   return (
     <div className="space-y-6">
+      {loadError && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{loadError}</div>}
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8E2D8]">
         <div>
@@ -206,6 +219,7 @@ export const VerificationManager: React.FC<{ actorName: string }> = ({ actorName
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E8E2D8]">
+              {loading && <tr><td colSpan={6} className="py-8 text-center text-stone-500">جارٍ تحميل سجلات قاعدة البيانات…</td></tr>}
               {filteredSites.map(site => (
                 <tr key={site.id} className="hover:bg-stone-50/80 transition-colors">
                   <td className="py-3.5 px-4">
@@ -249,7 +263,7 @@ export const VerificationManager: React.FC<{ actorName: string }> = ({ actorName
                   </td>
                 </tr>
               ))}
-              {filteredSites.length === 0 && (
+              {!loading && filteredSites.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-stone-400">
                     لا توجد معالم مطابقة لتصنيف التحقيق الحالي.
@@ -315,7 +329,7 @@ export const VerificationManager: React.FC<{ actorName: string }> = ({ actorName
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button type="submit" className={primaryBtn + ' flex-1'}>اعتماد وحفظ القرار</button>
+                <button type="submit" disabled={saving} className={primaryBtn + ' flex-1 disabled:opacity-60'}>{saving ? 'جارٍ الحفظ…' : 'اعتماد وحفظ القرار'}</button>
                 <button type="button" onClick={() => setIsModalOpen(false)} className={ghostBtn}>إلغاء</button>
               </div>
             </form>

@@ -31,7 +31,6 @@ export function normalizeArabic(text: string): string {
     .trim()
     .toLowerCase();
 }
-
 /**
  * Checks if search query matches target text using Arabic normalization
  */
@@ -211,40 +210,5 @@ export function exportToCSV(sites: any[]): string {
     `"${s.last_reviewed_at}"`,
   ]);
   return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-}
-
-/**
- * Generates an Atom/RSS XML feed string for recent additions and reviews
- */
-export function generateAtomFeed(sites: any[]): string {
-  const sorted = [...sites].slice(0, 15);
-  const updated = new Date().toISOString();
-
-  const entriesXml = sorted
-    .map(s => {
-      return `  <entry>
-    <title>${s.name_ar} (${s.permanent_id})</title>
-    <link href="https://karbalaheritage.iq/sites/${s.slug}" />
-    <id>urn:kha:site:${s.id}</id>
-    <updated>${s.last_reviewed_at}T00:00:00Z</updated>
-    <summary>${s.short_description || ''}</summary>
-    <category term="${s.verification_status}" label="حالة التحقيق" />
-  </entry>`;
-    })
-    .join('\n');
-
-  return `<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ar">
-  <title>أثر كربلاء — ما استجدّ في السجل الأثري</title>
-  <subtitle>آخر المعالم والمواقع الأثرية المحققة والمحدثة في محافظة كربلاء</subtitle>
-  <link href="https://karbalaheritage.iq/feed.atom" rel="self" />
-  <link href="https://karbalaheritage.iq" />
-  <id>urn:kha:feed</id>
-  <updated>${updated}</updated>
-  <author>
-    <name>هيئة تحرير أثر كربلاء</name>
-  </author>
-${entriesXml}
-</feed>`;
 }
 

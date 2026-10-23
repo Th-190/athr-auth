@@ -16,7 +16,7 @@ class EncyclopediaController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = EncyclopediaEntry::with(['sites', 'sources']);
+        $query = EncyclopediaEntry::with(['sites', 'sources'])->where('publication_status', 'published');
 
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
@@ -36,8 +36,10 @@ class EncyclopediaController extends Controller
     public function show(string $slug): JsonResponse
     {
         $entry = EncyclopediaEntry::with(['sites', 'sources'])
-            ->where('slug', $slug)
-            ->orWhere('id', $slug)
+            ->where('publication_status', 'published')
+            ->where(function ($query) use ($slug): void {
+                $query->where('slug', $slug)->orWhere('id', $slug);
+            })
             ->firstOrFail();
 
         return response()->json($entry);
@@ -64,6 +66,7 @@ class EncyclopediaController extends Controller
             'category' => $validated['category'],
             'short_summary' => $validated['short_summary'],
             'full_text' => $validated['full_text'],
+            'publication_status' => 'draft',
         ]);
 
         if (!empty($validated['related_site_ids'])) {
@@ -136,5 +139,24 @@ class EncyclopediaController extends Controller
         );
 
         return response()->json(['message' => 'تم حذف المادة الموسوعية بنجاح']);
+    }
+
+    public function publish(Request $request, string $id): JsonResponse
+    {
+        $entry = EncyclopediaEntry::with(['sources'])->findOrFail($id);
+        abort_unless($entry->sources->isNotEmpty(), 422, 'لا يمكن نشر مادة موسوعية دون مصدر موثق.');
+        abort_unless(trim($entry->term_ar) !== '' && trim($entry->short_summary) !== '' && trim($entry->full_text) !== '', 422, 'تتطلب المادة اسماً وملخصاً ونصاً قبل النشر.');
+
+        $entry->forceFill(['publication_status' => 'published', 'published_at' => now()])->save();
+        $this->auditLogAction->execute(
+            action: 'encyclopedia.published',
+            entityType: 'EncyclopediaEntry',
+            entityId: (string) $entry->id,
+            performedBy: (string) ($request->user()?->name ?? 'إدارة الأرشيف'),
+            details: "نشر المادة الموسوعية بعد التحقق من الاستشهادات: {$entry->term_ar}",
+            ipAddress: $request->ip()
+        );
+
+        return response()->json(['message' => 'تم نشر المادة الموسوعية بعد التحقق من المصدر.', 'entry' => $entry->fresh(['sites', 'sources'])]);
     }
 }

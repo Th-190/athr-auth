@@ -87,7 +87,7 @@ export const AdminUserRoleModal: React.FC<AdminUserRoleModalProps> = ({
                 لوحة إدارة صلاحيات المستخدمين (RBAC Management)
               </h2>
               <span className="text-xs text-stone-500">
-                التحكم في أدوار مستخدمي Google (مدير، محرر، مشاهد، معلق)
+                التحكم في أدوار المحررين والباحثين المعتمدين
               </span>
             </div>
           </div>
@@ -168,7 +168,6 @@ export const AdminUserRoleModal: React.FC<AdminUserRoleModalProps> = ({
                         disabled={updatingUserId === u.id}
                         className="bg-white border border-stone-300 rounded px-2.5 py-1 text-xs text-stone-800 font-medium focus:outline-none focus:border-[#78350F] cursor-pointer"
                       >
-                        <option value="admin">مدير أرشيف (Admin)</option>
                         <option value="editor">محرر وباحث (Editor)</option>
                         <option value="viewer">مشاهد وباحث (Viewer)</option>
                         <option value="pending">معلق (Pending)</option>
@@ -183,7 +182,7 @@ export const AdminUserRoleModal: React.FC<AdminUserRoleModalProps> = ({
           <div className="p-3 bg-stone-100 border border-stone-200 rounded-lg text-xs text-stone-600 flex items-start gap-2">
             <UserCheck className="w-4 h-4 text-[#78350F] shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              <strong>قواعد الصلاحيات:</strong> المستخدم المعلق (Pending) يمتلك حق التصفح العام فقط؛ المشاهد (Viewer) يحق له حفظ القوائم والتصدير؛ المحرر (Editor) يملك حق اعتماد التوثيق وتعديل السجلات؛ المدير (Admin) يملك التحكم الكامل في الصلاحيات والمستودع.
+              <strong>قواعد الصلاحيات:</strong> لا يمكن منح دور المدير من هذه الواجهة؛ الحساب الإداري المحدد يُدار حصراً عبر إعداد النشر المحمي.
             </p>
           </div>
         </div>

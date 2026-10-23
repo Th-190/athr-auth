@@ -213,38 +213,43 @@ export const InteractiveHeritageExplorer: React.FC<InteractiveHeritageExplorerPr
 
       const marker = L.marker([lat, lng], { icon: customIcon });
 
-      const popupHtml = `
-        <div style="direction: rtl; text-align: right; font-family: 'Cairo', sans-serif; min-width: 200px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
-            <span style="font-size: 10px; color: #78350F; font-family: 'JetBrains Mono', monospace; font-weight: bold;">
-              ${site.permanent_id}
-            </span>
-            ${
-              isFuzzed
-                ? `<span style="font-size: 9px; background: #FEF2F2; color: #991B1B; padding: 1px 4px; border-radius: 2px;">
-                    ${isRestricted ? 'إحداثيات محجوبة احترازياً' : 'إحداثيات تقريبية'}
-                   </span>`
-                : ''
-            }
-          </div>
-          <h4 style="font-size: 15px; font-weight: bold; margin: 0 0 4px 0; color: #1C1917; font-family: 'Amiri', serif;">
-            ${site.name_ar}
-          </h4>
-          <p style="font-size: 11px; color: #57534E; margin: 0 0 8px 0; line-height: 1.4;">
-            ${site.short_description.substring(0, 90)}...
-          </p>
-          <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #E7E5E4; padding-top: 6px; font-size: 11px;">
-            <span style="color: #065F46; font-weight: bold;">
-              ${site.verification_status === 'verified' ? '✓ محقق ومسند' : 'قيد التحقيق'}
-            </span>
-            <button id="popup-btn-${site.id}" style="color: #78350F; font-weight: bold; cursor: pointer; background: none; border: none; text-decoration: underline;">
-              تفاصيل السجل ←
-            </button>
-          </div>
-        </div>
-      `;
-
-      marker.bindPopup(popupHtml);
+      // Record values are editor supplied; build popup content with text nodes
+      // so markup in a title or description cannot become executable HTML.
+      const popup = document.createElement('div');
+      popup.dir = 'rtl';
+      popup.style.cssText = "text-align:right;font-family:'Cairo',sans-serif;min-width:200px";
+      const metadata = document.createElement('div');
+      metadata.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px';
+      const accession = document.createElement('span');
+      accession.textContent = site.permanent_id;
+      accession.style.cssText = "font-size:10px;color:#78350F;font-family:'JetBrains Mono',monospace;font-weight:bold";
+      metadata.append(accession);
+      if (isFuzzed) {
+        const locationNote = document.createElement('span');
+        locationNote.textContent = isRestricted ? 'إحداثيات محجوبة احترازياً' : 'إحداثيات تقريبية';
+        locationNote.style.cssText = 'font-size:9px;background:#FEF2F2;color:#991B1B;padding:1px 4px;border-radius:2px';
+        metadata.append(locationNote);
+      }
+      const title = document.createElement('h4');
+      title.textContent = site.name_ar;
+      title.style.cssText = "font-size:15px;font-weight:bold;margin:0 0 4px;color:#1C1917;font-family:'Amiri',serif";
+      const description = document.createElement('p');
+      description.textContent = site.short_description;
+      description.style.cssText = 'font-size:11px;color:#57534E;margin:0 0 8px;line-height:1.4';
+      const footer = document.createElement('div');
+      footer.style.cssText = 'display:flex;align-items:center;justify-content:space-between;border-top:1px solid #E7E5E4;padding-top:6px;font-size:11px';
+      const verification = document.createElement('span');
+      verification.textContent = site.verification_status === 'verified' ? '✓ محقق ومسند' : 'قيد التحقيق';
+      verification.style.cssText = 'color:#065F46;font-weight:bold';
+      const viewButton = document.createElement('button');
+      viewButton.type = 'button';
+      viewButton.textContent = 'تفاصيل السجل ←';
+      viewButton.setAttribute('aria-label', `تفاصيل سجل ${site.name_ar}`);
+      viewButton.style.cssText = 'color:#78350F;font-weight:bold;cursor:pointer;background:none;border:0;text-decoration:underline';
+      viewButton.addEventListener('click', () => onSelectSite(site));
+      footer.append(verification, viewButton);
+      popup.append(metadata, title, description, footer);
+      marker.bindPopup(popup);
 
       marker.on('click', () => {
         setSelectedSiteId(site.id);
@@ -252,13 +257,6 @@ export const InteractiveHeritageExplorer: React.FC<InteractiveHeritageExplorerPr
         const cardElem = document.getElementById(`credit-card-${site.id}`);
         if (cardElem) {
           cardElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      });
-
-      marker.on('popupopen', () => {
-        const btn = document.getElementById(`popup-btn-${site.id}`);
-        if (btn) {
-          btn.onclick = () => onSelectSite(site);
         }
       });
 
@@ -408,23 +406,6 @@ export const InteractiveHeritageExplorer: React.FC<InteractiveHeritageExplorerPr
           </div>
         )}
 
-        {/* Pending Role Notice Banner */}
-        {currentUser?.role === 'pending' && (
-          <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg text-xs flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                <strong>تنبيه الصلاحية:</strong> حسابك قيد المراجعة والاعتماد (Pending Role) — مرحباً بك كباحث متصفح لحين ترقية دورك من قبل مدير الأرشيف.
-              </span>
-            </div>
-            <button
-              onClick={() => setIsAdminModalOpen(true)}
-              className="text-xs text-amber-800 underline font-bold shrink-0 hover:text-amber-950 cursor-pointer"
-            >
-              ترقية الصلاحية (تجربة الإدارة)
-            </button>
-          </div>
-        )}
       </div>
 
       {/* 2. Primary Responsive Layout: Primary Leaflet Map + Sleek 'Credit/Card' Preview List */}

@@ -1,7 +1,8 @@
 <?php
 
 return [
-    'firebase' => [
-        'project_id' => env('FIREBASE_PROJECT_ID', env('VITE_FIREBASE_PROJECT_ID')),
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL'),
     ],
 ];

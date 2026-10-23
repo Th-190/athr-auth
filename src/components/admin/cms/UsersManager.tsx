@@ -1,3 +1,4 @@
+import { apiFetch } from '../../../services/apiFetch';
 import React, { useState, useEffect } from 'react';
 import { authService } from '../../../services/authService';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
@@ -43,7 +44,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     name: '',
     email: '',
     password: '',
-    role: 'editor' as 'admin' | 'editor' | 'viewer',
+    role: 'editor' as 'editor' | 'viewer',
   });
 
   const activeAdminsCount = users.filter(u => u.role === 'admin' && u.is_active).length;
@@ -51,7 +52,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
   const fetchApiUsers = async () => {
     const token = authService.getToken();
     if (!token) { setUsers([]); return; }
-    const response = await fetch('/api/v1/admin/users', {
+    const response = await apiFetch('/api/v1/admin/users', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     });
     if (!response.ok) throw new Error('تعذر تحميل المستخدمين من الخادم.');
@@ -73,7 +74,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     try {
       const token = authService.getToken();
       if (!token) return;
-      const res = await fetch('/api/v1/admin/invitations', {
+      const res = await apiFetch('/api/v1/admin/invitations', {
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
       });
       if (res.ok) {
@@ -93,7 +94,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     }
     try {
       const token = authService.getToken();
-      const res = await fetch('/api/v1/admin/invitations', {
+      const res = await apiFetch('/api/v1/admin/invitations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +123,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     }
     try {
       const token = authService.getToken();
-      const res = await fetch(`/api/v1/admin/invitations/${id}/revoke`, {
+      const res = await apiFetch(`/api/v1/admin/invitations/${id}/revoke`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
       });
@@ -156,7 +157,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     try {
       const token = authService.getToken();
       if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
-      const response = await fetch('/api/v1/admin/users', {
+      const response = await apiFetch('/api/v1/admin/users', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -197,7 +198,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
       const endpoint = willActivate
         ? `/api/v1/admin/users/${user.id}/activate`
         : `/api/v1/admin/users/${user.id}/deactivate`;
-      const response = await fetch(endpoint, {
+      const response = await apiFetch(endpoint, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
@@ -215,7 +216,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     try {
       const token = authService.getToken();
       if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
-      const response = await fetch(`/api/v1/admin/users/${user.id}/revoke-sessions`, {
+      const response = await apiFetch(`/api/v1/admin/users/${user.id}/revoke-sessions`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
@@ -241,7 +242,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     try {
       const token = authService.getToken();
       if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
-      const response = await fetch(`/api/v1/admin/users/${user.id}`, {
+      const response = await apiFetch(`/api/v1/admin/users/${user.id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
@@ -467,7 +468,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
               <Mail className="w-4 h-4" />
               <span>نظام دعوات الانضمام وقواعد عدم التصعيد (L6 Spec):</span>
             </div>
-            يتطلب تسجيل الدخول لأول مرة عبر Google وجود دعوة نشطة مسبقة من الإدارة. يتم تعيين الدور تلقائياً وبدقة لمرة واحدة فقط.
+            يتطلب الوصول إلى لوحة التحرير حساباً معتمداً ودعوة سارية من الإدارة. لا يتوفر تسجيل ذاتي، ويُعيّن الدور من جهة الخادم.
             لا يمكن للمدير العادي منح رتبة مدير أو مدير أعلى، ولا يجوز لأي مستخدم ترقية حسابه بنفسه.
           </div>
 
@@ -565,7 +566,7 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
             </div>
             <form onSubmit={handleSendInvite} className="p-5 space-y-4">
               <div>
-                <label className={labelClass}>البريد الإلكتروني للمدعو (Google Account) *</label>
+                <label className={labelClass}>البريد الإلكتروني للمدعو *</label>
                 <input
                   type="email"
                   required
@@ -584,11 +585,9 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
                 >
                   <option value={4}>مساهم (Contributor) - رفع المواد ومقترحات التوثيق فقط</option>
                   <option value={2}>محرر وباحث (Editor) - تحرير ونشر المواقع والمقالات</option>
-                  <option value={1}>مدير أرشيف (Admin) - يتطلب صلاحية Super Admin</option>
-                  <option value={5}>مدير أعلى (Super Admin) - صلاحية كاملة غير مقيدة</option>
                 </select>
                 <p className="text-[11px] text-stone-500 mt-1">
-                  ملاحظة أمنية: تمنع قواعد التصعيد منح رتبة مدير أو مدير أعلى إلا بواسطة مدير أعلى مسجل.
+                  صلاحية الإدارة تُهيأ حصراً من أمر النشر المحمي للحساب المحدد.
                 </p>
               </div>
               <div>
@@ -665,7 +664,6 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
                   onChange={e => setNewForm({ ...newForm, role: e.target.value as any })}
                 >
                   <option value="editor">محرر وباحث (تحرير المواقع والمقالات والوسائط)</option>
-                  <option value="admin">مدير أرشيف (صلاحيات كاملة شاملة المستخدمين والإعدادات)</option>
                   <option value="viewer">مشاهد وباحث (اطلاع وتدقيق داخلي)</option>
                 </select>
               </div>

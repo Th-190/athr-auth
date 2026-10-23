@@ -17,11 +17,11 @@ class SecurityHeadersMiddleware
 
         // L1: Content-Security-Policy (Report-Only initially to prevent unintended breakage of scripts/fonts)
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://apis.google.com https://www.gstatic.com; " .
-               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; " .
+               "script-src 'self' 'wasm-unsafe-eval'; " .
+               "style-src 'self' https://fonts.googleapis.com https://unpkg.com; " .
                "font-src 'self' https://fonts.gstatic.com data:; " .
                "img-src 'self' blob: data: https:; " .
-               "connect-src 'self' blob: data: https: https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; " .
+               "connect-src 'self' blob: data: https:; " .
                "frame-ancestors 'none'; " .
                "base-uri 'self'; " .
                "form-action 'self';";

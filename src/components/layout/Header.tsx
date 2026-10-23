@@ -4,7 +4,6 @@ import { ArchivalLogo } from '../foundation/BrandAssets';
 import { archiveDB } from '../../db/archiveStore';
 import { formatNumeral } from '../../utils/arabic';
 import { AuthUser } from '../../services/authService';
-import { UserDropdown } from '../auth/UserDropdown';
 import {
   Shield,
   Search,
@@ -15,7 +14,6 @@ import {
   X,
   Compass,
   Eye,
-  LogIn,
   Layers,
   MapPin,
   Calendar,
@@ -26,13 +24,9 @@ interface HeaderProps {
   currentTab: string;
   onNavigate: (tab: string, param?: string) => void;
   currentUser: AuthUser | null;
-  onOpenAuthModal: () => void;
-  onLogout: () => void;
-  onOpenContributeModal: () => void;
   onOpenInstantSearch: () => void;
   onOpenMyList: () => void;
   onOpenPreferences: () => void;
-  onOpenAdminModal?: () => void;
   onSelectSite: (site: Site) => void;
   numeralSystem: 'arabic' | 'latin';
 }
@@ -41,19 +35,16 @@ export const Header: React.FC<HeaderProps> = ({
   currentTab,
   onNavigate,
   currentUser,
-  onOpenAuthModal,
-  onLogout,
-  onOpenContributeModal,
   onOpenInstantSearch,
   onOpenMyList,
   onOpenPreferences,
-  onOpenAdminModal,
   onSelectSite,
   numeralSystem,
 }) => {
   const [isBrowseMenuOpen, setIsBrowseMenuOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const browseMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuCloseRef = useRef<HTMLButtonElement>(null);
 
   const announcement = archiveDB.getAnnouncement();
   const bookmarkedCount = archiveDB.getBookmarkedSiteIds().length;
@@ -69,6 +60,17 @@ export const Header: React.FC<HeaderProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileDrawerOpen) return;
+
+    mobileMenuCloseRef.current?.focus();
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMobileDrawerOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMobileDrawerOpen]);
 
   const handleRandomSite = () => {
     const site = archiveDB.getRandomSite();
@@ -345,39 +347,13 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
-          {/* Primary Action Button: Contribute */}
-          <button
-            onClick={onOpenContributeModal}
-            className="hidden md:inline-flex items-center justify-center px-4 min-h-[44px] text-xs font-medium text-white bg-[#78350F] hover:bg-[#9A3412] active:scale-[0.98] transition-all rounded-lg shadow-2xs whitespace-nowrap cursor-pointer"
-          >
-            ساهم في التوثيق
-          </button>
-
-          {/* Unified Authentication Action in Main Navigation Bar */}
-          {currentUser ? (
-            <UserDropdown
-              user={currentUser}
-              onNavigate={onNavigate}
-              onLogout={onLogout}
-              onOpenMyList={onOpenMyList}
-              onOpenAdminModal={onOpenAdminModal}
-            />
-          ) : (
-            <button
-              onClick={onOpenAuthModal}
-              className="inline-flex items-center justify-center gap-2 px-4 min-h-[44px] text-xs font-semibold text-stone-900 bg-white hover:bg-stone-50 active:bg-stone-100 border border-stone-300 hover:border-amber-700/60 rounded-lg shadow-2xs hover:shadow-xs transition-all cursor-pointer whitespace-nowrap"
-              title="تسجيل الدخول الموحد عبر Google"
-            >
-              <LogIn className="w-4 h-4 text-[#78350F]" />
-              <span className="hidden sm:inline">تسجيل الدخول</span>
-            </button>
-          )}
-
           {/* Mobile Drawer Hamburger */}
           <button
             onClick={() => setIsMobileDrawerOpen(true)}
             className="lg:hidden min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-lg cursor-pointer"
             aria-label="فتح القائمة الرئيسية"
+            aria-expanded={isMobileDrawerOpen}
+            aria-controls="public-mobile-navigation"
           >
             <Menu className="w-6 h-6" />
           </button>
@@ -391,6 +367,10 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => setIsMobileDrawerOpen(false)}
         >
           <div
+            id="public-mobile-navigation"
+            role="dialog"
+            aria-modal="true"
+            aria-label="القائمة الرئيسية"
             className="w-72 bg-[#FBF9F5] h-full shadow-2xl p-5 flex flex-col justify-between overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
@@ -398,57 +378,13 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center justify-between border-b border-stone-200 pb-3">
                 <span className="font-serif font-bold text-lg text-stone-900">أثر كربلاء</span>
                 <button
+                  ref={mobileMenuCloseRef}
                   onClick={() => setIsMobileDrawerOpen(false)}
-                  className="p-1 text-stone-500 hover:text-stone-800"
+                  className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded text-stone-500 hover:text-stone-800 focus-visible:outline-2 focus-visible:outline-[#78350F]"
+                  aria-label="إغلاق القائمة الرئيسية"
                 >
                   <X className="w-5 h-5" />
                 </button>
-              </div>
-
-              {/* Mobile User Profile or Login Trigger */}
-              <div className="p-3 bg-white border border-stone-200 rounded-xl">
-                {currentUser ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src={
-                          currentUser.avatar ||
-                          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(currentUser.name)}`
-                        }
-                        alt={currentUser.name}
-                        className="w-9 h-9 rounded-full object-cover border border-stone-200"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <span className="text-xs font-bold text-stone-900 block truncate">
-                          {currentUser.name}
-                        </span>
-                        <span className="text-[10px] text-[#78350F] font-mono font-semibold">
-                          {currentUser.role_ar || currentUser.role}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setIsMobileDrawerOpen(false);
-                        onLogout();
-                      }}
-                      className="w-full text-right text-[11px] text-red-700 hover:underline pt-1 border-t border-stone-100"
-                    >
-                      تسجيل الخروج
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setIsMobileDrawerOpen(false);
-                      onOpenAuthModal();
-                    }}
-                    className="w-full py-2 px-3 bg-[#78350F] text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-2"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    <span>تسجيل الدخول عبر Google</span>
-                  </button>
-                )}
               </div>
 
               <div className="space-y-1 text-sm font-medium">
@@ -560,15 +496,6 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div className="pt-4 border-t border-stone-200 space-y-2">
-              <button
-                onClick={() => {
-                  setIsMobileDrawerOpen(false);
-                  onOpenContributeModal();
-                }}
-                className="w-full py-2.5 px-3 min-h-[44px] text-xs bg-[#78350F] text-white rounded-lg font-medium text-center flex items-center justify-center cursor-pointer"
-              >
-                ساهم في التوثيق
-              </button>
               <button
                 onClick={() => {
                   setIsMobileDrawerOpen(false);

@@ -1,14 +1,16 @@
-# Railway database, Google sign-in, and image storage
+# Railway database, administrator authentication, and image storage
 
 ## Railway variables
 
 Use Railway's PostgreSQL `DATABASE_URL` in the web and queue-worker services. Set `DB_CONNECTION=pgsql`, `APP_ENV=production`, `APP_DEBUG=false`, and `APP_URL=https://<your-public-domain>`. The Laravel PostgreSQL connection reads `DATABASE_URL` directly; `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` remain available for local development. Set `DB_SSLMODE` to the mode required by the database provider.
 
-Configure `FIREBASE_PROJECT_ID` to the Firebase project used by the frontend. The backend verifies Firebase ID-token signatures and the exact project audience. `VITE_FIREBASE_*` variables are public browser configuration; never put a private service-account key in them.
+Configure `ARCHIVE_ADMIN_EMAIL` as the exact email of the one designated administrator. Initialize or recover that existing user with `php artisan make:admin --name="Administrator name"`; the command prompts for the password without echoing it and stores only a Laravel password hash. Keep the email unchanged to retain the current administrator identity. Additional admin accounts cannot be created through routes, APIs, invitations, or seeders.
+
+For the optional editor-only Gemini suggestion endpoint, set `GEMINI_API_KEY` and optionally `GEMINI_MODEL` in Railway's encrypted service variables. Never use a `VITE_` name or commit the key. See [backend AI and Supabase compatibility](backend-ai-and-supabase.md) for its scope, data handling, and human-review restrictions.
 
 Configure Cloudflare R2 with `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_REGION=auto`, `R2_ORIGINALS_BUCKET`, `CDN_DERIVATIVES_BUCKET`, `R2_DOWNLOADS_BUCKET`, and `CDN_URL`. The originals and downloads buckets must remain private. Publish the derivatives bucket through a Cloudflare custom domain and set that domain as `CDN_URL`. Do not enable public access on the originals or downloads buckets.
 
-Set `SESSION_SECURE_COOKIE=true`, `SESSION_SAME_SITE=lax`, and `SANCTUM_EXPIRATION=720` in production. Add the production frontend host to Firebase Authentication's authorized domains. The Laravel API and Vite app should be same-origin; if they are split across origins, configure the exact frontend origin in Firebase and CORS/Sanctum instead of using a wildcard.
+Set `SESSION_SECURE_COOKIE=true`, `SESSION_HTTP_ONLY=true`, `SESSION_SAME_SITE=lax`, and `SANCTUM_EXPIRATION=720` in production. Set `SANCTUM_STATEFUL_DOMAINS` to the frontend hostnames, including ports where applicable. Keep the Laravel application and frontend same-origin where possible; for split origins, configure exact trusted stateful domains and credentialed CORS without wildcards.
 
 ## Deploy
 

@@ -15,7 +15,6 @@ import {
   Building,
   Clock,
   ExternalLink,
-  PlusCircle,
   HelpCircle,
   Shield,
   AlertCircle,
@@ -25,14 +24,12 @@ import {
 interface MuseumsIndexViewProps {
   onSelectSite: (site: Site) => void;
   onNavigate: (tab: string, param?: string) => void;
-  onOpenContributeModal: () => void;
   currentUser?: AuthUser | null;
 }
 
 export const MuseumsIndexView: React.FC<MuseumsIndexViewProps> = ({
   onSelectSite,
   onNavigate,
-  onOpenContributeModal,
   currentUser,
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
@@ -183,13 +180,6 @@ export const MuseumsIndexView: React.FC<MuseumsIndexViewProps> = ({
               </button>
             </div>
 
-            <button
-              onClick={onOpenContributeModal}
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] text-xs font-semibold text-white bg-[#78350F] hover:bg-[#9A3412] rounded-lg shadow-2xs transition-colors cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">اقترح متحفًا</span>
-            </button>
           </div>
         </div>
       </div>
@@ -302,12 +292,6 @@ export const MuseumsIndexView: React.FC<MuseumsIndexViewProps> = ({
           </div>
 
           <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={onOpenContributeModal}
-              className="inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] text-xs sm:text-sm font-semibold text-white bg-[#78350F] hover:bg-[#9A3412] rounded-xl shadow-xs transition-colors cursor-pointer"
-            >
-              اقترح متحفًا أو وثيقة للتوثيق
-            </button>
             <button
               onClick={() => onNavigate('registry')}
               className="inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] text-xs sm:text-sm font-medium text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-xl transition-colors cursor-pointer"

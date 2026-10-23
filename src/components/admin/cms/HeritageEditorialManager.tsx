@@ -1,3 +1,4 @@
+import { apiFetch } from '../../../services/apiFetch';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { authService } from '../../../services/authService';
 
@@ -9,7 +10,7 @@ type Filters = { museums: Choice[]; sites: Choice[]; periods: Choice[]; categori
 const API = '/api/v1/admin/editorial';
 const request = async (path: string, init: RequestInit = {}) => {
   const token = authService.getToken();
-  const response = await fetch(`${API}${path}`, {
+  const response = await apiFetch(`${API}${path}`, {
     ...init,
     headers: { Accept: 'application/json', ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init.headers },
   });
@@ -88,6 +89,7 @@ export const HeritageEditorialManager: React.FC = () => {
 
   const decide = async (action: string) => {
     if (!selected) return;
+    if (['reject', 'unpublish', 'archive'].includes(action) && !window.confirm('هذا القرار سيغيّر إتاحة السجل أو حالته. هل تريد المتابعة؟')) return;
     const reason = window.prompt('أدخل سبب القرار التحريري (5 أحرف على الأقل):');
     if (!reason) return;
     setSaving(true); setError(''); setNotice('');
@@ -134,6 +136,14 @@ export const HeritageEditorialManager: React.FC = () => {
             {citations.map((citation,index) => <div key={`${index}-${citation.source_id}`} className="mb-2 grid gap-2 rounded-xl bg-stone-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto]"><select className="rounded border p-2" value={citation.source_id} onChange={e => setCitations(citations.map((c,i) => i === index ? {...c,source_id:Number(e.target.value)} : c))}>{(filters?.sources || []).map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</select><input aria-label="رقم الصفحة" placeholder="الصفحة" value={citation.page_reference || ''} onChange={e => setCitations(citations.map((c,i) => i === index ? {...c,page_reference:e.target.value} : c))} className="rounded border p-2"/><input aria-label="ملاحظة المحرر" placeholder="ملاحظة المحرر" value={citation.editor_note || ''} onChange={e => setCitations(citations.map((c,i) => i === index ? {...c,editor_note:e.target.value} : c))} className="rounded border p-2"/><button type="button" onClick={() => setCitations(citations.filter((_,i) => i !== index))} className="text-rose-700">حذف</button></div>)}
           </div>
           {kind === 'sites' && selected.images?.length > 0 && <div className="mt-5 border-t pt-4"><h3 className="mb-2 font-semibold">حقوق الصور</h3>{selected.images.map((image: any) => <div key={image.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm"><span>صورة #{image.id} · الحقوق: {image.rights_status} · {image.visibility ? 'ظاهرة' : 'مخفية'}</span><button type="button" disabled={saving} onClick={() => void updateRights(image)} className="rounded border px-3 py-1">{image.visibility ? 'إلغاء الإتاحة' : 'مراجعة وإتاحة'}</button></div>)}</div>}
+          <details className="mt-5 border-t pt-4">
+            <summary className="cursor-pointer font-semibold text-stone-800">تاريخ المراجعات والتحقق ({(selected.revisions || []).length + (selected.verifications || []).length})</summary>
+            <div className="mt-3 space-y-2">
+              {(selected.revisions || []).map((revision: any) => <article key={revision.id} className="rounded-lg bg-stone-50 p-3 text-sm"><p className="font-medium">{revision.field_name || 'تعديل سجل'} · {revision.user?.name || 'مستخدم محفوظ في السجل'}</p><p className="mt-1 text-xs text-stone-600">{revision.reason || 'لم يرفق سبب'}{revision.created_at ? ' · ' + new Date(revision.created_at).toLocaleString('ar-IQ') : ''}</p></article>)}
+              {(selected.verifications || []).map((verification: any) => <article key={verification.id} className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm"><p className="font-medium">تحقيق: {verification.verification_status || verification.status} · {verification.verifier?.name || 'محقق'}</p><p className="mt-1 text-xs text-stone-600">{verification.reason || verification.notes || 'قرار تحقق مسجل'}{verification.created_at ? ' · ' + new Date(verification.created_at).toLocaleString('ar-IQ') : ''}</p></article>)}
+              {!(selected.revisions || []).length && !(selected.verifications || []).length && <p className="text-sm text-stone-500">لا توجد مراجعات أو قرارات تحقق مسجلة لهذا السجل.</p>}
+            </div>
+          </details>
           <div className="mt-5 grid gap-3 border-t pt-4"><label className="space-y-1 text-sm"><span>سبب التعديل (إلزامي لسجل المراجعة)</span><textarea value={revisionNotes} onChange={e => setRevisionNotes(e.target.value)} minLength={5} maxLength={1000} rows={2} className="w-full rounded-lg border p-2" /></label><button form="heritage-editor-form" disabled={saving || revisionNotes.trim().length < 5 || citations.length === 0} className="rounded-xl bg-[#78350F] px-5 py-3 font-semibold text-white disabled:opacity-50">{saving ? 'جارٍ الحفظ…' : 'حفظ التعديلات'}</button></div>
         </>}
       </div>

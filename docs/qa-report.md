@@ -9,7 +9,7 @@
 |---|--------|---------|
 | C1 | Draft/Archived sites يظهر بـ URL مباشر | publication_status gate في SiteController::show() |
 | C2 | Coordinates خام تتسرب لمواقع restricted | unset lat/lng/coordinates قبل الإرسال |
-| C3 | Blocked users يدخلون عبر Google OAuth | فحص is_active في handleGoogleLogin |
+| C3 | OAuth endpoint removed; administrator access now uses Laravel sessions | inspected during single-admin migration |
 | C4 | Self role change + super_admin escalation | فحص self-change (422) + escalation (403) |
 
 ## 2. الثغرات المُصلَحة — High (7/7)

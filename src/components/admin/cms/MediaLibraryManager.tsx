@@ -1,3 +1,4 @@
+import { apiFetch } from '../../../services/apiFetch';
 import React, { useState, useMemo, useEffect } from 'react';
 import { archiveDB } from '../../../db/archiveStore';
 import { SiteImage, RightsStatus } from '../../../types';
@@ -25,7 +26,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
   const refresh = async () => {
     const token = authService.getToken();
     if (!token) return;
-    const response = await fetch('/api/v1/admin/media?per_page=100', {
+    const response = await apiFetch('/api/v1/admin/media?per_page=100', {
       headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
     });
     if (!response.ok) throw new Error('تعذر تحميل مكتبة الصور من الخادم.');
@@ -107,7 +108,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
     if (!selectedImage) return;
 
     try {
-      const response = await fetch(`/api/v1/admin/media/${selectedImage.id}`, {
+      const response = await apiFetch(`/api/v1/admin/media/${selectedImage.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` },
         body: JSON.stringify({
@@ -163,7 +164,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
     form.append('rights_status', rightsToApi(uploadRights));
     form.append('license', uploadLicense);
     try {
-      const response = await fetch('/api/v1/admin/media/upload', {
+      const response = await apiFetch('/api/v1/admin/media/upload', {
         method: 'POST', headers: { Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` }, body: form,
       });
       if (!response.ok) {
@@ -184,7 +185,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
 
     if (!confirm(confirmMsg)) return;
 
-    void fetch(`/api/v1/admin/media/${img.id}`, {
+    void apiFetch(`/api/v1/admin/media/${img.id}`, {
       method: 'DELETE', headers: { Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` },
     }).then(async response => {
       if (!response.ok) throw new Error('تعذر حذف الصورة من الخادم.');
@@ -194,7 +195,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
   };
 
   const handleSetPrimary = (img: SiteImage) => {
-    void fetch(`/api/v1/admin/media/${img.id}`, {
+    void apiFetch(`/api/v1/admin/media/${img.id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` },
       body: JSON.stringify({ is_primary: true }),
     }).then(async response => {

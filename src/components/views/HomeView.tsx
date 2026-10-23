@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
-import { Site, SiteType, HistoricalPeriod, Area } from '../../types';
+import { Site } from '../../types';
 import { archiveDB } from '../../db/archiveStore';
 import { VerificationBadge, LocationPrecisionBadge } from '../common/VerificationBadge';
-import { ArchiveMap } from '../map/ArchiveMap';
 import { formatNumeral } from '../../utils/arabic';
 import { InteractiveHeritageExplorer } from '../explorer/InteractiveHeritageExplorer';
 import { MonumentModelViewer } from '../common/MonumentModelViewer';
 import {
   Search,
   BookOpen,
-  Camera,
-  Compass,
   ArrowLeft,
-  Calendar,
-  Layers,
-  MapPin,
   Clock,
   Bookmark,
-  Check,
   Landmark,
   X,
 } from 'lucide-react';
@@ -25,14 +18,12 @@ import {
 interface HomeViewProps {
   onNavigate: (tab: string, param?: string) => void;
   onSelectSite: (site: Site) => void;
-  onOpenContributeModal: () => void;
   numeralSystem?: 'arabic' | 'latin';
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
   onNavigate,
   onSelectSite,
-  onOpenContributeModal,
   numeralSystem = 'latin',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,14 +32,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const stats = archiveDB.getArchiveStatistics();
   const allSites = archiveDB.getAllSites(false);
   const featuredSites = allSites.filter(s => s.featured);
-  const popularSearches = archiveDB.getPopularSearches();
   const featuredModels = archiveDB.getFeaturedSiteModels();
 
   const recentlyReviewed = [...allSites].sort(
     (a, b) => new Date(b.last_reviewed_at).getTime() - new Date(a.last_reviewed_at).getTime()
   ).slice(0, 4);
 
-  const siteTypes = archiveDB.getSiteTypes();
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,52 +135,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
           numeralSystem={numeralSystem}
         />
 
-        {/* Real Live Database Statistics Strip (Each card links directly to matching filtered list) */}
-        <div className="mt-8 max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3.5 px-2">
-          <div
-            onClick={() => onNavigate('registry')}
-            className="bg-white border border-[#E8E2D8] hover:border-amber-800/40 p-4 rounded-xl text-center cursor-pointer shadow-xs hover:shadow-md transition-all duration-300 hover:scale-[1.01] group"
-            title="استعراض كافة المعالم المسجلة بالسجل"
-          >
-            <span className="block text-2xl sm:text-3xl font-serif font-bold text-stone-900 tabular-nums group-hover:text-[#78350F] transition-colors">
-              {formatNumeral(stats.totalSites, numeralSystem)}
-            </span>
-            <span className="text-xs sm:text-sm text-stone-600 mt-1 block font-sans">معلم مسجل بالسجل</span>
-          </div>
-
-          <div
-            onClick={() => onNavigate('registry', '__filter_verified__')}
-            className="bg-white border border-[#E8E2D8] hover:border-emerald-600 p-4 rounded-xl text-center cursor-pointer shadow-xs hover:shadow-md transition-all duration-300 hover:scale-[1.01] group"
-            title="استعراض السجلات المحققة والمعتمدة"
-          >
-            <span className="block text-2xl sm:text-3xl font-serif font-bold text-emerald-800 tabular-nums group-hover:text-emerald-950 transition-colors">
-              {formatNumeral(stats.verificationCounts.verified, numeralSystem)}
-            </span>
-            <span className="text-xs sm:text-sm text-stone-600 mt-1 block font-sans">سجل محقق ومعتمد</span>
-          </div>
-
-          <div
-            onClick={() => onNavigate('sources')}
-            className="bg-white border border-[#E8E2D8] hover:border-amber-800/40 p-4 rounded-xl text-center cursor-pointer shadow-xs hover:shadow-md transition-all duration-300 hover:scale-[1.01] group"
-            title="استعراض فهرس المراجع والمصادر"
-          >
-            <span className="block text-2xl sm:text-3xl font-serif font-bold text-stone-900 tabular-nums group-hover:text-[#78350F] transition-colors">
-              {formatNumeral(stats.totalSources, numeralSystem)}
-            </span>
-            <span className="text-xs sm:text-sm text-stone-600 mt-1 block font-sans">مرجع ودراسة مسندة</span>
-          </div>
-
-          <div
-            onClick={() => onNavigate('collections')}
-            className="bg-white border border-[#E8E2D8] hover:border-amber-800/40 p-4 rounded-xl text-center cursor-pointer shadow-xs hover:shadow-md transition-all duration-300 hover:scale-[1.01] group"
-            title="استعراض المجموعات الفوتوغرافية الأرشيفية"
-          >
-            <span className="block text-2xl sm:text-3xl font-serif font-bold text-stone-900 tabular-nums group-hover:text-[#78350F] transition-colors">
-              {formatNumeral(stats.totalImages, numeralSystem)}
-            </span>
-            <span className="text-xs sm:text-sm text-stone-600 mt-1 block font-sans">لوحة فوتوغرافية مؤرشفة</span>
-          </div>
-        </div>
       </section>
 
       {/* 2. Featured Heritage Sites (Museum Plate Cards above 1080p fold) */}
@@ -269,8 +212,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       )}
                     </div>
 
-                    <h3 className="text-base font-serif font-bold text-stone-900 group-hover:text-[#78350F] transition-colors leading-snug">
-                      {site.name_ar}
+                    <h3 className="text-base font-serif font-bold leading-snug">
+                      <button
+                        type="button"
+                        onClick={() => onSelectSite(site)}
+                        className="text-right text-stone-900 group-hover:text-[#78350F] transition-colors focus-visible:underline"
+                      >
+                        {site.name_ar}
+                      </button>
                     </h3>
 
                     <p className="text-xs sm:text-sm text-stone-600 line-clamp-2 leading-relaxed">
@@ -281,9 +230,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
                 <div className="px-4 py-2.5 bg-[#FBF9F5] border-t border-stone-100 flex items-center justify-between text-xs text-stone-600 font-mono">
                   <span>{formatNumeral(site.source_count, numeralSystem)} مصادر مسندة</span>
-                  <span className="text-[#78350F] font-sans font-medium group-hover:underline">
-                    تفاصيل السجل ←
-                  </span>
+                  <span className="text-stone-500 font-sans">السجل الأرشيفي</span>
                 </div>
               </div>
             );
@@ -323,8 +270,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <span className="text-xs font-mono font-bold text-[#78350F]">{museum.permanent_id}</span>
                   <VerificationBadge status={museum.verification_status} size="sm" />
                 </div>
-                <h3 className="text-lg font-serif font-bold text-stone-900">{museum.name_ar}</h3>
-                <p className="text-xs text-stone-600 line-clamp-2">{museum.short_description || 'متحف تراثي موثق'}</p>
+                <h3 className="text-lg font-serif font-bold">
+                  <button
+                    type="button"
+                    onClick={() => onSelectSite(museum)}
+                    className="text-right text-stone-900 hover:text-[#78350F] focus-visible:underline"
+                  >
+                    {museum.name_ar}
+                  </button>
+                </h3>
+                <p className="text-xs text-stone-600 line-clamp-2">{museum.short_description || 'لا يتوفر وصف منشور لهذا المتحف.'}</p>
               </div>
             ))}
           </div>
@@ -342,12 +297,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
               <button
-                onClick={onOpenContributeModal}
-                className="inline-flex items-center justify-center px-4 py-2 min-h-[44px] text-xs font-medium text-white bg-[#78350F] hover:bg-[#9A3412] rounded-lg shadow-2xs transition-colors cursor-pointer"
-              >
-                اقترح متحفًا أو وثيقة للتوثيق
-              </button>
-              <button
                 onClick={() => onNavigate('museums')}
                 className="inline-flex items-center justify-center px-4 py-2 min-h-[44px] text-xs font-medium text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 rounded-lg transition-colors cursor-pointer"
               >
@@ -358,71 +307,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         )}
       </section>
 
-      {/* 4. Interactive Map Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-3.5">
-        <div className="flex items-end justify-between border-b border-stone-200 pb-2.5">
-          <div>
-            <span className="text-xs font-mono text-[#78350F] uppercase tracking-wider block">
-              التوزيع المكاني
-            </span>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
-              خارطة المواقع والبوادي الكربلائية
-            </h2>
-          </div>
-          <button
-            onClick={() => onNavigate('map')}
-            className="text-xs sm:text-sm font-medium text-[#78350F] hover:text-[#9A3412] inline-flex items-center gap-1 min-h-[44px] px-2 py-1 cursor-pointer"
-          >
-            <span>فتح الخريطة التفاعلية الكاملة</span>
-            <ArrowLeft className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <ArchiveMap
-          sites={allSites}
-          onSelectSite={onSelectSite}
-          height="420px"
-        />
-      </section>
-
-      {/* 5. Taxonomies Breakdown */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
-        <div className="border-b border-stone-200 pb-2.5">
-          <span className="text-xs font-mono text-[#78350F] uppercase tracking-wider block">
-            التصنيفات المعتمدة
-          </span>
-          <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
-            تصفح حسب نوع المعلم التاريخي (12 صنفاً)
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {siteTypes.map((type) => {
-            const count = stats.typeCounts[type.id] || 0;
-            return (
-              <div
-                key={type.id}
-                onClick={() => onNavigate('types', type.slug)}
-                className="p-3.5 bg-white border border-[#E8E2D8] rounded-xl hover:border-amber-800/40 hover:bg-[#FBF9F5] shadow-xs hover:shadow-sm transition-all cursor-pointer space-y-1.5"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-stone-900 font-serif">
-                    {type.name_ar}
-                  </h4>
-                  <span className="text-xs font-mono text-stone-600 tabular-nums">
-                    {formatNumeral(count, numeralSystem)}
-                  </span>
-                </div>
-                <p className="text-xs text-stone-500 line-clamp-1 leading-relaxed">
-                  {type.definition}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 5. Recently Reviewed Records */}
+      {/* 4. Recently Reviewed Records */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-3.5">
         <div className="flex items-end justify-between border-b border-stone-200 pb-2.5">
           <div>
@@ -455,8 +340,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </span>
                   <VerificationBadge status={site.verification_status} size="sm" />
                 </div>
-                <h4 className="text-sm font-bold font-serif text-stone-900">
-                  {site.name_ar}
+                <h4 className="text-sm font-bold font-serif">
+                  <button
+                    type="button"
+                    onClick={() => onSelectSite(site)}
+                    className="text-right text-stone-900 hover:text-[#78350F] focus-visible:underline"
+                  >
+                    {site.name_ar}
+                  </button>
                 </h4>
                 <p className="text-xs text-stone-600 line-clamp-1">
                   {site.short_description}
@@ -475,27 +366,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 6. Community Contribution Callout */}
+      {/* 6. Editorial review note */}
       <section className="max-w-5xl mx-auto px-4 pb-4">
         <div className="bg-[#EFECE6] border border-[#DCD6C9] rounded p-6 sm:p-8 text-center space-y-3">
           <div className="w-9 h-9 rounded-full bg-[#78350F] text-white flex items-center justify-center mx-auto">
             <BookOpen className="w-4 h-4" />
           </div>
           <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
-            هل لديك معلومة تاريخية، صورة أرشيفية أو تصويب؟
+            منهجية توثيق السجلات
           </h2>
           <p className="text-xs sm:text-sm text-stone-700 max-w-xl mx-auto leading-relaxed">
-            يستقبل الأرشيف مساهمات الباحثين والأهالي والمصورين لتسجيل المعالم وتصويب الروايات.
-            تخضع كافة المساهمات للتدقيق المكتبي والمطابقة العلمية قبل اعتمادها في السجل.
+            لا تظهر في الأرشيف إلا السجلات التي راجعتها هيئة التحرير ونشرتها بعد تدقيق مصادرها.
           </p>
-          <div className="pt-1">
-            <button
-              onClick={onOpenContributeModal}
-              className="px-5 py-2 text-xs sm:text-sm font-medium text-white bg-[#78350F] hover:bg-[#9A3412] rounded transition-colors shadow-xs cursor-pointer"
-            >
-              تقديم مساهمة أو تصويب بحثي
-            </button>
-          </div>
         </div>
       </section>
     </div>

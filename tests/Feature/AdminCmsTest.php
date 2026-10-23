@@ -28,56 +28,24 @@ test('unauthorized users get 401 or 403 on admin routes', function () {
     $response->assertStatus(403);
 });
 
-test('make:admin cli command creates initial admin', function () {
-    Artisan::call('make:admin', [
-        '--name' => 'مدير النظام الأول',
-        '--email' => 'first.admin@karbalaheritage.iq',
-        '--password' => 'SecurePass2026!',
-    ]);
-
-    $admin = User::where('email', 'first.admin@karbalaheritage.iq')->first();
-    expect($admin)->not->toBeNull();
-    expect($admin->role->name)->toBe('admin');
-    expect($admin->is_active)->toBeTrue();
+test('make:admin requires the designated administrator identity', function () {
+    config(['archive.admin_email' => null]);
+    $this->artisan('make:admin')->assertExitCode(1);
 });
 
-test('admin can manage users and cannot delete the last active admin', function () {
+test('admin can manage users but cannot create another administrator', function () {
     $adminRole = Role::firstOrCreate(['name' => 'admin'], ['name_ar' => 'مدير الأرشيف']);
     $admin = User::create([
-        'name' => 'المدير الوحيد',
-        'email' => 'sole.admin@karbalaheritage.iq',
-        'password' => Hash::make('password123'),
-        'role_id' => $adminRole->id,
-        'email_verified_at' => now(),
-        'is_active' => true,
+        'name' => 'المدير الوحيد', 'email' => 'sole.admin@karbalaheritage.iq',
+        'password' => Hash::make('password123'), 'role_id' => $adminRole->id,
+        'email_verified_at' => now(), 'is_active' => true,
     ]);
-
-    // Attempting to delete the last active admin must fail with 422
-    $response = $this->actingAs($admin)->deleteJson("/api/v1/admin/users/{$admin->id}");
-    $response->assertStatus(422)
-        ->assertJsonFragment(['message' => 'مرفوض: لا يمكن حذف آخر مدير نشط في النظام.']);
-
-    // Attempting to deactivate the last active admin must fail with 422
-    $response = $this->actingAs($admin)->postJson("/api/v1/admin/users/{$admin->id}/deactivate");
-    $response->assertStatus(422)
-        ->assertJsonFragment(['message' => 'مرفوض: لا يمكن تعطيل حساب آخر مدير نشط في النظام.']);
-
-    // Admin creates second admin
-    $response = $this->actingAs($admin)->postJson('/api/v1/admin/users', [
-        'name' => 'مساعد مدير',
-        'email' => 'assistant@karbalaheritage.iq',
-        'password' => 'Assistant2026!',
-        'role' => 'admin',
-    ]);
-    $response->assertStatus(201);
-
-    $secondAdmin = User::where('email', 'assistant@karbalaheritage.iq')->first();
-    expect($secondAdmin)->not->toBeNull();
-
-    // Now second admin can be deactivated
-    $response = $this->actingAs($admin)->postJson("/api/v1/admin/users/{$secondAdmin->id}/deactivate");
-    $response->assertStatus(200);
-    expect($secondAdmin->fresh()->is_active)->toBeFalse();
+    $this->actingAs($admin)->deleteJson("/api/v1/admin/users/{$admin->id}")->assertUnprocessable();
+    $this->actingAs($admin)->postJson("/api/v1/admin/users/{$admin->id}/deactivate")->assertUnprocessable();
+    $this->actingAs($admin)->postJson('/api/v1/admin/users', [
+        'name' => 'مساعد مدير', 'email' => 'assistant@karbalaheritage.iq', 'password' => 'Assistant2026!', 'role' => 'admin',
+    ])->assertUnprocessable();
+    expect(User::where('email', 'assistant@karbalaheritage.iq')->exists())->toBeFalse();
 });
 
 test('taxonomies in use cannot be deleted', function () {
@@ -173,10 +141,10 @@ test('publishing workflow and verification with mandatory rationale works', func
         'verification_status' => 'unverified',
     ]);
 
-    // 1. Publish site
+    // Direct publication was removed; editorial publication requires citations and a review decision.
     $res = $this->actingAs($admin)->postJson("/api/v1/admin/sites/{$site->id}/publish");
-    $res->assertStatus(200);
-    expect($site->fresh()->publication_status->value)->toBe('published');
+    $res->assertNotFound();
+    expect($site->fresh()->publication_status->value)->toBe('draft');
 
     // 2. Unpublish site
     $res = $this->actingAs($admin)->postJson("/api/v1/admin/sites/{$site->id}/unpublish");
@@ -196,4 +164,9 @@ test('publishing workflow and verification with mandatory rationale works', func
     ]);
     $res->assertStatus(200);
     expect($site->fresh()->verification_status->value)->toBe('verified');
+    $this->assertDatabaseHas('site_verifications', [
+        'site_id' => $site->id,
+        'new_status' => 'verified',
+        'decision_reason' => 'تم التحقق بمطابقة مسوح دائرة الآثار والتراث العامة لسنة 1974 والمسح الميداني الأخير.',
+    ]);
 });

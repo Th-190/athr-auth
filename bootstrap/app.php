@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdminRole::class,
             'staff' => \App\Http\Middleware\EnsureStaffRole::class,
-            'firebase' => \App\Http\Middleware\VerifyFirebaseToken::class,
+            'designated.staff' => \App\Http\Middleware\EnsureDesignatedStaff::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

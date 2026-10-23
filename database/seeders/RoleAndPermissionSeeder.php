@@ -4,9 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use App\Models\Role;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class RoleAndPermissionSeeder extends Seeder
 {
@@ -28,15 +26,6 @@ class RoleAndPermissionSeeder extends Seeder
             );
         }
 
-        // Seed a default admin user for testing
-        User::firstOrCreate(
-            ['email' => 'admin@karbala-archive.iq'],
-            [
-                'name' => 'مدير الأرشيف النموذجي',
-                'password' => Hash::make('password123'),
-                'role_id' => $roleModels['admin']->id,
-                'email_verified_at' => now(),
-            ]
-        );
+
     }
 }

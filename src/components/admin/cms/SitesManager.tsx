@@ -1,7 +1,9 @@
+import { apiFetch } from '../../../services/apiFetch';
 import React, { useMemo, useState } from 'react';
 import { archiveDB } from '../../../db/archiveStore';
-import { PublicationStatus, Site, VerificationStatus } from '../../../types';
+import { Site } from '../../../types';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
+import { authService } from '../../../services/authService';
 
 interface Props {
   actorName: string;
@@ -35,10 +37,23 @@ const emptyForm = (): Partial<Site> => ({
   ai_assisted: false,
 });
 
-export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntity, onSelectSite }) => {
-  const [, setTick] = useState(0);
-  const refresh = () => setTick(t => t + 1);
-  const sites = archiveDB.getAllSites(true);
+export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
+  const [sites, setSites] = useState<Site[]>([]);
+  const [loadingSites, setLoadingSites] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  React.useEffect(() => {
+    const token = authService.getToken();
+    if (!token) { setError('سجّل الدخول لعرض سجلات المواقع من قاعدة البيانات.'); setLoadingSites(false); return; }
+    apiFetch('/api/v1/admin/editorial?kind=sites&per_page=50', { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } })
+      .then(async response => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || `تعذر تحميل المواقع (${response.status}).`);
+        setSites(body.data || []);
+      })
+      .catch(reason => setError(reason instanceof Error ? reason.message : 'تعذر تحميل المواقع.'))
+      .finally(() => setLoadingSites(false));
+  }, []);
   const [internalEntityId, setInternalEntityId] = useState<string | undefined>(entityId);
   const currentEntityId = entityId !== undefined ? entityId : internalEntityId;
 
@@ -55,8 +70,14 @@ export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntit
 
   React.useEffect(() => {
     if (entityId === 'new') setForm(emptyForm());
-    else if (editing) setForm(editing);
-  }, [entityId]);
+    else if (editing) {
+      const row = editing as any;
+      const localType = archiveDB.getSiteTypes().find(item => item.slug === row.site_type?.slug || String(item.id) === String(row.site_type_id));
+      const localPeriod = archiveDB.getHistoricalPeriods().find(item => item.slug === row.historical_period?.slug || String(item.id) === String(row.historical_period_id));
+      const localArea = archiveDB.getAreas().find(item => item.name_ar === row.area?.name_ar || String(item.id) === String(row.area_id));
+      setForm({ ...editing, site_type_id: localType?.id ?? String(row.site_type_id), historical_period_id: localPeriod?.id ?? String(row.historical_period_id), area_id: localArea?.id ?? String(row.area_id), lat: Number(row.latitude ?? row.lat ?? 0), lng: Number(row.longitude ?? row.lng ?? 0) });
+    }
+  }, [entityId, editing?.id]);
 
   const filtered = useMemo(() => {
     const q = filter.trim();
@@ -68,7 +89,7 @@ export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntit
 
   const set = (key: keyof Site, value: unknown) => setForm(prev => ({ ...prev, [key]: value }));
 
-  const save = (e: React.FormEvent) => {
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name_ar?.trim() || !form.short_description?.trim()) {
       alert('الاسم العربي والوصف المختصر إلزاميان.');
@@ -83,28 +104,57 @@ export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntit
         alert('يلزم ذكر سبب التعديل في سجل المراجعة.');
         return;
       }
-      archiveDB.updateSite(editing.id, form, reason.trim(), actorName);
-    } else {
-      const created = archiveDB.createSite(
-        {
-          ...(form as Site),
-          name_ar: form.name_ar!,
-          short_description: form.short_description!,
-          site_type_id: form.site_type_id!,
-          historical_period_id: form.historical_period_id!,
-          area_id: form.area_id!,
-        },
-        actorName
-      );
-      openEntity(created.id);
     }
-    refresh();
-    alert('تم حفظ السجل. التغييرات تظهر في الموقع العام بحسب حالة النشر.');
+    const token = authService.getToken();
+    if (!token) { setError('انتهت الجلسة. سجّل الدخول مجدداً قبل الحفظ.'); return; }
+    setSaving(true); setError('');
+    try {
+      const taxonomyResponse = await apiFetch('/api/v1/taxonomies', { headers: { Accept: 'application/json' } });
+      const taxonomy = await taxonomyResponse.json();
+      if (!taxonomyResponse.ok) throw new Error(taxonomy.message || 'تعذر تحميل تصنيفات قاعدة البيانات.');
+      const localType = archiveDB.getSiteTypes().find(item => String(item.id) === String(form.site_type_id));
+      const localPeriod = archiveDB.getHistoricalPeriods().find(item => String(item.id) === String(form.historical_period_id));
+      const localArea = archiveDB.getAreas().find(item => String(item.id) === String(form.area_id));
+      const siteType = taxonomy.site_types?.find((item: any) => item.slug === localType?.slug);
+      const period = taxonomy.historical_periods?.find((item: any) => item.slug === localPeriod?.slug);
+      const area = taxonomy.areas?.find((item: any) => item.name_ar === localArea?.name_ar);
+      const province = taxonomy.provinces?.find((item: any) => item.code === 'KHA');
+      if (!siteType || !period || !area || !province) throw new Error('تعذر مطابقة التصنيف أو المنطقة مع قاعدة البيانات.');
+      const payload: Record<string, unknown> = {
+        name_ar: form.name_ar, name_en: form.name_en, summary_ar: form.short_description,
+        description_ar: form.description, historical_description: form.historical_description,
+        architectural_description: form.architectural_description, cultural_significance: form.cultural_significance,
+        current_condition: form.current_condition, location_description: form.location_description,
+        site_type_id: siteType.id, historical_period_id: period.id, area_id: area.id,
+        location_precision: form.location_precision, latitude: form.lat, longitude: form.lng,
+        is_demo: form.is_demo, featured: form.featured, ai_assisted: form.ai_assisted,
+        is_lost_or_vanished: form.is_lost_or_vanished, is_under_research: form.is_under_research,
+      };
+      if (!editing) payload.province_id = province.id;
+      if (editing) payload.revision_notes = reason.trim();
+      const response = await apiFetch(editing ? `/api/v1/admin/sites/${editing.id}` : '/api/v1/admin/sites', {
+        method: editing ? 'PUT' : 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.errors ? Object.values(body.errors).flat().join(' ') : body.message || `تعذر الحفظ (${response.status}).`);
+      const saved = { ...body.site, site_type: siteType, historical_period: period, area } as Site;
+      setSites(current => editing ? current.map(site => String(site.id) === String(saved.id) ? saved : site) : [saved, ...current]);
+      setForm({ ...form, ...saved, site_type_id: form.site_type_id, historical_period_id: form.historical_period_id, area_id: form.area_id, lat: Number((saved as any).latitude ?? form.lat ?? 0), lng: Number((saved as any).longitude ?? form.lng ?? 0) });
+      if (!editing) {
+        openEntity(String(saved.id));
+      }
+      alert(body.message || 'تم حفظ السجل في قاعدة البيانات.');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذر حفظ السجل.');
+    } finally { setSaving(false); }
   };
 
   if (isForm) {
     return (
       <form onSubmit={save} className="space-y-5 max-w-4xl">
+        {error && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</div>}
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-serif font-bold text-stone-900">
@@ -178,7 +228,7 @@ export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntit
           </div>
           <div>
             <label className={labelClass}>حالة النشر</label>
-            <select className={inputClass} value={form.publication_status} onChange={e => set('publication_status', e.target.value as PublicationStatus)}>
+            <select className={inputClass} value={form.publication_status} disabled>
               <option value="draft">مسودة</option>
               <option value="pending_review">بانتظار المراجعة</option>
               <option value="published">منشور</option>
@@ -187,7 +237,7 @@ export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntit
           </div>
           <div>
             <label className={labelClass}>حالة التحقيق</label>
-            <select className={inputClass} value={form.verification_status} onChange={e => set('verification_status', e.target.value as VerificationStatus)}>
+            <select className={inputClass} value={form.verification_status} disabled>
               <option value="unverified">غير محقّق</option>
               <option value="partially_verified">محقّق جزئياً</option>
               <option value="verified">محقّق</option>
@@ -219,15 +269,25 @@ export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntit
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button type="submit" className={primaryBtn}>حفظ السجل</button>
+          <button type="submit" disabled={saving} className={primaryBtn + ' disabled:opacity-60'}>{saving ? 'جارٍ الحفظ…' : 'حفظ السجل'}</button>
           {editing && (
             <button
               type="button"
               className={dangerBtn}
-              onClick={() => {
+              onClick={async () => {
                 if (!confirm('سيتم أرشفة السجل المنشور أو حذف المسودة. المتابعة؟')) return;
-                archiveDB.deleteDraftSite(editing.id, actorName);
-                openEntity(undefined);
+                const token = authService.getToken();
+                if (!token) { setError('انتهت الجلسة. سجّل الدخول مجدداً.'); return; }
+                setSaving(true); setError('');
+                try {
+                  const response = await apiFetch(`/api/v1/admin/sites/${editing.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+                  const body = await response.json().catch(() => ({}));
+                  if (!response.ok) throw new Error(body.message || `تعذر الأرشفة (${response.status}).`);
+                  setSites(current => current.filter(site => String(site.id) !== String(editing.id)));
+                  openEntity(undefined);
+                  alert(body.message || 'تمت أرشفة السجل.');
+                } catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر أرشفة السجل.'); }
+                finally { setSaving(false); }
               }}
             >
               أرشفة / حذف
@@ -240,10 +300,11 @@ export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntit
 
   return (
     <div className="space-y-5">
+      {error && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</div>}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-serif font-bold text-stone-900">المواقع الأثرية والتراثية</h1>
-          <p className="text-sm text-stone-600 mt-1">{sites.length} سجلاً في الأرشيف (بما فيها المسودات).</p>
+          <p className="text-sm text-stone-600 mt-1">{loadingSites ? 'جارٍ تحميل السجلات…' : `${sites.length} سجلاً من قاعدة البيانات.`}</p>
         </div>
         <button className={primaryBtn} onClick={() => openEntity('new')}>تسجيل معلم جديد</button>
       </div>
@@ -259,6 +320,7 @@ export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntit
             </tr>
           </thead>
           <tbody>
+            {loadingSites && <tr><td colSpan={4} className="p-5 text-center text-stone-500">جارٍ تحميل السجلات…</td></tr>}
             {filtered.map(site => (
               <tr key={site.id} className="border-t border-stone-100">
                 <td className="p-3">
@@ -272,6 +334,7 @@ export const SitesManager: React.FC<Props> = ({ actorName, entityId, onOpenEntit
                 </td>
               </tr>
             ))}
+            {!loadingSites && filtered.length === 0 && <tr><td colSpan={4} className="p-5 text-center text-stone-500">لا توجد سجلات مطابقة.</td></tr>}
           </tbody>
         </table>
       </div>

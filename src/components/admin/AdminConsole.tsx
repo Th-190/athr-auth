@@ -20,6 +20,7 @@ import { VerificationManager } from './cms/VerificationManager';
 import { SettingsManager } from './cms/SettingsManager';
 import { AuditLogManager } from './cms/AuditLogManager';
 import { HeritageEditorialManager } from './cms/HeritageEditorialManager';
+import { AdminTwoFactorGate } from './AdminTwoFactorGate';
 import { authService } from '../../services/authService';
 import {
   LayoutDashboard,
@@ -44,7 +45,6 @@ import {
   X,
   Compass,
   AlertCircle,
-  FolderGit2,
   FileEdit,
 } from 'lucide-react';
 
@@ -67,7 +67,6 @@ const SECTION_ICONS: Record<AdminSection, React.ReactNode> = {
   homepage: <Home className="w-4 h-4" />,
   navigation: <MenuIcon className="w-4 h-4" />,
   verification: <FileCheck className="w-4 h-4" />,
-  editorial: <FolderGit2 className="w-4 h-4" />,
   heritage_editorial: <FileEdit className="w-4 h-4" />,
   users: <Users className="w-4 h-4" />,
   settings: <SettingsIcon className="w-4 h-4" />,
@@ -90,7 +89,9 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const user = authService.getCurrentUser();
-  const actorName = user?.name || (currentUserRole === 'Admin' ? 'مدير الأرشيف' : 'محرر توثيق');
+  const isSystemAdministrator = ['admin', 'super_admin'].includes(user?.role ?? '') || ['Admin', 'Super Admin'].includes(currentUserRole);
+  const [stepUpComplete, setStepUpComplete] = useState(false);
+  const actorName = user?.name || (isSystemAdministrator ? 'مدير الأرشيف' : 'محرر توثيق');
 
   // Sync browser URL when section changes
   const handleSelectSection = (newSection: AdminSection) => {
@@ -114,8 +115,10 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
   // Access Control: Only Admin and Editor roles may access Admin CMS
   const hasAccess =
     currentUserRole === 'Admin' ||
+    currentUserRole === 'Super Admin' ||
     currentUserRole === 'Editor' ||
     user?.role === 'admin' ||
+    user?.role === 'super_admin' ||
     user?.role === 'editor';
 
   if (!hasAccess) {
@@ -145,6 +148,10 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
         </div>
       </div>
     );
+  }
+
+  if (isSystemAdministrator && !stepUpComplete) {
+    return <AdminTwoFactorGate onVerified={() => { setStepUpComplete(true); window.setTimeout(() => setStepUpComplete(false), 10 * 60 * 1000); }} />;
   }
 
   // Navigation items grouped by category
@@ -199,6 +206,18 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
             <Compass className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden xs:inline">عرض الموقع العام</span>
             <ExternalLink className="w-3 h-3 text-stone-400" />
+          </button>
+          <button
+            onClick={() => {
+              authService.logout();
+              if (onNavigateHome) onNavigateHome();
+              else window.location.href = '/';
+            }}
+            className="flex items-center gap-1.5 py-1.5 px-3 bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs rounded-lg transition-colors cursor-pointer border border-stone-700"
+            title="تسجيل الخروج من لوحة الإدارة"
+          >
+            <LogOut className="w-3.5 h-3.5 text-amber-400" />
+            <span>خروج</span>
           </button>
         </div>
       </header>
@@ -310,7 +329,6 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
           {section === 'homepage' && <HomepageManager actorName={actorName} />}
           {section === 'navigation' && <NavigationFooterManager actorName={actorName} />}
           {section === 'verification' && <VerificationManager actorName={actorName} />}
-          {section === 'editorial' && <VerificationManager actorName={actorName} />}
           {section === 'heritage_editorial' && <HeritageEditorialManager />}
           {section === 'users' && <UsersManager actorName={actorName} />}
           {section === 'settings' && <SettingsManager actorName={actorName} />}

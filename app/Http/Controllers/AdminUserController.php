@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\CreateAuditLogAction;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\AdminAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -75,7 +76,7 @@ class AdminUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8',
-            'role' => 'required|string|in:admin,editor,viewer,super_admin',
+            'role' => 'required|string|in:editor,viewer,contributor',
             'is_active' => 'boolean',
         ]);
 
@@ -83,7 +84,6 @@ class AdminUserController extends Controller
             ['name' => $validated['role']],
             [
                 'name_ar' => match ($validated['role']) {
-                    'admin' => 'مدير أرشيف',
                     'editor' => 'محرر وباحث',
                     'viewer' => 'مشاهد وباحث',
                     default => $validated['role'],
@@ -129,11 +129,15 @@ class AdminUserController extends Controller
     public function updateRole(Request $request, string $id): JsonResponse
     {
         $validated = $request->validate([
-            'role' => 'required|string|in:admin,editor,viewer,pending,contributor,super_admin',
+            'role' => 'required|string|in:editor,viewer,pending,contributor',
         ]);
 
         $user = User::with('role')->findOrFail($id);
         $actingUser = $request->user();
+
+        if (AdminAccess::isDesignatedAdministrator($user)) {
+            return response()->json(['message' => 'لا يمكن تغيير دور المدير المحدد عبر واجهة المستخدمين. استخدم إجراء الاستعادة المحمي عند الحاجة.'], 422);
+        }
 
         // Privilege Escalation Prevention: Cannot change your own role
         if ($actingUser && (string) $actingUser->id === (string) $user->id) {
@@ -232,6 +236,10 @@ class AdminUserController extends Controller
     {
         $user = User::with('role')->findOrFail($id);
 
+        if (AdminAccess::isDesignatedAdministrator($user)) {
+            return response()->json(['message' => 'لا يمكن تعطيل المدير المحدد عبر واجهة المستخدمين.'], 422);
+        }
+
         if ($user->role?->name === 'super_admin') {
             $otherSuperAdmins = User::whereHas('role', fn ($q) => $q->where('name', 'super_admin'))
                 ->where('is_active', true)
@@ -295,7 +303,11 @@ class AdminUserController extends Controller
      */
     public function activate(Request $request, string $id): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = User::with('role')->findOrFail($id);
+        if (in_array(strtolower($user->role?->name ?? ''), ['admin', 'super_admin'], true)
+            && !AdminAccess::isDesignatedAdministrator($user)) {
+            return response()->json(['message' => 'لا يمكن تفعيل حساب إداري إضافي من واجهة المستخدمين.'], 422);
+        }
         $user->is_active = true;
         $user->deactivated_at = null;
         $user->save();
@@ -354,6 +366,10 @@ class AdminUserController extends Controller
     public function destroy(Request $request, string $id): JsonResponse
     {
         $user = User::with('role')->findOrFail($id);
+
+        if (AdminAccess::isDesignatedAdministrator($user)) {
+            return response()->json(['message' => 'لا يمكن حذف المدير المحدد عبر واجهة المستخدمين.'], 422);
+        }
 
         if ($user->role?->name === 'super_admin') {
             $otherSuperAdmins = User::whereHas('role', fn ($q) => $q->where('name', 'super_admin'))

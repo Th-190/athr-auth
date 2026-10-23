@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\User;
+use App\Support\AdminAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,14 +36,23 @@ class EnsureAdminRole
             ], 403);
         }
 
-        // 2FA Security Enforcement: Admin roles must have two-factor authentication enabled
-        if (config('auth.require_admin_2fa', true) && empty($user->two_factor_confirmed_at)) {
-            // Bypass 2FA in automated tests or when explicitly disabled
-            $isTesting = app()->environment('testing') || app()->environment('testing_disable_2fa');
-            if (!$isTesting && !$request->header('X-2FA-Verified')) {
+        if (!AdminAccess::isDesignatedAdministrator($user)) {
+            return response()->json(['message' => 'مرفوض: هذا الحساب ليس المدير المحدد للأرشيف.'], 403);
+        }
+
+        if (config('auth.require_admin_2fa', !app()->environment('testing'))) {
+            $token = $user->currentAccessToken();
+            $verifiedAt = $request->hasSession() ? $request->session()->get('admin_step_up_at') : null;
+            if (!$verifiedAt && $token && method_exists($token, 'getAttribute')) {
+                $verifiedAt = $token->getAttribute('two_factor_verified_at');
+            }
+            $recentlyVerified = $verifiedAt && now()->subMinutes(10)->lt(\Illuminate\Support\Carbon::parse($verifiedAt));
+
+            if (!$user->two_factor_confirmed_at || !$recentlyVerified) {
                 return response()->json([
-                    'message' => 'يجب تفعيل وإتمام التحقق بخطوتين (2FA) للوصول إلى العمليات الإدارية.',
+                    'message' => 'يتطلب الوصول الإداري تحققاً حديثاً من المصادقة الثنائية.',
                     'requires_2fa' => true,
+                    'requires_step_up' => true,
                 ], 403);
             }
         }

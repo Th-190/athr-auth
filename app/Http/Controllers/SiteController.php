@@ -9,6 +9,7 @@ use App\Services\ArabicSearchNormalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class SiteController extends Controller
@@ -159,6 +160,7 @@ class SiteController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        Gate::authorize('create', Site::class);
         $validated = $request->validate([
             'name_ar' => 'required|string|max:255',
             'name_en' => 'nullable|string|max:255',
@@ -177,6 +179,11 @@ class SiteController extends Controller
             'location_precision' => 'required|in:exact,approximate,restricted,unknown',
             'latitude' => 'nullable|required_with:longitude|numeric|between:-90,90',
             'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
+            'is_demo' => 'sometimes|boolean',
+            'featured' => 'sometimes|boolean',
+            'ai_assisted' => 'sometimes|boolean',
+            'is_lost_or_vanished' => 'sometimes|boolean',
+            'is_under_research' => 'sometimes|boolean',
         ]);
 
         $validated['slug'] = Str::slug($validated['name_en'] ?? $validated['name_ar']).'-'.Str::random(5);
@@ -226,6 +233,7 @@ class SiteController extends Controller
      */
     public function update(Request $request, Site $site): JsonResponse
     {
+        Gate::authorize('update', $site);
         $validated = $request->validate([
             'name_ar' => 'sometimes|string|max:255',
             'name_en' => 'nullable|string|max:255',
@@ -233,6 +241,18 @@ class SiteController extends Controller
             'description_ar' => 'nullable|string',
             'site_type_id' => 'sometimes|exists:site_types,id',
             'historical_period_id' => 'sometimes|exists:historical_periods,id',
+            'area_id' => 'sometimes|exists:areas,id',
+            'historical_description' => 'nullable|string',
+            'architectural_description' => 'nullable|string',
+            'cultural_significance' => 'nullable|string',
+            'historical_significance' => 'nullable|string',
+            'current_condition' => 'nullable|string',
+            'location_description' => 'nullable|string',
+            'featured' => 'sometimes|boolean',
+            'is_lost_or_vanished' => 'sometimes|boolean',
+            'is_under_research' => 'sometimes|boolean',
+            'is_demo' => 'sometimes|boolean',
+            'ai_assisted' => 'sometimes|boolean',
             'location_precision' => 'sometimes|in:exact,approximate,restricted,unknown',
             'latitude' => 'nullable|required_with:longitude|numeric|between:-90,90',
             'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
@@ -360,31 +380,6 @@ class SiteController extends Controller
     }
 
     /**
-     * Publish site (Staff/Admin).
-     */
-    public function publish(Request $request, string $id): JsonResponse
-    {
-        $site = Site::findOrFail($id);
-        $site->publication_status = 'published';
-        $site->published_at = now();
-        $site->save();
-
-        $this->auditLogAction->execute(
-            action: 'site.published',
-            entityType: 'Site',
-            entityId: (string) $site->id,
-            performedBy: (string) ($request->user()?->name ?? 'محرر الأرشيف'),
-            details: "نشر الموقع رسمياً للجمهور: {$site->name_ar}",
-            ipAddress: $request->ip()
-        );
-
-        return response()->json([
-            'message' => "تم نشر الموقع ({$site->name_ar}) بنجاح وأصبح متاحاً للعموم.",
-            'site' => $site,
-        ]);
-    }
-
-    /**
      * Unpublish site (revert to draft).
      */
     public function unpublish(Request $request, string $id): JsonResponse
@@ -468,6 +463,7 @@ class SiteController extends Controller
         ]);
 
         $site = Site::findOrFail($id);
+        Gate::authorize('verify', $site);
         $oldStatus = $site->verification_status;
         $oldLabel = $oldStatus instanceof \BackedEnum ? $oldStatus->value : (string) $oldStatus;
 
@@ -483,7 +479,16 @@ class SiteController extends Controller
         $site->verified_at = now();
         $site->verified_by = $request->user()?->id;
         $site->last_reviewed_at = now();
-        $site->save();
+        DB::transaction(function () use ($site, $validated, $request, $oldLabel): void {
+            $site->save();
+            \App\Models\SiteVerification::create([
+                'site_id' => $site->id,
+                'verified_by' => $request->user()?->id,
+                'previous_status' => $oldLabel,
+                'new_status' => $validated['verification_status'],
+                'decision_reason' => $validated['reason'],
+            ]);
+        });
 
         $newLabel = $site->verification_status instanceof \BackedEnum ? $site->verification_status->value : (string) $site->verification_status;
 

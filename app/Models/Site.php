@@ -73,6 +73,7 @@ class Site extends Model
     public function scopePublishedAndPublic(Builder $query): Builder
     {
         return $query->where('publication_status', PublicationStatus::PUBLISHED->value ?? 'published')
+                     ->where('is_demo', false)
                      ->whereNull('deleted_at');
     }
 
@@ -85,7 +86,7 @@ class Site extends Model
             ? $this->publication_status->value
             : (string) $this->publication_status;
 
-        return $status === 'published' && !$this->trashed();
+        return $status === 'published' && !$this->is_demo && !$this->trashed();
     }
 
     /**

@@ -1,3 +1,4 @@
+import { apiFetch } from '../../../services/apiFetch';
 import React, { useState } from 'react';
 import { archiveDB } from '../../../db/archiveStore';
 import { CmsSiteSettings } from '../../../types/cms';
@@ -26,7 +27,7 @@ export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) 
     try {
       const token = localStorage.getItem('kha_auth_token');
       if (token) {
-        await fetch('/api/v1/admin/settings', {
+        await apiFetch('/api/v1/admin/settings', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,

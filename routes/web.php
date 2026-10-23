@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\AdminSessionController;
 use App\Http\Controllers\SiteController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,9 +26,15 @@ Route::get('/sites/{slug}', function ($slug) {
     return view('welcome', ['slug' => $slug]);
 })->name('sites.show');
 
+Route::get('/admin/login', [AdminSessionController::class, 'show'])->name('login');
+Route::post('/admin/login', [AdminSessionController::class, 'store'])
+    ->middleware('throttle:5,1')->name('admin.login.store');
+Route::post('/admin/logout', [AdminSessionController::class, 'destroy'])
+    ->middleware('auth')->name('admin.logout');
+
 Route::get('/admin/{any?}', function () {
     return view('welcome');
-})->where('any', '.*')->name('admin');
+})->where('any', '.*')->middleware(['auth', 'designated.staff'])->name('admin');
 
 Route::get('/sitemap.xml', [SiteController::class, 'sitemap'])->name('sitemap');
 Route::get('/rss.xml', [SiteController::class, 'rss'])->name('rss');
