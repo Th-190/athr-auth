@@ -34,7 +34,7 @@
         <p class="error" role="alert">{{ $errors->first() }}</p>
     @endif
 
-    <form method="post" action="{{ route('admin.login.store') }}">
+    <form method="post" action="{{ route('admin.login.store', [], false) }}">
         @csrf
         <label for="email">البريد الإلكتروني</label>
         <input id="email" name="email" type="email" autocomplete="username" value="{{ old('email') }}" required maxlength="255" autofocus>

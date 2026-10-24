@@ -164,3 +164,38 @@
   }
 }
 
+/* Reading contrast is scoped to the public archive shell. Unlike a CSS filter,
+   these rules improve text and control contrast without altering image colors. */
+[data-reading-contrast="high"] {
+  color: #17110d;
+  background-color: #fff;
+}
+
+[data-reading-contrast="high"] :is(h1, h2, h3, h4, h5, h6, p, li, dt, dd, label, small, figcaption),
+[data-reading-contrast="high"] [class*="text-stone-"],
+[data-reading-contrast="high"] [class*="text-amber-"],
+[data-reading-contrast="high"] [class*="text-orange-"],
+[data-reading-contrast="high"] [class*="text-yellow-"] {
+  color: #17110d !important;
+}
+
+[data-reading-contrast="high"] :is(a:not([class*="text-white"]), [role="link"]) {
+  color: #5b2a0a !important;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+[data-reading-contrast="high"] :is(button, input, select, textarea, [role="switch"], [role="checkbox"]),
+[data-reading-contrast="high"] [class*="border-"] {
+  border-color: #59483b !important;
+}
+
+[data-reading-contrast="high"] :is([class*="bg-[#FBF9F5]"], [class*="bg-[#F8F6F2]"], [class*="bg-stone-50"], [class*="bg-stone-100"], [class*="bg-white"]) {
+  background-color: #fff !important;
+}
+
+[data-reading-contrast="high"] :focus-visible {
+  outline: 3px solid #17110d !important;
+  outline-offset: 3px;
+}
+

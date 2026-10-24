@@ -21,6 +21,7 @@ class SingleAdministratorAuthTest extends TestCase
     public function test_public_pages_are_anonymous_but_admin_routes_and_writes_are_protected(): void
     {
         $this->get('/')->assertOk();
+        $this->get('/admin/login')->assertOk()->assertSee('action="/admin/login"', false);
         $this->get('/admin')->assertRedirect('/admin/login');
         $this->getJson('/api/v1/admin/users')->assertUnauthorized();
         $this->postJson('/api/v1/admin/sites', [])->assertUnauthorized();

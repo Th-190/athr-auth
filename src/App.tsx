@@ -86,10 +86,20 @@ export default function App() {
   // Reading-comfort preferences (remembered in localStorage)
   const [preferences, setPreferences] = useState<ReadingPreferences>(() => {
     try {
-      const saved = localStorage.getItem('kha_reading_preferences');
-      if (saved) return JSON.parse(saved);
+      const saved = typeof window !== 'undefined' ? window.localStorage.getItem('kha_reading_preferences') : null;
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (
+          parsed && typeof parsed === 'object' &&
+          'fontSize' in parsed && ['normal', 'medium', 'large'].includes(String(parsed.fontSize)) &&
+          'highContrast' in parsed && typeof parsed.highContrast === 'boolean' &&
+          'numeralSystem' in parsed && ['arabic', 'latin'].includes(String(parsed.numeralSystem))
+        ) {
+          return parsed as ReadingPreferences;
+        }
+      }
     } catch {
-      // Fallback
+      // Storage can be unavailable in private browsing or locked-down contexts.
     }
     return {
       fontSize: 'normal',
@@ -97,17 +107,17 @@ export default function App() {
       numeralSystem: 'latin',
     };
   });
+  const [preferenceSaveError, setPreferenceSaveError] = useState(false);
 
   const handleUpdatePreferences = (newPrefs: Partial<ReadingPreferences>) => {
-    setPreferences(prev => {
-      const updated = { ...prev, ...newPrefs };
-      try {
-        localStorage.setItem('kha_reading_preferences', JSON.stringify(updated));
-      } catch {
-        // Fallback
-      }
-      return updated;
-    });
+    const updated = { ...preferences, ...newPrefs };
+    try {
+      window.localStorage.setItem('kha_reading_preferences', JSON.stringify(updated));
+      setPreferences(updated);
+      setPreferenceSaveError(false);
+    } catch {
+      setPreferenceSaveError(true);
+    }
   };
 
 
@@ -192,12 +202,12 @@ export default function App() {
       ? 'text-[16px]'
       : 'text-[15px]';
 
-  const contrastClass = preferences.highContrast ? 'contrast-125 saturate-110 font-medium' : '';
+  const contrastAttribute = preferences.highContrast ? 'high' : 'standard';
 
   // Dedicated layout for Admin CMS
   if (currentTab === 'admin') {
     return (
-      <div className={`min-h-screen bg-[#F8F6F2] text-[#1C1917] w-full max-w-full ${fontSizeClass} ${contrastClass}`}>
+      <div className={`min-h-screen bg-[#F8F6F2] text-[#1C1917] w-full max-w-full ${fontSizeClass}`}>
         <AdminConsole
           currentUserRole={currentUserRole}
           onSelectSite={handleSelectSite}
@@ -209,7 +219,7 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917] w-full max-w-full overflow-x-hidden ${fontSizeClass} ${contrastClass}`}>
+    <div data-reading-contrast={contrastAttribute} className={`min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917] w-full max-w-full overflow-x-hidden ${fontSizeClass}`}>
       {/* Top Header */}
       <Header
         currentTab={currentTab}
@@ -349,6 +359,7 @@ export default function App() {
           onClose={() => setIsPreferencesOpen(false)}
           preferences={preferences}
           onUpdatePreferences={handleUpdatePreferences}
+          saveError={preferenceSaveError}
         />
       )}
 
