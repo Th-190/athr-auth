@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Railway terminates HTTPS at its edge and forwards the original protocol.
+        // Trust the platform proxy so Laravel interprets X-Forwarded-Proto correctly.
+        $middleware->trustProxies(at: '*');
         $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
         $middleware->statefulApi();
         $middleware->alias([

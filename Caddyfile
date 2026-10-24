@@ -7,6 +7,13 @@
 :{$PORT:8080} {
     root * /app/public
 
+    @admin path /admin /admin/*
+    header @admin {
+        Cache-Control "no-store, no-cache, must-revalidate, private, max-age=0"
+        Pragma "no-cache"
+        Expires "0"
+    }
+
     @laravel path /api /api/* /up /admin /admin/* /sitemap.xml /rss.xml /feed /web/action /web/action* /sanctum /sanctum/* *.php
     handle @laravel {
         php_server
