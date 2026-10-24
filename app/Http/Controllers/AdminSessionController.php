@@ -9,19 +9,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class AdminSessionController extends Controller
 {
-    public function show(Request $request): View|RedirectResponse
+    public function show(Request $request): Response
     {
         if ($request->user() && AdminAccess::isStaff($request->user())) {
-            return redirect('/admin');
+            return $this->preventCaching(redirect('/admin'));
         }
 
-        return view('admin.login', [
+        return $this->preventCaching(response()->view('admin.login', [
             'adminEmailConfigured' => filled(config('archive.admin_email')),
-        ]);
+        ]));
     }
 
     public function store(Request $request): RedirectResponse
@@ -35,9 +35,9 @@ class AdminSessionController extends Controller
         $key = 'archive-admin-login:'.strtolower($request->ip() ?? 'unknown').'|'.$email;
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
-            return back()->withErrors([
+            return $this->preventCaching(back()->withErrors([
                 'email' => 'محاولات كثيرة. انتظر قبل المحاولة مجدداً.',
-            ])->onlyInput('email')->setStatusCode(429);
+            ])->onlyInput('email')->setStatusCode(429));
         }
 
         $user = User::with('role')->whereRaw('LOWER(email) = ?', [$email])->first();
@@ -58,9 +58,9 @@ class AdminSessionController extends Controller
         if (!$validUser) {
             RateLimiter::hit($key, 60);
 
-            return back()->withErrors([
+            return $this->preventCaching(back()->withErrors([
                 'email' => 'بيانات الدخول غير صحيحة أو الحساب غير مخول.',
-            ])->onlyInput('email');
+            ])->onlyInput('email'));
         }
 
         RateLimiter::clear($key);
@@ -68,7 +68,7 @@ class AdminSessionController extends Controller
         $request->session()->regenerate();
         $request->session()->forget('admin_step_up_at');
 
-        return redirect()->intended('/admin');
+        return $this->preventCaching(redirect()->intended('/admin'));
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -77,6 +77,15 @@ class AdminSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return $this->preventCaching(redirect()->route('login'));
+    }
+
+    private function preventCaching(Response $response): Response
+    {
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, private, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        return $response;
     }
 }
