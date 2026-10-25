@@ -28,6 +28,20 @@ class SingleAdministratorAuthTest extends TestCase
         $this->postJson('/api/v1/admin/sites/1/verify', [])->assertUnauthorized();
     }
 
+    public function test_admin_login_emits_session_cookie_and_disables_caching(): void
+    {
+        $response = $this->get('/admin/login');
+
+        $response->assertOk()
+            ->assertCookie(config('session.cookie'))
+            ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private, max-age=0')
+            ->assertSee('name="_token"', false);
+
+        $sessionConfig = file_get_contents(config_path('session.php'));
+        $this->assertIsString($sessionConfig);
+        $this->assertStringStartsNotWith("\xEF\xBB\xBF", $sessionConfig, 'Session config must not emit a UTF-8 BOM before HTTP headers.');
+    }
+
     public function test_three_super_admins_authenticate_independently_and_fourth_active_account_is_rejected(): void
     {
         config(['auth.require_admin_2fa' => false]);
