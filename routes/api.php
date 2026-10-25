@@ -98,6 +98,7 @@ Route::prefix('v1')->group(function () {
     // -------------------------------------------------------------------------
     Route::prefix('admin')->middleware(['admin'])->group(function () {
         // Users & Role Management (Admin only)
+        Route::get('/site-options', [SiteController::class, 'adminOptions'])->name('api.v1.admin.sites.options');
         Route::get('/reports', [ContentReportController::class, 'index'])->name('api.v1.admin.reports.index');
         Route::put('/reports/{report}', [ContentReportController::class, 'resolve'])->name('api.v1.admin.reports.resolve');
         Route::get('/users', [AdminUserController::class, 'index'])->name('api.v1.admin.users.index');

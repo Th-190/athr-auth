@@ -3,7 +3,6 @@ import React, { useMemo, useState } from 'react';
 import { archiveDB } from '../../../db/archiveStore';
 import { Site } from '../../../types';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
-import { authService } from '../../../services/authService';
 
 interface Props {
   actorName: string;
@@ -43,9 +42,7 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   React.useEffect(() => {
-    const token = authService.getToken();
-    if (!token) { setError('سجّل الدخول لعرض سجلات المواقع من قاعدة البيانات.'); setLoadingSites(false); return; }
-    apiFetch('/api/v1/admin/editorial?kind=sites&per_page=50', { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } })
+    apiFetch('/api/v1/admin/editorial?kind=sites&per_page=50', { headers: { Accept: 'application/json' } })
       .then(async response => {
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(body.message || `تعذر تحميل المواقع (${response.status}).`);
@@ -105,8 +102,6 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
         return;
       }
     }
-    const token = authService.getToken();
-    if (!token) { setError('انتهت الجلسة. سجّل الدخول مجدداً قبل الحفظ.'); return; }
     setSaving(true); setError('');
     try {
       const taxonomyResponse = await apiFetch('/api/v1/taxonomies', { headers: { Accept: 'application/json' } });
@@ -134,7 +129,7 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
       if (editing) payload.revision_notes = reason.trim();
       const response = await apiFetch(editing ? `/api/v1/admin/sites/${editing.id}` : '/api/v1/admin/sites', {
         method: editing ? 'PUT' : 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(payload),
       });
       const body = await response.json().catch(() => ({}));
@@ -276,11 +271,9 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
               className={dangerBtn}
               onClick={async () => {
                 if (!confirm('سيتم أرشفة السجل المنشور أو حذف المسودة. المتابعة؟')) return;
-                const token = authService.getToken();
-                if (!token) { setError('انتهت الجلسة. سجّل الدخول مجدداً.'); return; }
                 setSaving(true); setError('');
                 try {
-                  const response = await apiFetch(`/api/v1/admin/sites/${editing.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+                  const response = await apiFetch(`/api/v1/admin/sites/${editing.id}`, { method: 'DELETE', headers: { Accept: 'application/json' } });
                   const body = await response.json().catch(() => ({}));
                   if (!response.ok) throw new Error(body.message || `تعذر الأرشفة (${response.status}).`);
                   setSites(current => current.filter(site => String(site.id) !== String(editing.id)));

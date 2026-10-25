@@ -19,6 +19,22 @@ class SiteController extends Controller
     ) {}
 
     /**
+     * Compact authorized options for admin forms. Avoids loading PostGIS columns
+     * and every editorial relation when a form only needs the linked site name.
+     */
+    public function adminOptions(Request $request): JsonResponse
+    {
+        $perPage = min(max($request->integer('per_page', 100), 1), 500);
+
+        return response()->json(
+            Site::query()
+                ->select(['id', 'name_ar', 'name_en', 'slug', 'permanent_id'])
+                ->orderBy('name_ar')
+                ->paginate($perPage)
+        );
+    }
+
+    /**
      * List heritage sites with search, spatial bounding, and taxonomy filters.
      */
     public function index(Request $request): JsonResponse

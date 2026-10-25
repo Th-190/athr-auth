@@ -16,7 +16,6 @@ class AuthService {
   public subscribe(callback: (user: AuthUser | null) => void): () => void { this.listeners.push(callback); return () => { this.listeners = this.listeners.filter(listener => listener !== callback); }; }
   private notify() { this.listeners.forEach(callback => callback(this.currentUser)); }
   public getCurrentUser() { return this.currentUser; }
-  public getToken(): string | null { return null; }
   public isAuthenticated() { return !!this.currentUser; }
   public isAdmin() { return this.currentUser?.role === 'admin' || this.currentUser?.role === 'super_admin'; }
   public isEditor() { return ['editor', 'admin', 'super_admin'].includes(this.currentUser?.role || ''); }

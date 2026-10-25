@@ -117,15 +117,27 @@ class SiteImage extends Model
 
     public function getWebUrlAttribute(): ?string
     {
-        return $this->web_storage_path
-            ? Storage::disk('derivatives')->url($this->web_storage_path)
-            : null;
+        if (!$this->web_storage_path) {
+            return null;
+        }
+
+        try {
+            return Storage::disk('derivatives')->url($this->web_storage_path);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function getThumbnailUrlAttribute(): ?string
     {
-        return $this->thumb_storage_path
-            ? Storage::disk('derivatives')->url($this->thumb_storage_path)
-            : null;
+        if (!$this->thumb_storage_path) {
+            return null;
+        }
+
+        try {
+            return Storage::disk('derivatives')->url($this->thumb_storage_path);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

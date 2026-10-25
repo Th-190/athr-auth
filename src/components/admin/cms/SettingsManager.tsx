@@ -13,6 +13,8 @@ export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) 
     'سجل رقمي توثيقي مكرّس لحصر وتوثيق المعالم الأثرية والتاريخية في محافظة كربلاء، مسنداً بالمصادر الأكاديمية وسجلات التوثيق والمطابقة العلمية.'
   );
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,39 +23,37 @@ export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) 
       return;
     }
 
-    archiveDB.updateCms({ settings: form }, actorName);
-
-    // Also sync to backend API if token exists
+    setIsSaving(true);
+    setSaveError('');
     try {
-      const token = localStorage.getItem('kha_auth_token');
-      if (token) {
-        await apiFetch('/api/v1/admin/settings', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
+      const response = await apiFetch('/api/v1/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          settings: {
+            site_name_ar: form.site_name_ar,
+            site_name_en: form.site_name_en,
+            tagline_ar: form.tagline_ar,
+            contact_email: form.contact_email,
+            contact_note: form.contact_note,
+            footer_copyright: form.footer_copyright,
+            allow_public_contributions: form.allow_public_contributions ? '1' : '0',
+            seo_description: seoDescription,
           },
-          body: JSON.stringify({
-            settings: [
-              { key: 'site_name_ar', value: form.site_name_ar },
-              { key: 'site_name_en', value: form.site_name_en },
-              { key: 'tagline_ar', value: form.tagline_ar },
-              { key: 'contact_email', value: form.contact_email },
-              { key: 'contact_note', value: form.contact_note },
-              { key: 'footer_copyright', value: form.footer_copyright },
-              { key: 'allow_public_contributions', value: form.allow_public_contributions ? '1' : '0' },
-              { key: 'seo_description', value: seoDescription },
-            ],
-          }),
-        });
-      }
-    } catch {}
-
-    setTick(t => t + 1);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
-    alert('تم حفظ وتحديث إعدادات الموقع بنجاح، وستنعكس فوراً على الواجهة العامة.');
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || `تعذر حفظ إعدادات الموقع (${response.status}).`);
+      archiveDB.updateCms({ settings: form }, actorName);
+      setTick(t => t + 1);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+      alert('تم حفظ وتحديث إعدادات الموقع بنجاح، وستنعكس فوراً على الواجهة العامة.');
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'تعذر الاتصال بالخادم. لم تُحفظ الإعدادات.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -71,6 +71,7 @@ export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) 
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
+        {saveError && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{saveError}</div>}
         {/* General Site Identity */}
         <div className="bg-white border border-[#E8E2D8] rounded-xl p-5 space-y-4">
           <h2 className="font-serif font-bold text-base text-stone-900 border-b border-[#E8E2D8] pb-2 flex items-center gap-2">
@@ -189,9 +190,9 @@ export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) 
 
         {/* Submit */}
         <div className="flex items-center gap-3 pt-2">
-          <button type="submit" className={primaryBtn + ' flex items-center gap-2'}>
+          <button type="submit" disabled={isSaving} className={primaryBtn + ' flex items-center gap-2 disabled:opacity-60'}>
             <Save className="w-4 h-4" />
-            <span>حفظ الإعدادات</span>
+            <span>{isSaving ? 'جارٍ الحفظ…' : 'حفظ الإعدادات'}</span>
           </button>
           {isSaved && (
             <span className="text-emerald-700 text-xs flex items-center gap-1 font-medium">

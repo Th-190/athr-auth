@@ -27,7 +27,9 @@ class MediaController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = SiteImage::with('site')->orderBy('created_at', 'desc');
+        // Do not serialize a full Site model here: its raw PostGIS geography
+        // column is private/internal and is unnecessary for the media library.
+        $query = SiteImage::with('site:id,name_ar,name_en,slug,permanent_id')->orderByDesc('created_at');
 
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {

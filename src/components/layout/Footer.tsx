@@ -1,7 +1,7 @@
 import React from 'react';
 import { archiveDB } from '../../db/archiveStore';
 import { formatNumeral } from '../../utils/arabic';
-import { Rss, ArrowUp } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (tab: string, param?: string) => void;
@@ -109,12 +109,6 @@ export const Footer: React.FC<FooterProps> = ({
                 <button onClick={() => onNavigate('changelog')} className="hover:text-white transition-colors cursor-pointer">
                   سجل التعديلات وما استجدّ
                 </button>
-              </li>
-              <li>
-                <a href="/feed" className="hover:text-amber-400 transition-colors inline-flex items-center gap-1 min-h-[44px]">
-                  <Rss className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
-                  <span>تغذية التحديثات (RSS)</span>
-                </a>
               </li>
             </ul>
           </div>

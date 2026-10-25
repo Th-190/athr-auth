@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Site, VerificationStatus } from '../../../types';
 import { inputClass, labelClass, primaryBtn, ghostBtn } from './formStyles';
 import { VerificationBadge } from '../../common/VerificationBadge';
-import { authService } from '../../../services/authService';
 import {
   FileCheck,
   AlertTriangle,
@@ -25,9 +24,7 @@ export const VerificationManager: React.FC<{ actorName: string }> = ({ actorName
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   React.useEffect(() => {
-    const token = authService.getToken();
-    if (!token) { setLoadError('سجّل الدخول لعرض سجلات التحقيق من قاعدة البيانات.'); setLoading(false); return; }
-    apiFetch('/api/v1/admin/editorial?kind=sites&per_page=50', { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } })
+    apiFetch('/api/v1/admin/editorial?kind=sites&per_page=50', { headers: { Accept: 'application/json' } })
       .then(async response => {
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(body.message || `تعذر تحميل السجلات (${response.status}).`);
@@ -63,13 +60,11 @@ export const VerificationManager: React.FC<{ actorName: string }> = ({ actorName
       return;
     }
 
-    const token = authService.getToken();
-    if (!token) { setLoadError('انتهت الجلسة. سجّل الدخول مجدداً قبل الحفظ.'); return; }
     setSaving(true);
     try {
       const response = await apiFetch(`/api/v1/admin/sites/${selectedSite.id}/verify`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ verification_status: newStatus, reason: reason.trim() }),
       });
       const body = await response.json().catch(() => ({}));

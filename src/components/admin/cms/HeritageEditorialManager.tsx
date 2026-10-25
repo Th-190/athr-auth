@@ -1,6 +1,5 @@
 import { apiFetch } from '../../../services/apiFetch';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { authService } from '../../../services/authService';
 
 type Choice = { id: number; name_ar?: string; name_en?: string; title?: string; slug?: string };
 type Citation = { source_id: number; page_reference?: string; excerpt?: string; editor_note?: string; relevance?: string };
@@ -9,10 +8,9 @@ type Filters = { museums: Choice[]; sites: Choice[]; periods: Choice[]; categori
 
 const API = '/api/v1/admin/editorial';
 const request = async (path: string, init: RequestInit = {}) => {
-  const token = authService.getToken();
   const response = await apiFetch(`${API}${path}`, {
     ...init,
-    headers: { Accept: 'application/json', ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init.headers },
+    headers: { Accept: 'application/json', ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...init.headers },
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {

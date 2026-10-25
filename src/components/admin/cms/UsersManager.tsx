@@ -1,6 +1,5 @@
 import { apiFetch } from '../../../services/apiFetch';
 import React, { useState, useEffect } from 'react';
-import { authService } from '../../../services/authService';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
 import { Shield, UserPlus, KeyRound, Ban, CheckCircle2, Trash2, Search, UserCheck, Mail, Send, Clock, XCircle } from 'lucide-react';
 
@@ -52,10 +51,8 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
   const [canManageSuperAdmins, setCanManageSuperAdmins] = useState(false);
 
   const fetchApiUsers = async () => {
-    const token = authService.getToken();
-    if (!token) { setUsers([]); return; }
     const response = await apiFetch('/api/v1/admin/users', {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      headers: { Accept: 'application/json' },
     });
     if (!response.ok) throw new Error('تعذر تحميل المستخدمين من الخادم.');
     const data = await response.json();
@@ -78,10 +75,8 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
 
   const fetchInvitations = async () => {
     try {
-      const token = authService.getToken();
-      if (!token) return;
       const res = await apiFetch('/api/v1/admin/invitations', {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        headers: { Accept: 'application/json' },
       });
       if (res.ok) {
         const data = await res.json();
@@ -99,12 +94,10 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
       return;
     }
     try {
-      const token = authService.getToken();
       const res = await apiFetch('/api/v1/admin/invitations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
           Accept: 'application/json',
         },
         body: JSON.stringify(inviteForm),
@@ -128,10 +121,9 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
       return;
     }
     try {
-      const token = authService.getToken();
       const res = await apiFetch(`/api/v1/admin/invitations/${id}/revoke`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        headers: { Accept: 'application/json' },
       });
       const data = await res.json();
       if (!res.ok) {
@@ -162,12 +154,9 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     }
 
     try {
-      const token = authService.getToken();
-      if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
       const response = await apiFetch('/api/v1/admin/users', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },
@@ -203,14 +192,12 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
 
     // Backend call
     try {
-      const token = authService.getToken();
-      if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
       const endpoint = willActivate
         ? `/api/v1/admin/users/${user.id}/activate`
         : `/api/v1/admin/users/${user.id}/deactivate`;
       const response = await apiFetch(endpoint, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+          headers: { Accept: 'application/json' },
         });
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
@@ -228,11 +215,9 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     if (!confirm(`هل تريد إبطال جميع الجلسات النشطة للمستخدم (${user.name})؟`)) return;
 
     try {
-      const token = authService.getToken();
-      if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
       const response = await apiFetch(`/api/v1/admin/users/${user.id}/revoke-sessions`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+          headers: { Accept: 'application/json' },
         });
       if (!response.ok) throw new Error('تعذر إبطال جلسات المستخدم.');
     } catch (error: any) {
@@ -254,11 +239,9 @@ export const UsersManager: React.FC<{ actorName: string }> = () => {
     }
 
     try {
-      const token = authService.getToken();
-      if (!token) throw new Error('انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.');
       const response = await apiFetch(`/api/v1/admin/users/${user.id}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+          headers: { Accept: 'application/json' },
         });
       if (!response.ok) throw new Error('تعذر حذف المستخدم على الخادم.');
       await fetchApiUsers();

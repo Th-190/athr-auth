@@ -45,6 +45,10 @@ export default defineConfig(({mode}) => {
           target: env.LARAVEL_API_URL || process.env.LARAVEL_API_URL || 'http://127.0.0.1:8000',
           changeOrigin: true,
         },
+        '/sanctum': {
+          target: env.LARAVEL_API_URL || process.env.LARAVEL_API_URL || 'http://127.0.0.1:8000',
+          changeOrigin: true,
+        },
       },
       allowedHosts: true as const,
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

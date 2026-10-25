@@ -4,18 +4,15 @@ import { apiFetch } from './apiFetch';
  * continues to operate from archiveStore when the backend is offline.
  */
 
-import { authService } from './authService';
 import { CmsConfig } from '../types/cms';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
-  const token = authService.getToken();
   try {
     const res = await apiFetch(path, {
       ...init,
       headers: {
         Accept: 'application/json',
         ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(init?.headers || {}),
       },
     });

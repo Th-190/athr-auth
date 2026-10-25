@@ -29,8 +29,8 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
     const response = await apiFetch('/api/v1/admin/media?per_page=100', {
       headers: { Accept: 'application/json' },
     });
-    if (!response.ok) throw new Error('تعذر تحميل مكتبة الصور من الخادم.');
-    const result = await response.json();
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.message || `تعذر تحميل مكتبة الصور من الخادم (${response.status}).`);
     const rights: Record<string, RightsStatus> = {
       public_domain: 'Public Domain', creative_commons: 'Creative Commons',
       copyrighted_permitted: 'Copyrighted - Permission Granted', unknown: 'Unknown', restricted: 'Restricted',
@@ -57,7 +57,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
         let lastPage = 1;
 
         do {
-          const response = await apiFetch(`/api/v1/admin/editorial?kind=sites&per_page=50&page=${page}`, {
+          const response = await apiFetch(`/api/v1/admin/site-options?per_page=100&page=${page}`, {
             headers: { Accept: 'application/json' },
           });
           const result = await response.json().catch(() => ({}));

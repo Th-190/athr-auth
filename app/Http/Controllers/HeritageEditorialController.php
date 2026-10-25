@@ -130,7 +130,12 @@ class HeritageEditorialController extends Controller
                 ->orWhereHas('names', fn (Builder $names) => $names->where('name', 'like', $like)));
         }
 
-        return response()->json($query->orderBy('id')->paginate($perPage));
+        $sites = $query->orderBy('id')->paginate($perPage);
+        // A raw PostGIS geography value is not an API field. Keeping it out of
+        // model serialization also avoids binary/driver-specific JSON failures.
+        $sites->getCollection()->each(fn (Site $site) => $site->makeHidden(['coordinates']));
+
+        return response()->json($sites);
     }
 
     public function updateSite(Request $request, Site $site): JsonResponse
