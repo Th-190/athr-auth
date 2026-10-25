@@ -33,7 +33,17 @@ Route::post('/admin/logout', [AdminSessionController::class, 'destroy'])
     ->middleware('auth')->name('admin.logout');
 
 Route::get('/admin/{any?}', function () {
-    return view('welcome');
+    // Docker copies the compiled React application into public/. During local
+    // development the same build remains in dist/ instead.
+    $index = public_path('index.html');
+
+    if (!is_file($index)) {
+        $index = base_path('dist/index.html');
+    }
+
+    abort_unless(is_file($index), 503, 'The administration interface has not been built.');
+
+    return response()->file($index);
 })->where('any', '.*')->middleware(['auth', 'designated.staff'])->name('admin');
 
 Route::get('/sitemap.xml', [SiteController::class, 'sitemap'])->name('sitemap');

@@ -42,6 +42,17 @@ class SingleAdministratorAuthTest extends TestCase
         $this->assertStringStartsNotWith("\xEF\xBB\xBF", $sessionConfig, 'Session config must not emit a UTF-8 BOM before HTTP headers.');
     }
 
+    public function test_authenticated_staff_routes_to_the_react_admin_application(): void
+    {
+        $superAdmin = $this->user('dashboard-admin@example.test', 'super_admin');
+
+        $this->actingAs($superAdmin)
+            ->get('/admin')
+            ->assertOk()
+            ->assertSee('<div id="root"></div>', false)
+            ->assertDontSee('Laravel 12 · PHP 8.3 Ready');
+    }
+
     public function test_three_super_admins_authenticate_independently_and_fourth_active_account_is_rejected(): void
     {
         config(['auth.require_admin_2fa' => false]);
