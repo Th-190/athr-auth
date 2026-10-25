@@ -1,8 +1,6 @@
 import { apiFetch } from '../../../services/apiFetch';
 import React, { useState, useMemo, useEffect } from 'react';
-import { archiveDB } from '../../../db/archiveStore';
-import { SiteImage, RightsStatus } from '../../../types';
-import { authService } from '../../../services/authService';
+import { Site, SiteImage, RightsStatus } from '../../../types';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
 import { Image, Upload, Search, Filter, Trash2, CheckCircle2, AlertTriangle, Eye, ArrowUp, ArrowDown, Star, Link, Shield } from 'lucide-react';
 
@@ -23,11 +21,13 @@ interface Props {
 export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
   const [tick, setTick] = useState(0);
   const [images, setImages] = useState<SiteImage[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [loadingSites, setLoadingSites] = useState(true);
+  const [sitesError, setSitesError] = useState('');
+  const [uploadSiteId, setUploadSiteId] = useState<string>('');
   const refresh = async () => {
-    const token = authService.getToken();
-    if (!token) return;
     const response = await apiFetch('/api/v1/admin/media?per_page=100', {
-      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+      headers: { Accept: 'application/json' },
     });
     if (!response.ok) throw new Error('تعذر تحميل مكتبة الصور من الخادم.');
     const result = await response.json();
@@ -47,9 +47,49 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
     })));
     setTick(t => t + 1);
   };
-  useEffect(() => { void refresh().catch(error => alert(error.message)); }, []);
+  useEffect(() => {
+    let cancelled = false;
 
-  const sites = archiveDB.getAllSites(true);
+    const loadSites = async () => {
+      try {
+        const allSites: Site[] = [];
+        let page = 1;
+        let lastPage = 1;
+
+        do {
+          const response = await apiFetch(`/api/v1/admin/editorial?kind=sites&per_page=50&page=${page}`, {
+            headers: { Accept: 'application/json' },
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(result.message || 'تعذر تحميل قائمة المعالم من الأرشيف.');
+          }
+
+          allSites.push(...(result.data || []).map((site: Site) => ({ ...site, id: String(site.id) })));
+          lastPage = Number(result.last_page || 1);
+          page += 1;
+        } while (page <= lastPage);
+
+        if (!cancelled) {
+          setSites(allSites);
+          setUploadSiteId(current => allSites.some(site => String(site.id) === current)
+            ? current
+            : String(allSites[0]?.id ?? ''));
+        }
+      } catch (error) {
+        if (!cancelled) setSitesError(error instanceof Error ? error.message : 'تعذر تحميل قائمة المعالم.');
+      } finally {
+        if (!cancelled) setLoadingSites(false);
+      }
+    };
+
+    void loadSites();
+    void refresh().catch(error => {
+      if (!cancelled) alert(error instanceof Error ? error.message : 'تعذر تحميل مكتبة الصور.');
+    });
+
+    return () => { cancelled = true; };
+  }, []);
 
   const [search, setSearch] = useState('');
   const [selectedSiteFilter, setSelectedSiteFilter] = useState<string>('all');
@@ -59,7 +99,6 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
 
   // Upload modal state
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadSiteId, setUploadSiteId] = useState<string>(sites[0]?.id || '');
   const [uploadCaption, setUploadCaption] = useState('');
   const [uploadPhotographer, setUploadPhotographer] = useState('أرشيف أثر كربلاء');
   const [uploadRights, setUploadRights] = useState<RightsStatus>('Creative Commons');
@@ -110,7 +149,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
     try {
       const response = await apiFetch(`/api/v1/admin/media/${selectedImage.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           caption_ar: editCaption, photographer: editPhotographer, alt_text: editAltText,
           rights_status: rightsToApi(editRights), license: editLicense, copyright_notice: editCopyrightNotice, site_id: editSiteId,
@@ -165,7 +204,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
     form.append('license', uploadLicense);
     try {
       const response = await apiFetch('/api/v1/admin/media/upload', {
-        method: 'POST', headers: { Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` }, body: form,
+        method: 'POST', headers: { Accept: 'application/json' }, body: form,
       });
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
@@ -186,7 +225,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
     if (!confirm(confirmMsg)) return;
 
     void apiFetch(`/api/v1/admin/media/${img.id}`, {
-      method: 'DELETE', headers: { Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` },
+      method: 'DELETE', headers: { Accept: 'application/json' },
     }).then(async response => {
       if (!response.ok) throw new Error('تعذر حذف الصورة من الخادم.');
       if (selectedImage?.id === img.id) { setSelectedImage(null); setIsEditingMetadata(false); }
@@ -196,7 +235,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
 
   const handleSetPrimary = (img: SiteImage) => {
     void apiFetch(`/api/v1/admin/media/${img.id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${authService.getToken()}` },
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ is_primary: true }),
     }).then(async response => {
       if (!response.ok) throw new Error('تعذر تعيين الصورة الرئيسية.');
@@ -480,12 +519,20 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
                   className={inputClass}
                   value={uploadSiteId}
                   onChange={e => setUploadSiteId(e.target.value)}
+                  disabled={loadingSites || Boolean(sitesError) || sites.length === 0}
                   required
                 >
+                  <option value="">
+                    {loadingSites ? 'جارٍ تحميل المعالم…' : sitesError ? 'تعذر تحميل المعالم' : 'اختر معلماً أثرياً'}
+                  </option>
                   {sites.map(s => (
-                    <option key={s.id} value={s.id}>{s.name_ar} ({s.permanent_id})</option>
+                    <option key={s.id} value={String(s.id)}>{s.name_ar} ({s.permanent_id})</option>
                   ))}
                 </select>
+                {sitesError && <p className="mt-1 text-xs text-rose-700" role="alert">{sitesError}</p>}
+                {!loadingSites && !sitesError && sites.length === 0 && (
+                  <p className="mt-1 text-xs text-amber-800">لا توجد معالم في الأرشيف بعد. أنشئ سجل معلم أولاً ثم أعد فتح نموذج الرفع.</p>
+                )}
               </div>
 
               <div>
@@ -533,7 +580,7 @@ export const MediaLibraryManager: React.FC<Props> = ({ actorName }) => {
               </div>
 
               <div className="flex gap-2 pt-3 border-t">
-                <button type="submit" className={primaryBtn + ' flex-1'}>
+                <button type="submit" disabled={loadingSites || Boolean(sitesError) || !uploadSiteId} className={primaryBtn + ' flex-1 disabled:cursor-not-allowed disabled:opacity-50'}>
                   تأكيد الرفع والإدراج
                 </button>
                 <button
