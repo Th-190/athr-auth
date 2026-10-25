@@ -29,6 +29,7 @@ interface HeaderProps {
   onOpenPreferences: () => void;
   onSelectSite: (site: Site) => void;
   numeralSystem: 'arabic' | 'latin';
+  readingComfortEnabled: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -40,6 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPreferences,
   onSelectSite,
   numeralSystem,
+  readingComfortEnabled,
 }) => {
   const [isBrowseMenuOpen, setIsBrowseMenuOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -48,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const announcement = archiveDB.getAnnouncement();
   const bookmarkedCount = archiveDB.getBookmarkedSiteIds().length;
-  const isEditorialUser = currentUser?.role === 'editor' || currentUser?.role === 'admin';
+  const isEditorialUser = currentUser?.is_active === true && currentUser.can_access_admin === true;
 
   // Close browse dropdown when clicking outside
   useEffect(() => {
@@ -112,11 +114,14 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Reading comfort shortcut */}
             <button
               onClick={onOpenPreferences}
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="راحة القراءة"
               className="inline-flex items-center gap-1.5 text-[11px] text-stone-300 hover:text-white transition-colors cursor-pointer min-h-[44px] px-2 py-1"
               title="تفضيلات راحة القراءة والخط والتباين"
             >
               <Eye className="w-4 h-4 text-amber-500" />
-              <span>راحة القراءة</span>
+              <span>راحة القراءة{readingComfortEnabled ? ' · مفعّلة' : ''}</span>
             </button>
           </div>
         </div>
@@ -196,6 +201,7 @@ export const Header: React.FC<HeaderProps> = ({
             {isBrowseMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-white border border-stone-200 rounded-xl shadow-lg py-1.5 z-50 text-xs">
                 <button
+                  type="button"
                   onClick={() => {
                     setIsBrowseMenuOpen(false);
                     onNavigate('hierarchy');
@@ -514,7 +520,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className="w-full py-2.5 px-3 min-h-[44px] text-xs bg-white border border-stone-300 rounded-lg text-center flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Eye className="w-4 h-4 text-stone-600" />
-                <span>تفضيلات راحة القراءة</span>
+                <span>تفضيلات راحة القراءة{readingComfortEnabled ? ' · مفعّلة' : ''}</span>
               </button>
             </div>
           </div>

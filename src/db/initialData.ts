@@ -19,7 +19,6 @@ import {
   SiteRevision,
   AuditLogEntry,
   SiteContribution,
-  ContentReport,
   EncyclopediaEntry,
   CuratedCollection,
   MuseumProfile,

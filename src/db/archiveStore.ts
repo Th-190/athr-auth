@@ -12,7 +12,6 @@ import {
   SiteRevision,
   AuditLogEntry,
   SiteContribution,
-  ContentReport,
   EncyclopediaEntry,
   CuratedCollection,
   UserRole,
@@ -64,7 +63,6 @@ interface ArchiveDatabaseState {
   revisions: SiteRevision[];
   auditLogs: AuditLogEntry[];
   contributions: SiteContribution[];
-  reports: ContentReport[];
   encyclopedia: EncyclopediaEntry[];
   collections: CuratedCollection[];
   museumProfiles: MuseumProfile[];
@@ -253,7 +251,7 @@ class ArchiveDatabase {
       return {
         ...empty,
         sites: [], images: [], sources: [], claims: [], timelines: [], revisions: [], auditLogs: [],
-        contributions: [], reports: [], encyclopedia: [], collections: [], museumProfiles: [],
+        contributions: [], encyclopedia: [], collections: [], museumProfiles: [],
         siteRelations: [], researchLeads: [], siteModels: [],
       };
     }
@@ -279,7 +277,6 @@ class ArchiveDatabase {
           revisions: parsed.revisions || INITIAL_REVISIONS,
           auditLogs: parsed.auditLogs || INITIAL_AUDIT_LOGS,
           contributions: parsed.contributions || [],
-          reports: parsed.reports || [],
           encyclopedia: parsed.encyclopedia || ENCYCLOPEDIA_ENTRIES,
           collections: parsed.collections || CURATED_COLLECTIONS,
           museumProfiles: mergedProfiles,
@@ -317,7 +314,6 @@ class ArchiveDatabase {
       revisions: INITIAL_REVISIONS,
       auditLogs: INITIAL_AUDIT_LOGS,
       contributions: [],
-      reports: [],
       encyclopedia: ENCYCLOPEDIA_ENTRIES,
       collections: CURATED_COLLECTIONS,
       museumProfiles: INITIAL_MUSEUM_PROFILES,
@@ -433,10 +429,6 @@ class ArchiveDatabase {
 
   public getContributions(): SiteContribution[] {
     return [...this.state.contributions].reverse();
-  }
-
-  public getReports(): ContentReport[] {
-    return [...this.state.reports].reverse();
   }
 
   public getEncyclopedia(): EncyclopediaEntry[] {
@@ -1096,48 +1088,6 @@ class ArchiveDatabase {
       performed_by: reviewerName,
       ip_hash: 'auth_session_valid',
       details: `مراجعة مساهمة الزائر. القرار: ${decision}. السبب: ${reason}`,
-    });
-
-    this.persist();
-    return true;
-  }
-
-  public submitReport(report: Omit<ContentReport, 'id' | 'created_at' | 'status'>): ContentReport {
-    const newReport: ContentReport = {
-      id: `rep_${Date.now()}`,
-      created_at: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      status: 'pending',
-      ...report,
-    };
-    this.state.reports.push(newReport);
-
-    this.logAudit({
-      action: 'SUBMIT_REPORT',
-      entity_type: 'ContentReport',
-      entity_id: newReport.id,
-      performed_by: 'Public Visitor',
-      ip_hash: 'public_client',
-      details: `إبلاغ عن مشكلة في (${report.target_name}): تصنيف ${report.reason_category}`,
-    });
-
-    this.persist();
-    return newReport;
-  }
-
-  public resolveReport(reportId: string, note: string, resolverName: string): boolean {
-    const rep = this.state.reports.find(r => r.id === reportId);
-    if (!rep) return false;
-
-    rep.status = 'resolved';
-    rep.resolution_note = note;
-
-    this.logAudit({
-      action: 'RESOLVE_REPORT',
-      entity_type: 'ContentReport',
-      entity_id: rep.id,
-      performed_by: resolverName,
-      ip_hash: 'auth_session_valid',
-      details: `معالجة بلاغ الخطأ. الإجراء: ${note}`,
     });
 
     this.persist();

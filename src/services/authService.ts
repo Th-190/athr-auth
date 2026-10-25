@@ -1,13 +1,17 @@
 import { apiFetch } from './apiFetch';
 
 export type UserRole = 'super_admin' | 'admin' | 'editor' | 'contributor' | 'viewer' | 'pending';
-export interface AuthUser { id: string | number; name: string; email: string; avatar?: string; role: UserRole; role_ar: string; email_verified?: boolean; created_at?: string; two_factor_enabled?: boolean; }
+export interface AuthUser { id: string | number; name: string; email: string; avatar?: string; role: UserRole; role_ar: string; email_verified?: boolean; is_active?: boolean; can_access_admin?: boolean; created_at?: string; two_factor_enabled?: boolean; }
 
 class AuthService {
   private currentUser: AuthUser | null = null;
   private listeners: Array<(user: AuthUser | null) => void> = [];
   constructor() {
-    for (const key of ['kha_auth_user_v3', 'kha_auth_token_v3', 'kha_auth_token', 'kha_auth_role']) localStorage.removeItem(key);
+    try {
+      for (const key of ['kha_auth_user_v3', 'kha_auth_token_v3', 'kha_auth_token', 'kha_auth_role']) localStorage.removeItem(key);
+    } catch {
+      // Authentication is server-session based; unavailable browser storage must not prevent startup.
+    }
   }
   public subscribe(callback: (user: AuthUser | null) => void): () => void { this.listeners.push(callback); return () => { this.listeners = this.listeners.filter(listener => listener !== callback); }; }
   private notify() { this.listeners.forEach(callback => callback(this.currentUser)); }

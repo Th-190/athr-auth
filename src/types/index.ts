@@ -267,20 +267,6 @@ export interface SiteContribution {
   created_at: string;
 }
 
-export interface ContentReport {
-  id: string;
-  target_type: 'site' | 'image' | 'source';
-  target_id: string;
-  target_name: string;
-  reason_category: 'wrong_information' | 'incorrect_source' | 'wrong_image' | 'wrong_image_rights' | 'wrong_location' | 'offensive_content' | 'other';
-  reporter_email?: string;
-  details: string;
-  suggested_correction?: string;
-  status: 'pending' | 'resolved' | 'dismissed';
-  resolution_note?: string;
-  created_at: string;
-}
-
 export interface EncyclopediaEntry {
   id: string;
   slug: string;

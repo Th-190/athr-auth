@@ -28,7 +28,7 @@ export const CiteModal: React.FC<CiteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div data-reading-exempt="true" className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-[#FBF9F5] border border-stone-300 rounded max-w-xl w-full p-6 space-y-6 shadow-xl relative animate-in fade-in duration-150">
         <button
           onClick={onClose}

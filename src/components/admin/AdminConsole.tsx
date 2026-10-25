@@ -20,6 +20,7 @@ import { VerificationManager } from './cms/VerificationManager';
 import { SettingsManager } from './cms/SettingsManager';
 import { AuditLogManager } from './cms/AuditLogManager';
 import { HeritageEditorialManager } from './cms/HeritageEditorialManager';
+import { ReportsManager } from './cms/ReportsManager';
 import { AdminTwoFactorGate } from './AdminTwoFactorGate';
 import { authService } from '../../services/authService';
 import {
@@ -46,6 +47,7 @@ import {
   Compass,
   AlertCircle,
   FileEdit,
+  MessageSquareWarning,
 } from 'lucide-react';
 
 interface AdminConsoleProps {
@@ -71,6 +73,7 @@ const SECTION_ICONS: Record<AdminSection, React.ReactNode> = {
   users: <Users className="w-4 h-4" />,
   settings: <SettingsIcon className="w-4 h-4" />,
   audit: <History className="w-4 h-4" />,
+  reports: <MessageSquareWarning className="w-4 h-4" />,
 };
 
 export const AdminConsole: React.FC<AdminConsoleProps> = ({
@@ -236,7 +239,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                   </div>
                   {items.map(item => {
                     // Check adminOnly restriction
-                    if (item.adminOnly && currentUserRole !== 'Admin' && user?.role !== 'admin') {
+                    if (item.adminOnly && !isSystemAdministrator) {
                       return null;
                     }
                     const isActive = section === item.id;
@@ -286,7 +289,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                         {group}
                       </div>
                       {items.map(item => {
-                        if (item.adminOnly && currentUserRole !== 'Admin' && user?.role !== 'admin') {
+                        if (item.adminOnly && !isSystemAdministrator) {
                           return null;
                         }
                         const isActive = section === item.id;
@@ -333,6 +336,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
           {section === 'users' && <UsersManager actorName={actorName} />}
           {section === 'settings' && <SettingsManager actorName={actorName} />}
           {section === 'audit' && <AuditLogManager />}
+          {section === 'reports' && isSystemAdministrator && <ReportsManager />}
         </main>
       </div>
     </div>

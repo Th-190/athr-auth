@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أثر كربلاء | Karbala Heritage Archive — Laravel</title>
+    <title>أثر كربلاء | الأرشيف الرقمي للتراث والآثار</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -38,13 +38,17 @@
             color: var(--brand-primary);
             margin: 0;
         }
-        .badge {
-            background: #FEF3C7;
-            color: #92400E;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
+        .admin-link {
+            color: var(--brand-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 0.6rem 0.9rem;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
         }
         .container {
             max-width: 1200px;
@@ -89,13 +93,6 @@
             margin-top: 0;
             color: var(--brand-primary);
         }
-        .code-pill {
-            font-family: 'JetBrains Mono', monospace;
-            background: #F5F3EF;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
     </style>
 </head>
 <body>
@@ -104,34 +101,29 @@
             <h1 class="logo-title">«أثر كربلاء» — Karbala Heritage Archive</h1>
             <small style="color: #78716C;">منظومة التوثيق الرقمي الرصين للتراث والآثار</small>
         </div>
-        <div class="badge">Laravel 12 · PHP 8.3 Ready</div>
+        <a class="admin-link" href="/admin/login">دخول هيئة الإدارة</a>
     </header>
 
     <div class="container">
         <div class="hero">
             <h1>الأرشيف الرقمي الموثّق لمحافظة كربلاء</h1>
             <p>
-                تم تحويل وتهيئة المشروع بالكامل مع منظومة Laravel 12 وقاعدة بيانات PostGIS وواجهات RESTful API لجميع معالم التراث والتحقيق الميداني.
+                أرشيف رقمي يوثّق المواقع الأثرية والتاريخية والتراثية في محافظة كربلاء، ويربط السجلات بالمصادر والمراجعة العلمية.
             </p>
-            <div>
-                <a href="/api/v1/health" class="code-pill">/api/v1/health</a> ·
-                <a href="/api/v1/sites" class="code-pill">/api/v1/sites</a> ·
-                <a href="/api/v1/taxonomies" class="code-pill">/api/v1/taxonomies</a>
-            </div>
         </div>
 
         <div class="grid">
             <div class="card">
-                <h3>إدارة المعالم الأثرية (Sites)</h3>
-                <p>متحكم SiteController مع بوابات حماية الإحداثيات الجغرافية الحساسة PostGIS وتتبع المراجعات Revisions.</p>
+                <h3>سجل المعالم الأثرية</h3>
+                <p>سجلات توثيقية للمواقع والعمارة التاريخية في محافظة كربلاء مع معلومات الموقع والحالة والأهمية.</p>
             </div>
             <div class="card">
-                <h3>خزينة الصور والوسائط (Media Vault)</h3>
-                <p>متحكم MediaController لفحص الترويسات الثنائية وتجريد بيانات EXIF ووسم الصور بالخط العربي وتدقيق SHA-256.</p>
+                <h3>الصور والأدلة</h3>
+                <p>مواد بصرية مرتبطة بسجلاتها ومصادرها وبيانات الحقوق والنسبة، وفق ضوابط حفظ الأصول.</p>
             </div>
             <div class="card">
-                <h3>المساهمات والتحقيق الأكاديمي</h3>
-                <p>متحكمات ContributionController و ClaimController لتوثيق الفرضيات وتلقي المساهمات وتدقيق المصادر.</p>
+                <h3>المصادر والتحقيق العلمي</h3>
+                <p>إسناد تاريخي وأثري قابل للمراجعة، مع فصل حالة النشر عن مستوى التحقق من المعلومات.</p>
             </div>
         </div>
     </div>

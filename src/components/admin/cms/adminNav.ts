@@ -20,6 +20,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: 'navigation', label: 'التنقل والتذييل', group: 'الواجهة' },
   { id: 'verification', label: 'التحقيق والتحقق', group: 'المراجعة والتوثيق' },
   { id: 'heritage_editorial', label: 'تحرير السجلات والاستشهادات', group: 'السجلات' },
+  { id: 'reports', label: 'بلاغات تصويب الأرشيف', group: 'المراجعة والتوثيق', adminOnly: true },
   { id: 'users', label: 'المستخدمون والمديرون', group: 'النظام', adminOnly: true },
   { id: 'settings', label: 'إعدادات الموقع', group: 'النظام', adminOnly: true },
   { id: 'audit', label: 'سجل التدقيق والمراجعة', group: 'المراجعة والتوثيق' },

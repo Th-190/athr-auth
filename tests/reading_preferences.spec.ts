@@ -29,7 +29,7 @@ test('high contrast applies immediately and persists when the modal is reopened 
   await expect(page.locator('[data-reading-contrast="standard"]')).toBeVisible();
 });
 
-test('failed preference persistence leaves the saved setting and visible control unchanged', async ({ page }) => {
+test('preferences still take effect for the session when browser storage is unavailable', async ({ page }) => {
   await page.addInitScript(() => {
     const originalSetItem = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key: string, value: string) {
@@ -43,9 +43,31 @@ test('failed preference persistence leaves the saved setting and visible control
   const contrastSwitch = page.getByRole('switch', { name: 'نمط عالي التباين' });
   await contrastSwitch.click();
 
-  await expect(contrastSwitch).toHaveAttribute('aria-checked', 'false');
-  await expect(page.getByRole('alert')).toContainText('تعذّر حفظ التفضيل');
-  await expect(page.locator('[data-reading-contrast="standard"]')).toBeVisible();
+  await expect(contrastSwitch).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('alert')).toContainText('يظل فعالاً حتى إعادة تحميل الصفحة');
+  await expect(page.locator('[data-reading-contrast="high"]')).toBeVisible();
+});
+
+test('reading comfort changes archival prose, persists, and restores its original state', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'راحة القراءة', exact: true }).click();
+
+  const comfortSwitch = page.getByRole('switch', { name: 'تحسين تنسيق القراءة' });
+  await expect(comfortSwitch).toHaveAttribute('aria-checked', 'false');
+  await comfortSwitch.click();
+  await expect(comfortSwitch).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('[data-reading-comfort="on"]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('kha_reading_preferences')))
+    .toContain('"readingComfort":true');
+
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect(page.locator('[data-reading-comfort="on"]')).toBeVisible();
+  const activeShortcut = page.getByRole('button', { name: /^راحة القراءة/ });
+  await expect(activeShortcut).toContainText('مفعّلة');
+  await activeShortcut.click();
+  await page.getByRole('switch', { name: 'تحسين تنسيق القراءة' }).click();
+  await expect(page.locator('[data-reading-comfort="off"]')).toBeVisible();
 });
 
 test('settings dialog traps keyboard focus and closes from the backdrop', async ({ page }) => {

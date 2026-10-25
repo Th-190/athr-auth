@@ -38,6 +38,8 @@ class AuthController extends Controller
                 'role' => $user->role?->name ?? 'viewer',
                 'role_ar' => $user->role?->name_ar ?? 'مشاهد وباحث',
                 'email_verified' => !is_null($user->email_verified_at),
+                'is_active' => (bool) $user->is_active,
+                'can_access_admin' => AdminAccess::isStaff($user),
                 'two_factor_enabled' => !is_null($user->two_factor_confirmed_at),
                 'created_at' => $user->created_at?->toIso8601String(),
             ],

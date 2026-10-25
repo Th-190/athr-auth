@@ -5,6 +5,7 @@ export interface ReadingPreferences {
   fontSize: 'normal' | 'medium' | 'large';
   highContrast: boolean;
   numeralSystem: 'arabic' | 'latin';
+  readingComfort: boolean;
 }
 
 interface ReadingPreferencesModalProps {
@@ -97,6 +98,29 @@ export const ReadingPreferencesModal: React.FC<ReadingPreferencesModalProps> = (
         </div>
 
         <div className="space-y-6 overflow-y-auto p-5 text-sm sm:p-6">
+          <section aria-labelledby="reading-comfort-heading" className="flex items-center justify-between gap-4 rounded-lg border border-stone-300 bg-white p-4">
+            <div className="min-w-0">
+              <h3 id="reading-comfort-heading" className="text-sm font-bold text-stone-950">تحسين تنسيق القراءة</h3>
+              <p id="reading-comfort-description" className="mt-1 text-xs leading-6 text-stone-700">
+                يوسّع المسافة بين الأسطر والفقرات ويضبط عرض النص في سجلات المواقع والمقالات.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="تحسين تنسيق القراءة"
+              aria-describedby="reading-comfort-description"
+              aria-checked={preferences.readingComfort}
+              onClick={() => onUpdatePreferences({ readingComfort: !preferences.readingComfort })}
+              className={`inline-flex h-11 w-[4.25rem] shrink-0 items-center rounded-full border p-1 transition-colors ${
+                preferences.readingComfort ? 'justify-start border-[#5B260D] bg-[#78350F]' : 'justify-end border-stone-500 bg-stone-300'
+              }`}
+            >
+              <span className="sr-only">{preferences.readingComfort ? 'مفعّل' : 'متوقف'}</span>
+              <span aria-hidden="true" className="h-7 w-7 rounded-full border border-black/20 bg-white shadow-sm" />
+            </button>
+          </section>
+
           <section aria-labelledby="reading-font-size-heading" className="space-y-3">
             <h3 id="reading-font-size-heading" className="flex items-center gap-2 text-sm font-bold text-stone-900">
               <Type aria-hidden="true" className="h-4 w-4 text-[#78350F]" /> حجم الخط والنصوص
@@ -185,7 +209,7 @@ export const ReadingPreferencesModal: React.FC<ReadingPreferencesModalProps> = (
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-300 bg-stone-50 px-5 py-4 text-xs sm:px-6">
           <div className="min-w-0">
             {saveError ? (
-              <p role="alert" className="text-red-900">تعذّر حفظ التفضيل. لم يتغير الاختيار.</p>
+              <p role="alert" className="text-red-900">تعذّر حفظ التفضيل على هذا الجهاز؛ يظل فعالاً حتى إعادة تحميل الصفحة.</p>
             ) : (
               <p className="text-stone-700">تُحفظ التفضيلات على هذا الجهاز تلقائياً.</p>
             )}

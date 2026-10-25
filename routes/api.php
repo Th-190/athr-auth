@@ -5,6 +5,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\ContributionController;
+use App\Http\Controllers\ContentReportController;
 use App\Http\Controllers\EncyclopediaController;
 use App\Http\Controllers\EditorialAiController;
 use App\Http\Controllers\HealthCheckController;
@@ -28,6 +29,9 @@ Route::get('/health', HealthCheckController::class)->name('api.health');
 Route::prefix('v1')->group(function () {
     // System Health & Architecture Status
     Route::get('/health', HealthCheckController::class)->name('api.v1.health');
+
+    Route::post('/reports', [ContentReportController::class, 'store'])
+        ->middleware('throttle:5,1')->name('api.v1.reports.store');
 
     // Session authentication uses Laravel's web guard, CSRF token and HttpOnly cookie.
     Route::middleware('auth:sanctum')->group(function () {
@@ -94,6 +98,8 @@ Route::prefix('v1')->group(function () {
     // -------------------------------------------------------------------------
     Route::prefix('admin')->middleware(['admin'])->group(function () {
         // Users & Role Management (Admin only)
+        Route::get('/reports', [ContentReportController::class, 'index'])->name('api.v1.admin.reports.index');
+        Route::put('/reports/{report}', [ContentReportController::class, 'resolve'])->name('api.v1.admin.reports.resolve');
         Route::get('/users', [AdminUserController::class, 'index'])->name('api.v1.admin.users.index');
         Route::post('/users', [AdminUserController::class, 'store'])->name('api.v1.admin.users.store');
         Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole'])->name('api.v1.admin.users.role');

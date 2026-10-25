@@ -93,9 +93,11 @@ export default function App() {
           parsed && typeof parsed === 'object' &&
           'fontSize' in parsed && ['normal', 'medium', 'large'].includes(String(parsed.fontSize)) &&
           'highContrast' in parsed && typeof parsed.highContrast === 'boolean' &&
-          'numeralSystem' in parsed && ['arabic', 'latin'].includes(String(parsed.numeralSystem))
+          'numeralSystem' in parsed && ['arabic', 'latin'].includes(String(parsed.numeralSystem)) &&
+          (!('readingComfort' in parsed) || typeof parsed.readingComfort === 'boolean')
         ) {
-          return parsed as ReadingPreferences;
+          const savedPreferences = parsed as Partial<ReadingPreferences>;
+          return { ...savedPreferences, readingComfort: savedPreferences.readingComfort === true } as ReadingPreferences;
         }
       }
     } catch {
@@ -105,15 +107,16 @@ export default function App() {
       fontSize: 'normal',
       highContrast: false,
       numeralSystem: 'latin',
+      readingComfort: false,
     };
   });
   const [preferenceSaveError, setPreferenceSaveError] = useState(false);
 
   const handleUpdatePreferences = (newPrefs: Partial<ReadingPreferences>) => {
     const updated = { ...preferences, ...newPrefs };
+    setPreferences(updated);
     try {
       window.localStorage.setItem('kha_reading_preferences', JSON.stringify(updated));
-      setPreferences(updated);
       setPreferenceSaveError(false);
     } catch {
       setPreferenceSaveError(true);
@@ -128,7 +131,10 @@ export default function App() {
       if (
         e.key === '/' &&
         !isInstantSearchOpen &&
-        !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)
+        !isMyListOpen &&
+        !isPreferencesOpen &&
+        !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName) &&
+        !(e.target as HTMLElement)?.isContentEditable
       ) {
         e.preventDefault();
         setIsInstantSearchOpen(true);
@@ -136,7 +142,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isInstantSearchOpen]);
+  }, [isInstantSearchOpen, isMyListOpen, isPreferencesOpen]);
 
   // Dynamic document title & meta tags per page
   useEffect(() => {
@@ -207,7 +213,7 @@ export default function App() {
   // Dedicated layout for Admin CMS
   if (currentTab === 'admin') {
     return (
-      <div className={`min-h-screen bg-[#F8F6F2] text-[#1C1917] w-full max-w-full ${fontSizeClass}`}>
+      <div className="min-h-screen bg-[#F8F6F2] text-[#1C1917] w-full max-w-full">
         <AdminConsole
           currentUserRole={currentUserRole}
           onSelectSite={handleSelectSite}
@@ -219,7 +225,7 @@ export default function App() {
   }
 
   return (
-    <div data-reading-contrast={contrastAttribute} className={`min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917] w-full max-w-full overflow-x-hidden ${fontSizeClass}`}>
+    <div data-reading-contrast={contrastAttribute} data-reading-font-size={preferences.fontSize} data-reading-comfort={preferences.readingComfort ? 'on' : 'off'} className={`min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917] w-full max-w-full overflow-x-hidden ${fontSizeClass}`}>
       {/* Top Header */}
       <Header
         currentTab={currentTab}
@@ -230,6 +236,7 @@ export default function App() {
         onOpenPreferences={() => setIsPreferencesOpen(true)}
         onSelectSite={handleSelectSite}
         numeralSystem={preferences.numeralSystem}
+        readingComfortEnabled={preferences.readingComfort}
       />
 
       {/* Main Content Area */}
