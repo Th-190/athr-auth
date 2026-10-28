@@ -51,6 +51,7 @@ RUN mkdir -p \
 # Keep tracked public assets and add the generated Vite build.
 COPY --from=frontend /app/dist/ /app/public/
 COPY Caddyfile /etc/caddy/Caddyfile
+RUN caddy fmt --overwrite /etc/caddy/Caddyfile
 
 EXPOSE 8080
 
