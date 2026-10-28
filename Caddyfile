@@ -1,26 +1,25 @@
-
 {
-    admin off
-    auto_https off
+	admin off
+	auto_https off
 }
 
 :{$PORT:8080} {
-    root * /app/public
+	root * /app/public
 
-    @admin path /admin /admin/*
-    header @admin {
-        Cache-Control "no-store, no-cache, must-revalidate, private, max-age=0"
-        Pragma "no-cache"
-        Expires "0"
-    }
+	@admin path /admin /admin/*
+	header @admin {
+		Cache-Control "no-store, no-cache, must-revalidate, private, max-age=0"
+		Pragma "no-cache"
+		Expires "0"
+	}
 
-    @laravel path /api /api/* /up /admin /admin/* /sitemap.xml /rss.xml /feed /web/action /web/action* /sanctum /sanctum/* *.php
-    handle @laravel {
-        php_server
-    }
+	@laravel path /api /api/* /up /admin /admin/* /sitemap.xml /rss.xml /feed /web/action /web/action* /sanctum /sanctum/* *.php
+	handle @laravel {
+		php_server
+	}
 
-    handle {
-        try_files {path} {path}/ /index.html
-        file_server
-    }
+	handle {
+		try_files {path} {path}/ /index.html
+		file_server
+	}
 }
