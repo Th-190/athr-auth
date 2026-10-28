@@ -1,3 +1,9 @@
+FROM caddy:2 AS caddyfmt
+
+WORKDIR /fmt
+COPY Caddyfile /fmt/Caddyfile
+RUN caddy fmt --overwrite /fmt/Caddyfile
+
 FROM node:22-bookworm-slim AS frontend
 
 WORKDIR /app
@@ -50,8 +56,7 @@ RUN mkdir -p \
 
 # Keep tracked public assets and add the generated Vite build.
 COPY --from=frontend /app/dist/ /app/public/
-COPY Caddyfile /etc/caddy/Caddyfile
-RUN caddy fmt --overwrite /etc/caddy/Caddyfile
+COPY --from=caddyfmt /fmt/Caddyfile /etc/caddy/Caddyfile
 
 EXPOSE 8080
 
