@@ -1,7 +1,8 @@
-<?php
+﻿<?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 return new class extends Migration
 {
@@ -9,6 +10,10 @@ return new class extends Migration
      * Laravel is the only supported application gateway for archive data.
      * Supabase anon/authenticated are PostgREST client roles and must not be
      * able to bypass Laravel policies by writing directly to these tables.
+     *
+     * NOTE: ALTER DEFAULT PRIVILEGES requires superuser on Supabase and is
+     * intentionally omitted. Per-table REVOKE ALL is sufficient for the
+     * tables that already exist.
      */
     private const TABLES = [
         'roles', 'permissions', 'role_permission', 'provinces', 'districts', 'sub_districts', 'areas',
@@ -28,50 +33,69 @@ return new class extends Migration
             return;
         }
 
-        $schema = DB::selectOne('select current_schema() as schema_name')?->schema_name;
+        $schemaRow = DB::selectOne('select current_schema() as schema_name');
+        $schema = $schemaRow?->schema_name ?? '';
         if (! is_string($schema) || $schema === '') {
             return;
         }
 
-        $quote = fn (string $identifier): string => '"'.str_replace('"', '""', $identifier).'"';
-        $schemaIdentifier = $quote($schema);
+        $quote = fn (string $id): string => '"' . str_replace('"', '""', $id) . '"';
+        $schemaId = $quote($schema);
+
+        // Identify which Supabase PostgREST roles actually exist in this database.
         $roles = DB::select("select rolname from pg_roles where rolname in ('anon', 'authenticated')");
         $existingRoles = array_column($roles, 'rolname');
         $targets = array_values(array_intersect(['anon', 'authenticated'], $existingRoles));
 
+        // REVOKE on tables
         foreach (self::TABLES as $table) {
-            $exists = DB::selectOne('select to_regclass(?) as relation', [$schema.'.'.$table]);
-            if (! $exists?->relation) {
-                continue;
-            }
+            try {
+                $exists = DB::selectOne('select to_regclass(?) as relation', [$schema . '.' . $table]);
+                if (! $exists?->relation) {
+                    continue;
+                }
 
-            foreach (['PUBLIC', ...$targets] as $role) {
-                $roleIdentifier = $role === 'PUBLIC' ? 'PUBLIC' : $quote($role);
-                DB::statement('REVOKE ALL PRIVILEGES ON TABLE '.$schemaIdentifier.'.'.$quote($table).' FROM '.$roleIdentifier);
-            }
-        }
-
-        $sequences = DB::select(
-            "select distinct sequence.relname as sequence_name
-             from pg_class sequence
-             join pg_namespace namespace on namespace.oid = sequence.relnamespace
-             join pg_depend dependency on dependency.objid = sequence.oid and dependency.deptype in ('a', 'i')
-             join pg_class owning_table on owning_table.oid = dependency.refobjid
-             where sequence.relkind = 'S' and namespace.nspname = ? and owning_table.relname = any(?)",
-            [$schema, '{'.implode(',', self::TABLES).'}']
-        );
-
-        foreach ($sequences as $sequence) {
-            foreach (['PUBLIC', ...$targets] as $role) {
-                $roleIdentifier = $role === 'PUBLIC' ? 'PUBLIC' : $quote($role);
-                DB::statement('REVOKE ALL PRIVILEGES ON SEQUENCE '.$schemaIdentifier.'.'.$quote($sequence->sequence_name).' FROM '.$roleIdentifier);
+                foreach (['PUBLIC', ...$targets] as $role) {
+                    $roleId = $role === 'PUBLIC' ? 'PUBLIC' : $quote($role);
+                    try {
+                        DB::statement(
+                            'REVOKE ALL PRIVILEGES ON TABLE ' . $schemaId . '.' . $quote($table) . ' FROM ' . $roleId
+                        );
+                    } catch (\Throwable $e) {
+                        Log::warning("REVOKE on {$table} from {$role} skipped: " . $e->getMessage());
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Could not inspect table {$table}: " . $e->getMessage());
             }
         }
 
-        foreach (['PUBLIC', ...$targets] as $role) {
-            $roleIdentifier = $role === 'PUBLIC' ? 'PUBLIC' : $quote($role);
-            DB::statement('ALTER DEFAULT PRIVILEGES IN SCHEMA '.$schemaIdentifier.' REVOKE ALL ON TABLES FROM '.$roleIdentifier);
-            DB::statement('ALTER DEFAULT PRIVILEGES IN SCHEMA '.$schemaIdentifier.' REVOKE ALL ON SEQUENCES FROM '.$roleIdentifier);
+        // REVOKE on sequences
+        try {
+            $sequences = DB::select(
+                "select distinct seq.relname as sequence_name
+                 from pg_class seq
+                 join pg_namespace ns  on ns.oid  = seq.relnamespace
+                 join pg_depend   dep  on dep.objid = seq.oid and dep.deptype in ('a', 'i')
+                 join pg_class   tbl  on tbl.oid  = dep.refobjid
+                 where seq.relkind = 'S' and ns.nspname = ? and tbl.relname = any(?)",
+                [$schema, '{' . implode(',', self::TABLES) . '}']
+            );
+
+            foreach ($sequences as $sequence) {
+                foreach (['PUBLIC', ...$targets] as $role) {
+                    $roleId = $role === 'PUBLIC' ? 'PUBLIC' : $quote($role);
+                    try {
+                        DB::statement(
+                            'REVOKE ALL PRIVILEGES ON SEQUENCE ' . $schemaId . '.' . $quote($sequence->sequence_name) . ' FROM ' . $roleId
+                        );
+                    } catch (\Throwable $e) {
+                        Log::warning("REVOKE on sequence {$sequence->sequence_name} from {$role} skipped: " . $e->getMessage());
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Could not enumerate sequences: ' . $e->getMessage());
         }
     }
 
