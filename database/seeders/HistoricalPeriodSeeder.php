@@ -109,7 +109,7 @@ class HistoricalPeriodSeeder extends Seeder
         ];
 
         foreach ($periods as $period) {
-            HistoricalPeriod::updateOrCreate(['slug' => $period['slug']], $period);
+            HistoricalPeriod::firstOrCreate(['slug' => $period['slug']], $period);
         }
     }
 }

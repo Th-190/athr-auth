@@ -109,7 +109,7 @@ class SiteTypeSeeder extends Seeder
         ];
 
         foreach ($types as $type) {
-            SiteType::updateOrCreate(['slug' => $type['slug']], $type);
+            SiteType::firstOrCreate(['slug' => $type['slug']], $type);
         }
     }
 }

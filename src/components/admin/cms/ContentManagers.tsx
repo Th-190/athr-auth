@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { apiFetch } from '../../../services/apiFetch';
 import { archiveDB } from '../../../db/archiveStore';
 import { Area, EncyclopediaEntry, HistoricalPeriod, SiteType, Source, SourceType, Tag } from '../../../types';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
@@ -11,9 +12,27 @@ function slugify(value: string) {
     .replace(/^-|-$/g, '');
 }
 
+async function requestApi<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await apiFetch(path, {
+    ...init,
+    headers: {
+      Accept: 'application/json',
+      ...(init.body && !(init.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
+      ...(init.headers || {}),
+    },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const validation = body.errors && Object.values(body.errors).flat().join(' ');
+    throw new Error(validation || body.message || `تعذر إتمام العملية (${response.status}).`);
+  }
+  return body as T;
+}
+
 export const EncyclopediaManager: React.FC<{ actorName: string }> = ({ actorName }) => {
-  const [, setTick] = useState(0);
-  const entries = archiveDB.getEncyclopedia();
+  const [entries, setEntries] = useState<EncyclopediaEntry[]>([]);
+  const [busy, setBusy] = useState(true);
+  const [error, setError] = useState('');
   const [editing, setEditing] = useState<EncyclopediaEntry | null>(null);
   const [form, setForm] = useState<Partial<EncyclopediaEntry>>({
     term_ar: '',
@@ -24,6 +43,21 @@ export const EncyclopediaManager: React.FC<{ actorName: string }> = ({ actorName
     related_site_ids: [],
     source_ids: [],
   });
+
+  const loadEntries = async () => {
+    const result = await requestApi<{ data: any[] }>('/api/v1/admin/encyclopedia?per_page=100');
+    setEntries((result.data || []).map(row => ({
+      id: String(row.id), slug: row.slug, term_ar: row.term_ar, term_en: row.term_en || '',
+      category: row.category, short_summary: row.short_summary, full_text: row.full_text,
+      related_site_ids: (row.sites || []).map((site: any) => String(site.id)),
+      source_ids: (row.sources || []).map((source: any) => String(source.id)),
+    })));
+  };
+
+  useEffect(() => {
+    void loadEntries().catch(reason => setError(reason instanceof Error ? reason.message : 'تعذر تحميل مواد المعجم من الخادم.'))
+      .finally(() => setBusy(false));
+  }, []);
 
   const startNew = () => {
     setEditing(null);
@@ -38,27 +72,39 @@ export const EncyclopediaManager: React.FC<{ actorName: string }> = ({ actorName
     });
   };
 
-  const save = (e: React.FormEvent) => {
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.term_ar?.trim() || !form.full_text?.trim()) {
       alert('المصطلح العربي والنص الكامل إلزاميان.');
       return;
     }
-    const entry: EncyclopediaEntry = {
-      id: editing?.id || `ency_${Date.now()}`,
-      slug: editing?.slug || slugify(form.term_en || form.term_ar || `entry-${Date.now()}`),
+    setBusy(true); setError('');
+    try {
+      const payload = {
       term_ar: form.term_ar,
       term_en: form.term_en || '',
       category: (form.category as EncyclopediaEntry['category']) || 'architecture',
       short_summary: form.short_summary || form.full_text.slice(0, 180),
       full_text: form.full_text,
-      related_site_ids: form.related_site_ids || [],
-      source_ids: form.source_ids || [],
-    };
-    archiveDB.saveEncyclopediaEntry(entry, actorName);
-    setTick(t => t + 1);
-    setEditing(entry);
-    alert('حُفظت المادة وتظهر في المعجم الموسوعي العام.');
+      related_site_ids: (form.related_site_ids || []).map(Number).filter(Number.isFinite),
+      source_ids: (form.source_ids || []).map(Number).filter(Number.isFinite),
+      };
+      const result = await requestApi<{ message: string; entry: any }>(editing ? `/api/v1/admin/encyclopedia/${editing.id}` : '/api/v1/admin/encyclopedia', {
+        method: editing ? 'PUT' : 'POST', body: JSON.stringify(payload),
+      });
+      const saved: EncyclopediaEntry = {
+        id: String(result.entry.id), slug: result.entry.slug, term_ar: result.entry.term_ar,
+        term_en: result.entry.term_en || '', category: result.entry.category,
+        short_summary: result.entry.short_summary, full_text: result.entry.full_text,
+        related_site_ids: (result.entry.sites || []).map((site: any) => String(site.id)),
+        source_ids: (result.entry.sources || []).map((source: any) => String(source.id)),
+      };
+      setEntries(current => editing ? current.map(item => item.id === saved.id ? saved : item) : [saved, ...current]);
+      setEditing(saved); setForm(saved);
+      alert(result.message || 'حُفظت المسودة في قاعدة البيانات.');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذر حفظ المادة في قاعدة البيانات.');
+    } finally { setBusy(false); }
   };
 
   return (
@@ -68,7 +114,9 @@ export const EncyclopediaManager: React.FC<{ actorName: string }> = ({ actorName
           <h1 className="text-2xl font-serif font-bold">المقالات والمعجم</h1>
           <button className={ghostBtn} onClick={startNew}>مادة جديدة</button>
         </div>
+        {error && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
         <div className="bg-white border border-[#E8E2D8] rounded-xl divide-y max-h-[70vh] overflow-auto">
+          {busy && <p className="p-3 text-sm text-stone-500">جارٍ تحميل المواد من قاعدة البيانات…</p>}
           {entries.map(e => (
             <button key={e.id} onClick={() => { setEditing(e); setForm(e); }} className="w-full text-right p-3 hover:bg-stone-50 cursor-pointer">
               <div className="font-medium text-stone-900">{e.term_ar}</div>
@@ -105,13 +153,17 @@ export const EncyclopediaManager: React.FC<{ actorName: string }> = ({ actorName
           <textarea className={inputClass} rows={8} value={form.full_text || ''} onChange={e => setForm({ ...form, full_text: e.target.value })} />
         </div>
         <div className="flex gap-2">
-          <button className={primaryBtn} type="submit">حفظ المادة</button>
+          <button className={primaryBtn} type="submit" disabled={busy}>حفظ المسودة</button>
           {editing && (
-            <button type="button" className={dangerBtn} onClick={() => {
+            <button type="button" className={dangerBtn} disabled={busy} onClick={async () => {
               if (!confirm('حذف هذه المادة من المعجم العام؟')) return;
-              archiveDB.deleteEncyclopediaEntry(editing.id, actorName);
-              startNew();
-              setTick(t => t + 1);
+              setBusy(true); setError('');
+              try {
+                const result = await requestApi<{ message: string }>(`/api/v1/admin/encyclopedia/${editing.id}`, { method: 'DELETE' });
+                setEntries(current => current.filter(item => item.id !== editing.id)); startNew();
+                alert(result.message || 'تم حذف المادة من قاعدة البيانات.');
+              } catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حذف المادة من قاعدة البيانات.'); }
+              finally { setBusy(false); }
             }}>حذف</button>
           )}
         </div>
@@ -126,19 +178,48 @@ const SOURCE_TYPES: SourceType[] = [
 ];
 
 export const SourcesManager: React.FC<{ actorName: string }> = ({ actorName }) => {
-  const [, setTick] = useState(0);
-  const sources = archiveDB.getAllSources();
+  const [sources, setSources] = useState<Source[]>([]);
+  const [busy, setBusy] = useState(true);
+  const [error, setError] = useState('');
   const [form, setForm] = useState<Source | null>(null);
 
-  const save = (e: React.FormEvent) => {
+  const loadSources = async () => {
+    const result = await requestApi<{ data: any[] }>('/api/v1/admin/sources?per_page=100');
+    setSources((result.data || []).map(source => ({ ...source, id: String(source.id), year: source.year || '', language: source.language || 'ar' })));
+  };
+
+  useEffect(() => {
+    void loadSources().catch(reason => setError(reason instanceof Error ? reason.message : 'تعذر تحميل المصادر من الخادم.'))
+      .finally(() => setBusy(false));
+  }, []);
+
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form?.title.trim() || !form.author.trim()) {
       alert('العنوان والمؤلف إلزاميان.');
       return;
     }
-    archiveDB.saveSource(form, actorName);
-    setTick(t => t + 1);
-    alert('حُفظ المرجع ويظهر في فهرس المصادر.');
+    setBusy(true); setError('');
+    try {
+      const creating = !/^\d+$/.test(form.id);
+      const payload = {
+        source_type: form.source_type, title: form.title, author: form.author,
+        publisher: form.publisher || null, year: form.year || null, url: form.url || null,
+        isbn: form.isbn || null, archive_reference: form.archive_reference || null,
+        page_reference: form.page_reference || null, excerpt: form.excerpt || null,
+        language: form.language || 'ar',
+        reliability_level: form.reliability_level, reliability_notes: form.reliability_notes || null,
+      };
+      const result = await requestApi<{ message: string; source: Source }>(creating ? '/api/v1/admin/sources' : `/api/v1/admin/sources/${form.id}`, {
+        method: creating ? 'POST' : 'PUT', body: JSON.stringify(payload),
+      });
+      const saved = { ...result.source, id: String(result.source.id) };
+      setSources(current => creating ? [saved, ...current] : current.map(item => item.id === saved.id ? saved : item));
+      setForm(saved);
+      alert(result.message || 'تم حفظ المصدر في قاعدة البيانات.');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذر حفظ المصدر في قاعدة البيانات.');
+    } finally { setBusy(false); }
   };
 
   return (
@@ -147,7 +228,7 @@ export const SourcesManager: React.FC<{ actorName: string }> = ({ actorName }) =
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-serif font-bold">المصادر والمراجع</h1>
           <button className={ghostBtn} onClick={() => setForm({
-            id: `src_${Date.now()}`,
+            id: '',
             source_type: 'book',
             title: '',
             author: '',
@@ -155,7 +236,9 @@ export const SourcesManager: React.FC<{ actorName: string }> = ({ actorName }) =
             language: 'ar',
           })}>مرجع جديد</button>
         </div>
+        {error && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
         <div className="bg-white border border-[#E8E2D8] rounded-xl divide-y max-h-[70vh] overflow-auto">
+          {busy && <p className="p-3 text-sm text-stone-500">جارٍ تحميل المصادر من قاعدة البيانات…</p>}
           {sources.map(s => (
             <button key={s.id} onClick={() => setForm(s)} className="w-full text-right p-3 hover:bg-stone-50 cursor-pointer">
               <div className="font-medium text-stone-900">{s.title}</div>
@@ -207,13 +290,17 @@ export const SourcesManager: React.FC<{ actorName: string }> = ({ actorName }) =
             <textarea className={inputClass} rows={2} value={form.reliability_notes || ''} onChange={e => setForm({ ...form, reliability_notes: e.target.value })} />
           </div>
           <div className="flex gap-2">
-            <button className={primaryBtn} type="submit">حفظ المرجع</button>
-            <button type="button" className={dangerBtn} onClick={() => {
+            <button className={primaryBtn} type="submit" disabled={busy}>حفظ المرجع</button>
+            {/^[0-9]+$/.test(form.id) && <button type="button" className={dangerBtn} disabled={busy} onClick={async () => {
               if (!confirm('حذف هذا المرجع؟')) return;
-              archiveDB.deleteSource(form.id, actorName);
-              setForm(null);
-              setTick(t => t + 1);
-            }}>حذف</button>
+              setBusy(true); setError('');
+              try {
+                const result = await requestApi<{ message: string }>(`/api/v1/admin/sources/${form.id}`, { method: 'DELETE' });
+                setSources(current => current.filter(item => item.id !== form.id)); setForm(null);
+                alert(result.message || 'تم حذف المصدر من قاعدة البيانات.');
+              } catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حذف المصدر.'); }
+              finally { setBusy(false); }
+            }}>حذف</button>}
           </div>
         </form>
       )}
@@ -222,35 +309,43 @@ export const SourcesManager: React.FC<{ actorName: string }> = ({ actorName }) =
 };
 
 export const TypesManager: React.FC<{ actorName: string }> = ({ actorName }) => {
-  const [, setTick] = useState(0);
-  const items = archiveDB.getSiteTypes();
+  const [items, setItems] = useState<SiteType[]>([]);
+  const [error, setError] = useState('');
   const [form, setForm] = useState<SiteType | null>(null);
-  const save = (e: React.FormEvent) => {
+  const load = async () => {
+    const rows = await requestApi<any[]>('/api/v1/taxonomies/types');
+    setItems(rows.map(row => ({ ...row, id: String(row.id), icon_name: row.icon || row.icon_name || 'Landmark' })));
+  };
+  useEffect(() => { void load().catch(reason => setError(reason.message || 'تعذر تحميل الأنواع.')); }, []);
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form?.name_ar.trim()) return;
-    archiveDB.saveSiteType({ ...form, slug: form.slug || slugify(form.name_en || form.name_ar) }, actorName);
-    setTick(t => t + 1);
+    setError('');
+    try {
+      const creating = !/^\d+$/.test(form.id);
+      const result = await requestApi<{ type: any }>(creating ? '/api/v1/admin/taxonomies/types' : `/api/v1/admin/taxonomies/types/${form.id}`, {
+        method: creating ? 'POST' : 'PUT', body: JSON.stringify({ name_ar: form.name_ar, name_en: form.name_en, definition: form.definition, icon: form.icon_name, sort_order: (form as any).sort_order || 0, is_active: true }),
+      });
+      await load(); setForm({ ...result.type, id: String(result.type.id), icon_name: result.type.icon || 'Landmark' });
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حفظ النوع.'); }
   };
   return (
     <TaxonomyList
       title="أنواع المعالم"
       items={items.map(i => ({ id: i.id, label: i.name_ar }))}
-      onNew={() => setForm({ id: `type_${Date.now()}`, slug: '', name_ar: '', name_en: '', definition: '', icon_name: 'Landmark' })}
+      onNew={() => setForm({ id: '', slug: '', name_ar: '', name_en: '', definition: '', icon_name: 'Landmark' })}
       onSelect={id => setForm(items.find(i => i.id === id) || null)}
       form={form && (
         <form onSubmit={save} className="space-y-3">
+          {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
           <div><label className={labelClass}>الاسم بالعربية</label><input className={inputClass} value={form.name_ar} onChange={e => setForm({ ...form, name_ar: e.target.value })} /></div>
           <div><label className={labelClass}>الاسم بالإنجليزية</label><input className={inputClass} value={form.name_en} onChange={e => setForm({ ...form, name_en: e.target.value })} /></div>
           <div><label className={labelClass}>التعريف</label><textarea className={inputClass} rows={3} value={form.definition} onChange={e => setForm({ ...form, definition: e.target.value })} /></div>
           <div className="flex gap-2">
             <button className={primaryBtn} type="submit">حفظ النوع</button>
-            <button type="button" className={dangerBtn} onClick={() => {
-              if (!archiveDB.deleteSiteType(form.id, actorName)) {
-                alert('لا يمكن حذف نوع مرتبط بسجلات قائمة.');
-                return;
-              }
-              setForm(null);
-              setTick(t => t + 1);
+            <button type="button" className={dangerBtn} onClick={async () => {
+              try { await requestApi(`/api/v1/admin/taxonomies/types/${form.id}`, { method: 'DELETE' }); setForm(null); await load(); }
+              catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حذف النوع.'); }
             }}>حذف</button>
           </div>
         </form>
@@ -260,23 +355,35 @@ export const TypesManager: React.FC<{ actorName: string }> = ({ actorName }) => 
 };
 
 export const PeriodsManager: React.FC<{ actorName: string }> = ({ actorName }) => {
-  const [, setTick] = useState(0);
-  const items = archiveDB.getHistoricalPeriods();
+  const [items, setItems] = useState<HistoricalPeriod[]>([]);
+  const [error, setError] = useState('');
   const [form, setForm] = useState<HistoricalPeriod | null>(null);
-  const save = (e: React.FormEvent) => {
+  const load = async () => {
+    const rows = await requestApi<any[]>('/api/v1/taxonomies/periods');
+    setItems(rows.map(row => ({ ...row, id: String(row.id), start_year: row.start_year_label || '', end_year: row.end_year_label || '' })));
+  };
+  useEffect(() => { void load().catch(reason => setError(reason.message || 'تعذر تحميل الحقب.')); }, []);
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form?.name_ar.trim()) return;
-    archiveDB.saveHistoricalPeriod({ ...form, slug: form.slug || slugify(form.name_en || form.name_ar) }, actorName);
-    setTick(t => t + 1);
+    setError('');
+    try {
+      const creating = !/^\d+$/.test(form.id);
+      const result = await requestApi<{ period: any }>(creating ? '/api/v1/admin/taxonomies/periods' : `/api/v1/admin/taxonomies/periods/${form.id}`, {
+        method: creating ? 'POST' : 'PUT', body: JSON.stringify({ name_ar: form.name_ar, name_en: form.name_en, start_year_label: form.start_year || 'غير محدد', end_year_label: form.end_year || 'غير محدد', description: form.description, sort_order: (form as any).sort_order || 0, is_active: true }),
+      });
+      await load(); setForm({ ...result.period, id: String(result.period.id), start_year: result.period.start_year_label, end_year: result.period.end_year_label });
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حفظ الحقبة.'); }
   };
   return (
     <TaxonomyList
       title="الحقبات التاريخية"
       items={items.map(i => ({ id: i.id, label: `${i.name_ar} (${i.start_year} – ${i.end_year})` }))}
-      onNew={() => setForm({ id: `period_${Date.now()}`, slug: '', name_ar: '', name_en: '', start_year: '', end_year: '', description: '' })}
+      onNew={() => setForm({ id: '', slug: '', name_ar: '', name_en: '', start_year: '', end_year: '', description: '' })}
       onSelect={id => setForm(items.find(i => i.id === id) || null)}
       form={form && (
         <form onSubmit={save} className="space-y-3">
+          {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
           <div><label className={labelClass}>الاسم بالعربية</label><input className={inputClass} value={form.name_ar} onChange={e => setForm({ ...form, name_ar: e.target.value })} /></div>
           <div><label className={labelClass}>الاسم بالإنجليزية</label><input className={inputClass} value={form.name_en} onChange={e => setForm({ ...form, name_en: e.target.value })} /></div>
           <div className="grid grid-cols-2 gap-3">
@@ -286,13 +393,9 @@ export const PeriodsManager: React.FC<{ actorName: string }> = ({ actorName }) =
           <div><label className={labelClass}>الوصف</label><textarea className={inputClass} rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
           <div className="flex gap-2">
             <button className={primaryBtn} type="submit">حفظ الحقبة</button>
-            <button type="button" className={dangerBtn} onClick={() => {
-              if (!archiveDB.deleteHistoricalPeriod(form.id, actorName)) {
-                alert('لا يمكن حذف حقبة مرتبطة بسجلات قائمة.');
-                return;
-              }
-              setForm(null);
-              setTick(t => t + 1);
+            <button type="button" className={dangerBtn} onClick={async () => {
+              try { await requestApi(`/api/v1/admin/taxonomies/periods/${form.id}`, { method: 'DELETE' }); setForm(null); await load(); }
+              catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حذف الحقبة.'); }
             }}>حذف</button>
           </div>
         </form>
@@ -302,16 +405,26 @@ export const PeriodsManager: React.FC<{ actorName: string }> = ({ actorName }) =
 };
 
 export const TagsManager: React.FC<{ actorName: string }> = ({ actorName }) => {
-  const [, setTick] = useState(0);
-  const items = archiveDB.getTags();
+  const [items, setItems] = useState<Tag[]>([]);
+  const [error, setError] = useState('');
   const [form, setForm] = useState<Tag | null>(null);
 
-  const save = (e: React.FormEvent) => {
+  const load = async () => {
+    const result = await requestApi<{ tags: any[] }>('/api/v1/taxonomies');
+    setItems((result.tags || []).map(row => ({ ...row, id: String(row.id) })));
+  };
+  useEffect(() => { void load().catch(reason => setError(reason.message || 'تعذر تحميل الوسوم.')); }, []);
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form?.name_ar.trim()) return;
-    archiveDB.saveTag(form, actorName);
-    setTick(t => t + 1);
-    alert('تم حفظ الوسم بنجاح.');
+    setError('');
+    try {
+      const creating = !/^\d+$/.test(form.id);
+      await requestApi(creating ? '/api/v1/admin/taxonomies/tags' : `/api/v1/admin/taxonomies/tags/${form.id}`, {
+        method: creating ? 'POST' : 'PUT', body: JSON.stringify({ name_ar: form.name_ar, name_en: form.name_en || null, sort_order: form.sort_order || 0, is_active: form.is_active !== false }),
+      });
+      await load(); alert('تم حفظ الوسم في قاعدة البيانات.');
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حفظ الوسم.'); }
   };
 
   return (
@@ -319,7 +432,7 @@ export const TagsManager: React.FC<{ actorName: string }> = ({ actorName }) => {
       title="الوسوم والكلمات الدلالية"
       items={items.map(i => ({ id: i.id, label: `${i.name_ar} ${i.name_en ? `(${i.name_en})` : ''}` }))}
       onNew={() => setForm({
-        id: `tag_${Date.now()}`,
+        id: '',
         name_ar: '',
         name_en: '',
         slug: '',
@@ -329,6 +442,7 @@ export const TagsManager: React.FC<{ actorName: string }> = ({ actorName }) => {
       onSelect={id => setForm(items.find(i => i.id === id) || null)}
       form={form && (
         <form onSubmit={save} className="space-y-4">
+          {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
           <div>
             <label className={labelClass}>الوسم بالعربية *</label>
             <input
@@ -383,11 +497,10 @@ export const TagsManager: React.FC<{ actorName: string }> = ({ actorName }) => {
             <button
               type="button"
               className={dangerBtn}
-              onClick={() => {
+              onClick={async () => {
                 if (confirm('هل أنت متأكد من رغبتك بحذف هذا الوسم؟')) {
-                  archiveDB.deleteTag(form.id, actorName);
-                  setForm(null);
-                  setTick(t => t + 1);
+                  try { await requestApi(`/api/v1/admin/taxonomies/tags/${form.id}`, { method: 'DELETE' }); setForm(null); await load(); }
+                  catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حذف الوسم.'); }
                 }
               }}
             >
@@ -402,17 +515,35 @@ export const TagsManager: React.FC<{ actorName: string }> = ({ actorName }) => {
 
 export const AreasManager: React.FC<{ actorName: string }> = ({ actorName }) => {
   const [tab, setTab] = useState<'areas' | 'tags'>('areas');
-  const [, setTick] = useState(0);
-  const items = archiveDB.getAreas();
-  const districts = archiveDB.getDistricts();
+  const [items, setItems] = useState<Area[]>([]);
+  const [subDistricts, setSubDistricts] = useState<{ id: string; name_ar: string; district_name_ar: string }[]>([]);
+  const [error, setError] = useState('');
   const [form, setForm] = useState<Area | null>(null);
 
-  const save = (e: React.FormEvent) => {
+  const load = async () => {
+    const body = await requestApi<any>('/api/v1/taxonomies');
+    const districts = (body.provinces || []).flatMap((province: any) => province.districts || []);
+    const subs = districts.flatMap((district: any) => (district.sub_districts || district.subDistricts || []).map((sub: any) => ({ id: String(sub.id), name_ar: sub.name_ar, district_name_ar: district.name_ar })));
+    setSubDistricts(subs);
+    setItems((body.areas || []).map((area: any) => ({
+      ...area, id: String(area.id), sub_district_id: String(area.sub_district_id),
+      district_id: String(subs.find((sub: any) => sub.id === String(area.sub_district_id))?.id || ''),
+      lat: 32.616, lng: 44.0249,
+    })));
+  };
+  useEffect(() => { void load().catch(reason => setError(reason.message || 'تعذر تحميل المناطق.')); }, []);
+
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form?.name_ar.trim()) return;
-    archiveDB.saveArea(form, actorName);
-    setTick(t => t + 1);
-    alert('تم حفظ المنطقة بنجاح.');
+    setError('');
+    try {
+      const creating = !/^\d+$/.test(form.id);
+      await requestApi(creating ? '/api/v1/admin/taxonomies/areas' : `/api/v1/admin/taxonomies/areas/${form.id}`, {
+        method: creating ? 'POST' : 'PUT', body: JSON.stringify({ name_ar: form.name_ar, name_en: form.name_en || null, sub_district_id: Number(form.district_id), description: form.description || null, sort_order: 0, is_active: true }),
+      });
+      await load(); alert('تم حفظ المنطقة في قاعدة البيانات.');
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حفظ المنطقة.'); }
   };
 
   return (
@@ -448,9 +579,9 @@ export const AreasManager: React.FC<{ actorName: string }> = ({ actorName }) => 
           title="المناطق والمواقع"
           items={items.map(i => ({ id: i.id, label: i.name_ar }))}
           onNew={() => setForm({
-            id: `area_${Date.now()}`,
-            sub_district_id: archiveDB.getSubDistricts()[0]?.id || 'sub_center',
-            district_id: districts[0]?.id || 'dist_center',
+            id: '',
+            sub_district_id: subDistricts[0]?.id || '',
+            district_id: subDistricts[0]?.id || '',
             name_ar: '',
             name_en: '',
             description: '',
@@ -460,12 +591,13 @@ export const AreasManager: React.FC<{ actorName: string }> = ({ actorName }) => 
           onSelect={id => setForm(items.find(i => i.id === id) || null)}
           form={form && (
             <form onSubmit={save} className="space-y-3">
+              {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
               <div><label className={labelClass}>الاسم بالعربية</label><input className={inputClass} value={form.name_ar} onChange={e => setForm({ ...form, name_ar: e.target.value })} /></div>
               <div><label className={labelClass}>الاسم بالإنجليزية</label><input className={inputClass} value={form.name_en} onChange={e => setForm({ ...form, name_en: e.target.value })} /></div>
               <div>
-                <label className={labelClass}>القضاء</label>
-                <select className={inputClass} value={form.district_id} onChange={e => setForm({ ...form, district_id: e.target.value })}>
-                  {districts.map(d => <option key={d.id} value={d.id}>{d.name_ar}</option>)}
+                  <label className={labelClass}>القضاء / الناحية</label>
+                <select className={inputClass} required value={form.district_id} onChange={e => setForm({ ...form, district_id: e.target.value, sub_district_id: e.target.value })}>
+                  {subDistricts.map(d => <option key={d.id} value={d.id}>{d.district_name_ar} — {d.name_ar}</option>)}
                 </select>
               </div>
               <div><label className={labelClass}>الوصف</label><textarea className={inputClass} rows={3} value={form.description || ''} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
@@ -475,13 +607,9 @@ export const AreasManager: React.FC<{ actorName: string }> = ({ actorName }) => 
               </div>
               <div className="flex gap-2">
                 <button className={primaryBtn} type="submit">حفظ المنطقة</button>
-                <button type="button" className={dangerBtn} onClick={() => {
-                  if (!archiveDB.deleteArea(form.id, actorName)) {
-                    alert('لا يمكن حذف منطقة مرتبطة بسجلات قائمة.');
-                    return;
-                  }
-                  setForm(null);
-                  setTick(t => t + 1);
+                <button type="button" className={dangerBtn} onClick={async () => {
+                  try { await requestApi(`/api/v1/admin/taxonomies/areas/${form.id}`, { method: 'DELETE' }); setForm(null); await load(); }
+                  catch (reason) { setError(reason instanceof Error ? reason.message : 'تعذر حذف المنطقة.'); }
                 }}>حذف</button>
               </div>
             </form>

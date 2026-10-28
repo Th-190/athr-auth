@@ -24,8 +24,8 @@ class GeographicHierarchySeeder extends Seeder
             ]
         );
 
-        if (DB::getDriverName() === 'pgsql') {
-            DB::statement("UPDATE provinces SET coordinates = ST_SetSRID(ST_MakePoint(44.0249, 32.6160), 4326)::geography WHERE id = {$karbala->id};");
+        if ($karbala->wasRecentlyCreated && DB::getDriverName() === 'pgsql') {
+            DB::update('UPDATE provinces SET coordinates = ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography WHERE id = ?', [44.0249, 32.6160, $karbala->id]);
         }
 
         // 2. Districts (Editable placeholders flagged for editor confirmation)
@@ -58,8 +58,8 @@ class GeographicHierarchySeeder extends Seeder
                 ]
             );
 
-            if (DB::getDriverName() === 'pgsql') {
-                DB::statement("UPDATE areas SET coordinates = ST_SetSRID(ST_MakePoint(44.0249, 32.6160), 4326)::geography WHERE id = {$area->id};");
+            if ($area->wasRecentlyCreated && DB::getDriverName() === 'pgsql') {
+                DB::update('UPDATE areas SET coordinates = ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography WHERE id = ?', [44.0249, 32.6160, $area->id]);
             }
         }
     }

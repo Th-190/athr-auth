@@ -15,6 +15,7 @@ use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MuseumController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\SourceController;
 use App\Http\Controllers\TaxonomyController;
 use Illuminate\Support\Facades\Route;
 
@@ -125,10 +126,17 @@ Route::prefix('v1')->group(function () {
         Route::post('/claims/{claim}/evidence', [ClaimController::class, 'addEvidence'])->name('api.v1.admin.claims.evidence');
 
         // Encyclopedia / Articles CRUD
+        Route::get('/encyclopedia', [EncyclopediaController::class, 'adminIndex'])->name('api.v1.admin.encyclopedia.index');
         Route::post('/encyclopedia', [EncyclopediaController::class, 'store'])->name('api.v1.admin.encyclopedia.store');
         Route::put('/encyclopedia/{id}', [EncyclopediaController::class, 'update'])->name('api.v1.admin.encyclopedia.update');
         Route::post('/encyclopedia/{id}/publish', [EncyclopediaController::class, 'publish'])->name('api.v1.admin.encyclopedia.publish');
         Route::delete('/encyclopedia/{id}', [EncyclopediaController::class, 'destroy'])->name('api.v1.admin.encyclopedia.destroy');
+
+        // Source bibliography CRUD
+        Route::get('/sources', [SourceController::class, 'index'])->name('api.v1.admin.sources.index');
+        Route::post('/sources', [SourceController::class, 'store'])->name('api.v1.admin.sources.store');
+        Route::put('/sources/{source}', [SourceController::class, 'update'])->name('api.v1.admin.sources.update');
+        Route::delete('/sources/{source}', [SourceController::class, 'destroy'])->name('api.v1.admin.sources.destroy');
 
         // Taxonomies Management (Types, Periods, Areas, Tags)
         Route::post('/taxonomies/types', [TaxonomyController::class, 'storeType'])->name('api.v1.admin.taxonomies.types.store');

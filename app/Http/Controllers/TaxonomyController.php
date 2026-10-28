@@ -27,7 +27,7 @@ class TaxonomyController extends Controller
         return response()->json([
             'site_types' => SiteType::withCount('sites')->orderBy('sort_order')->get(),
             'historical_periods' => HistoricalPeriod::withCount('sites')->orderBy('sort_order')->get(),
-            'provinces' => Province::with(['districts.areas' => fn ($q) => $q->withCount('sites')])->get(),
+            'provinces' => Province::with(['districts.subDistricts.areas' => fn ($q) => $q->withCount('sites')])->get(),
             'areas' => Area::withCount('sites')->orderBy('sort_order')->get(),
             'tags' => Tag::withCount('sites')->orderBy('sort_order')->get(),
         ]);
@@ -46,7 +46,7 @@ class TaxonomyController extends Controller
     public function geography(): JsonResponse
     {
         return response()->json(
-            Province::with(['districts.areas' => function ($q) {
+            Province::with(['districts.subDistricts.areas' => function ($q) {
                 $q->withCount('sites')->orderBy('sort_order');
             }])->get()
         );

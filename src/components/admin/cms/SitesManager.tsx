@@ -1,6 +1,5 @@
 import { apiFetch } from '../../../services/apiFetch';
 import React, { useMemo, useState } from 'react';
-import { archiveDB } from '../../../db/archiveStore';
 import { Site } from '../../../types';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
 
@@ -11,7 +10,10 @@ interface Props {
   onSelectSite?: (site: Site) => void;
 }
 
-const emptyForm = (): Partial<Site> => ({
+type Option = { id: string | number; name_ar: string; name_en?: string; slug?: string };
+type SiteFormTaxonomies = { siteTypes: Option[]; periods: Option[]; areas: Option[]; province: Option };
+
+const emptyForm = (taxonomies?: SiteFormTaxonomies): Partial<Site> => ({
   name_ar: '',
   name_en: '',
   short_description: '',
@@ -21,15 +23,15 @@ const emptyForm = (): Partial<Site> => ({
   cultural_significance: '',
   current_condition: '',
   location_description: '',
-  site_type_id: archiveDB.getSiteTypes()[0]?.id,
-  historical_period_id: archiveDB.getHistoricalPeriods()[0]?.id,
-  area_id: archiveDB.getAreas()[0]?.id,
+  site_type_id: taxonomies?.siteTypes[0]?.id ? String(taxonomies.siteTypes[0].id) : '',
+  historical_period_id: taxonomies?.periods[0]?.id ? String(taxonomies.periods[0].id) : '',
+  area_id: taxonomies?.areas[0]?.id ? String(taxonomies.areas[0].id) : '',
   lat: 32.616,
   lng: 44.0249,
   location_precision: 'approximate',
   publication_status: 'draft',
   verification_status: 'unverified',
-  is_demo: true,
+  is_demo: false,
   featured: false,
   is_lost_or_vanished: false,
   is_under_research: true,
@@ -39,8 +41,45 @@ const emptyForm = (): Partial<Site> => ({
 export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
   const [sites, setSites] = useState<Site[]>([]);
   const [loadingSites, setLoadingSites] = useState(true);
+  const [taxonomies, setTaxonomies] = useState<SiteFormTaxonomies | null>(null);
+  const [loadingTaxonomies, setLoadingTaxonomies] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  React.useEffect(() => {
+    let cancelled = false;
+    apiFetch('/api/v1/taxonomies', { headers: { Accept: 'application/json' } })
+      .then(async response => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || `تعذر تحميل التصنيفات من قاعدة البيانات (${response.status}).`);
+        const province = (body.provinces || []).find((item: any) => item.code === 'KHA');
+        const areas = (province?.districts || []).flatMap((district: any) =>
+          (district.sub_districts || district.subDistricts || []).flatMap((subDistrict: any) =>
+            (subDistrict.areas || []).map((area: any) => ({ ...area, district_name_ar: district.name_ar }))
+          )
+        );
+        const loaded: SiteFormTaxonomies = {
+          siteTypes: body.site_types || [],
+          periods: body.historical_periods || [],
+          areas,
+          province,
+        };
+        if (!loaded.siteTypes.length || !loaded.periods.length || !loaded.areas.length || !province) {
+          throw new Error('لا توجد بيانات تصنيف أو مناطق كربلاء في قاعدة البيانات. يلزم تهيئة البيانات المرجعية قبل تسجيل معلم جديد.');
+        }
+        if (!cancelled) {
+          setTaxonomies(loaded);
+          setForm(current => ({
+            ...current,
+            site_type_id: loaded.siteTypes.some(item => String(item.id) === String(current.site_type_id)) ? String(current.site_type_id) : String(loaded.siteTypes[0].id),
+            historical_period_id: loaded.periods.some(item => String(item.id) === String(current.historical_period_id)) ? String(current.historical_period_id) : String(loaded.periods[0].id),
+            area_id: loaded.areas.some((item: any) => String(item.id) === String(current.area_id)) ? String(current.area_id) : String(loaded.areas[0].id),
+          }));
+        }
+      })
+      .catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'تعذر تحميل تصنيفات قاعدة البيانات.'); })
+      .finally(() => { if (!cancelled) setLoadingTaxonomies(false); });
+    return () => { cancelled = true; };
+  }, []);
   React.useEffect(() => {
     apiFetch('/api/v1/admin/editorial?kind=sites&per_page=50', { headers: { Accept: 'application/json' } })
       .then(async response => {
@@ -56,6 +95,7 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
 
   const openEntity = (id?: string) => {
     setInternalEntityId(id);
+    if (id === 'new') setForm(emptyForm(taxonomies || undefined));
     if (onOpenEntity) onOpenEntity(id);
   };
 
@@ -66,15 +106,12 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
   const [filter, setFilter] = useState('');
 
   React.useEffect(() => {
-    if (entityId === 'new') setForm(emptyForm());
+    if (entityId === 'new') setForm(emptyForm(taxonomies || undefined));
     else if (editing) {
       const row = editing as any;
-      const localType = archiveDB.getSiteTypes().find(item => item.slug === row.site_type?.slug || String(item.id) === String(row.site_type_id));
-      const localPeriod = archiveDB.getHistoricalPeriods().find(item => item.slug === row.historical_period?.slug || String(item.id) === String(row.historical_period_id));
-      const localArea = archiveDB.getAreas().find(item => item.name_ar === row.area?.name_ar || String(item.id) === String(row.area_id));
-      setForm({ ...editing, site_type_id: localType?.id ?? String(row.site_type_id), historical_period_id: localPeriod?.id ?? String(row.historical_period_id), area_id: localArea?.id ?? String(row.area_id), lat: Number(row.latitude ?? row.lat ?? 0), lng: Number(row.longitude ?? row.lng ?? 0) });
+      setForm({ ...editing, site_type_id: String(row.site_type_id || ''), historical_period_id: String(row.historical_period_id || ''), area_id: String(row.area_id || ''), lat: Number(row.latitude ?? row.lat ?? 0), lng: Number(row.longitude ?? row.lng ?? 0) });
     }
-  }, [entityId, editing?.id]);
+  }, [entityId, editing?.id, taxonomies]);
 
   const filtered = useMemo(() => {
     const q = filter.trim();
@@ -104,28 +141,18 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
     }
     setSaving(true); setError('');
     try {
-      const taxonomyResponse = await apiFetch('/api/v1/taxonomies', { headers: { Accept: 'application/json' } });
-      const taxonomy = await taxonomyResponse.json();
-      if (!taxonomyResponse.ok) throw new Error(taxonomy.message || 'تعذر تحميل تصنيفات قاعدة البيانات.');
-      const localType = archiveDB.getSiteTypes().find(item => String(item.id) === String(form.site_type_id));
-      const localPeriod = archiveDB.getHistoricalPeriods().find(item => String(item.id) === String(form.historical_period_id));
-      const localArea = archiveDB.getAreas().find(item => String(item.id) === String(form.area_id));
-      const siteType = taxonomy.site_types?.find((item: any) => item.slug === localType?.slug);
-      const period = taxonomy.historical_periods?.find((item: any) => item.slug === localPeriod?.slug);
-      const area = taxonomy.areas?.find((item: any) => item.name_ar === localArea?.name_ar);
-      const province = taxonomy.provinces?.find((item: any) => item.code === 'KHA');
-      if (!siteType || !period || !area || !province) throw new Error('تعذر مطابقة التصنيف أو المنطقة مع قاعدة البيانات.');
+      if (!taxonomies) throw new Error('تعذر تحميل خيارات قاعدة البيانات. أعد تحميل الصفحة أو تواصل مع مسؤول النظام.');
       const payload: Record<string, unknown> = {
         name_ar: form.name_ar, name_en: form.name_en, summary_ar: form.short_description,
         description_ar: form.description, historical_description: form.historical_description,
         architectural_description: form.architectural_description, cultural_significance: form.cultural_significance,
         current_condition: form.current_condition, location_description: form.location_description,
-        site_type_id: siteType.id, historical_period_id: period.id, area_id: area.id,
+        site_type_id: Number(form.site_type_id), historical_period_id: Number(form.historical_period_id), area_id: Number(form.area_id),
         location_precision: form.location_precision, latitude: form.lat, longitude: form.lng,
         is_demo: form.is_demo, featured: form.featured, ai_assisted: form.ai_assisted,
         is_lost_or_vanished: form.is_lost_or_vanished, is_under_research: form.is_under_research,
       };
-      if (!editing) payload.province_id = province.id;
+      if (!editing) payload.province_id = Number(taxonomies.province.id);
       if (editing) payload.revision_notes = reason.trim();
       const response = await apiFetch(editing ? `/api/v1/admin/sites/${editing.id}` : '/api/v1/admin/sites', {
         method: editing ? 'PUT' : 'POST',
@@ -134,7 +161,7 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.errors ? Object.values(body.errors).flat().join(' ') : body.message || `تعذر الحفظ (${response.status}).`);
-      const saved = { ...body.site, site_type: siteType, historical_period: period, area } as Site;
+      const saved = { ...body.site } as Site;
       setSites(current => editing ? current.map(site => String(site.id) === String(saved.id) ? saved : site) : [saved, ...current]);
       setForm({ ...form, ...saved, site_type_id: form.site_type_id, historical_period_id: form.historical_period_id, area_id: form.area_id, lat: Number((saved as any).latitude ?? form.lat ?? 0), lng: Number((saved as any).longitude ?? form.lng ?? 0) });
       if (!editing) {
@@ -183,25 +210,25 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
           </div>
           <div>
             <label className={labelClass}>النوع</label>
-            <select className={inputClass} value={form.site_type_id} onChange={e => set('site_type_id', e.target.value)}>
-              {archiveDB.getSiteTypes().map(t => (
+            <select className={inputClass} value={form.site_type_id || ''} disabled={loadingTaxonomies || !taxonomies} onChange={e => set('site_type_id', e.target.value)}>
+              {(taxonomies?.siteTypes || []).map(t => (
                 <option key={t.id} value={t.id}>{t.name_ar}</option>
               ))}
             </select>
           </div>
           <div>
             <label className={labelClass}>الحقبة التاريخية</label>
-            <select className={inputClass} value={form.historical_period_id} onChange={e => set('historical_period_id', e.target.value)}>
-              {archiveDB.getHistoricalPeriods().map(t => (
+            <select className={inputClass} value={form.historical_period_id || ''} disabled={loadingTaxonomies || !taxonomies} onChange={e => set('historical_period_id', e.target.value)}>
+              {(taxonomies?.periods || []).map(t => (
                 <option key={t.id} value={t.id}>{t.name_ar}</option>
               ))}
             </select>
           </div>
           <div>
             <label className={labelClass}>المنطقة</label>
-            <select className={inputClass} value={form.area_id} onChange={e => set('area_id', e.target.value)}>
-              {archiveDB.getAreas().map(t => (
-                <option key={t.id} value={t.id}>{t.name_ar}</option>
+            <select className={inputClass} value={form.area_id || ''} disabled={loadingTaxonomies || !taxonomies} onChange={e => set('area_id', e.target.value)}>
+              {(taxonomies?.areas || []).map((t: any) => (
+                <option key={t.id} value={t.id}>{t.name_ar} · {t.district_name_ar}</option>
               ))}
             </select>
           </div>
@@ -264,7 +291,7 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button type="submit" disabled={saving} className={primaryBtn + ' disabled:opacity-60'}>{saving ? 'جارٍ الحفظ…' : 'حفظ السجل'}</button>
+          <button type="submit" disabled={saving || loadingTaxonomies || !taxonomies} className={primaryBtn + ' disabled:opacity-60'}>{saving ? 'جارٍ الحفظ…' : 'حفظ السجل'}</button>
           {editing && (
             <button
               type="button"

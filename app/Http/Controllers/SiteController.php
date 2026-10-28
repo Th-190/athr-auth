@@ -238,9 +238,11 @@ class SiteController extends Controller
             return $site;
         });
 
+        $site->load(['siteType', 'historicalPeriod', 'province', 'area.subDistrict.district']);
+
         return response()->json([
             'message' => 'تم حفظ الموقع بنجاح كمسودة بانتظار التدقيق والتحقيق الميداني',
-            'site' => $site,
+            'site' => $site->makeHidden(['coordinates']),
         ], 201);
     }
 
@@ -368,9 +370,11 @@ class SiteController extends Controller
             );
         });
 
+        $updatedSite = $site->fresh(['siteType', 'historicalPeriod', 'province', 'area.subDistrict.district']);
+
         return response()->json([
             'message' => 'تم تحديث بيانات الموقع وحفظ المراجعة في السجل التاريخي',
-            'site' => $site->fresh(),
+            'site' => $updatedSite?->makeHidden(['coordinates']),
         ]);
     }
 
