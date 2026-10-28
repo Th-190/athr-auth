@@ -13,6 +13,11 @@ class MuseumArtifactPolicy
         return $this->isEditor($user);
     }
 
+    public function create(User $user): bool
+    {
+        return $this->isEditor($user);
+    }
+
     public function update(User $user, MuseumArtifact $artifact): bool
     {
         return $this->isEditor($user);

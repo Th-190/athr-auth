@@ -6,21 +6,21 @@ import { apiFetch } from './apiFetch';
 
 import { CmsConfig } from '../types/cms';
 
-async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
-  try {
-    const res = await apiFetch(path, {
-      ...init,
-      headers: {
-        Accept: 'application/json',
-        ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-        ...(init?.headers || {}),
-      },
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await apiFetch(path, {
+    ...init,
+    headers: {
+      Accept: 'application/json',
+      ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(init?.headers || {}),
+    },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const validation = body.errors ? Object.values(body.errors).flat().join(' ') : '';
+    throw new Error(validation || body.message || `تعذر الاتصال بإدارة المحتوى (${res.status}).`);
   }
+  return body as T;
 }
 
 export const cmsApi = {

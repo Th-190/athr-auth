@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { archiveDB } from '../../../db/archiveStore';
-import { CmsConfig, CmsNavItem, CmsFooterColumn } from '../../../types/cms';
+import { CmsConfig, CmsNavItem, CmsFooterColumn, mergeCmsConfig } from '../../../types/cms';
+import { cmsApi } from '../../../services/cmsApi';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
 import { Compass, Columns, Eye, EyeOff, Save, CheckCircle2, ArrowUp, ArrowDown, Plus, Trash2 } from 'lucide-react';
 
@@ -9,13 +10,21 @@ interface Props {
 }
 
 export const NavigationFooterManager: React.FC<Props> = ({ actorName }) => {
-  const [, setTick] = useState(0);
-  const refresh = () => setTick(t => t + 1);
-
-  const cms = archiveDB.getCms();
+  const [cms, setCms] = useState<CmsConfig>(() => mergeCmsConfig(archiveDB.getCms()));
   const [navItems, setNavItems] = useState<CmsNavItem[]>(cms.navigation);
   const [footerColumns, setFooterColumns] = useState<CmsFooterColumn[]>(cms.footer_columns);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    void cmsApi.getAdminCms().then(result => {
+      const loaded = mergeCmsConfig(result.cms);
+      setCms(loaded); setNavItems(loaded.navigation); setFooterColumns(loaded.footer_columns);
+    }).catch(error => setErrorMessage(error instanceof Error ? error.message : 'تعذر تحميل إعدادات التنقل.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   // Reorder Navigation Item
   const handleMoveNav = (index: number, direction: 'up' | 'down') => {
@@ -76,19 +85,19 @@ export const NavigationFooterManager: React.FC<Props> = ({ actorName }) => {
     setFooterColumns(copy);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    archiveDB.updateCms(
-      {
-        navigation: navItems,
-        footer_columns: footerColumns,
-      },
-      actorName
-    );
-
-    setStatusMessage('تم حفظ إعدادات شريط التنقل والتذييل وتحديثها على الواجهة العامة.');
-    refresh();
-    setTimeout(() => setStatusMessage(null), 4000);
+    setSaving(true); setErrorMessage('');
+    try {
+      const result = await cmsApi.saveCms({ ...cms, navigation: navItems, footer_columns: footerColumns });
+      const saved = mergeCmsConfig(result.cms);
+      archiveDB.updateCms(saved, actorName);
+      setCms(saved); setNavItems(saved.navigation); setFooterColumns(saved.footer_columns);
+      setStatusMessage(result.message || 'تم حفظ إعدادات التنقل والتذييل.');
+      setTimeout(() => setStatusMessage(null), 4000);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'تعذر حفظ إعدادات التنقل والتذييل.');
+    } finally { setSaving(false); }
   };
 
   return (
@@ -101,11 +110,14 @@ export const NavigationFooterManager: React.FC<Props> = ({ actorName }) => {
             إدارة روابط شريط الترويسة العلوي وأعمدة التذييل، وتعديل المسميات والترتيب والظهور في الموقع العام.
           </p>
         </div>
-        <button type="submit" className={primaryBtn}>
+        <button type="submit" disabled={loading || saving} className={primaryBtn + ' disabled:opacity-60'}>
           <Save className="w-4 h-4 ml-1.5" />
           حفظ التغييرات
         </button>
       </div>
+
+      {loading && <p role="status" className="text-sm text-stone-600">جارٍ تحميل الإعدادات المحفوظة…</p>}
+      {errorMessage && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{errorMessage}</p>}
 
       {statusMessage && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm flex items-center gap-2">

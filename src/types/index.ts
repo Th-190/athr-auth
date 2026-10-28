@@ -61,8 +61,8 @@ export interface Area {
   name_ar: string;
   name_en: string;
   description?: string;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface SiteType {

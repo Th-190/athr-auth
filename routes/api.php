@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClaimController;
+use App\Http\Controllers\CmsConfigController;
 use App\Http\Controllers\ContributionController;
 use App\Http\Controllers\ContentReportController;
 use App\Http\Controllers\EncyclopediaController;
@@ -30,6 +31,7 @@ Route::get('/health', HealthCheckController::class)->name('api.health');
 Route::prefix('v1')->group(function () {
     // System Health & Architecture Status
     Route::get('/health', HealthCheckController::class)->name('api.v1.health');
+    Route::get('/cms/public', [CmsConfigController::class, 'publicConfig'])->name('api.v1.cms.public');
 
     Route::post('/reports', [ContentReportController::class, 'store'])
         ->middleware('throttle:5,1')->name('api.v1.reports.store');
@@ -50,6 +52,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/filters', [HeritageEditorialController::class, 'filters'])->name('api.v1.editorial.filters');
         Route::get('/', [HeritageEditorialController::class, 'index'])->name('api.v1.editorial.index');
         Route::put('/sites/{site}', [HeritageEditorialController::class, 'updateSite'])->name('api.v1.editorial.sites.update');
+        Route::post('/artifacts', [HeritageEditorialController::class, 'storeArtifact'])->name('api.v1.editorial.artifacts.store');
         Route::put('/artifacts/{artifact}', [HeritageEditorialController::class, 'updateArtifact'])->name('api.v1.editorial.artifacts.update');
         Route::post('/{kind}/{id}/decision', [HeritageEditorialController::class, 'decide'])->name('api.v1.editorial.decision');
         Route::put('/images/{id}/rights', [MediaController::class, 'updateMetadata'])->name('api.v1.editorial.images.rights');
@@ -98,6 +101,8 @@ Route::prefix('v1')->group(function () {
     // Protected Admin & Editorial CMS Routes
     // -------------------------------------------------------------------------
     Route::prefix('admin')->middleware(['admin'])->group(function () {
+        Route::get('/cms', [CmsConfigController::class, 'show'])->name('api.v1.admin.cms.show');
+        Route::put('/cms', [CmsConfigController::class, 'update'])->name('api.v1.admin.cms.update');
         // Users & Role Management (Admin only)
         Route::get('/site-options', [SiteController::class, 'adminOptions'])->name('api.v1.admin.sites.options');
         Route::get('/reports', [ContentReportController::class, 'index'])->name('api.v1.admin.reports.index');

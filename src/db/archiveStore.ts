@@ -27,7 +27,7 @@ import {
   HistoricalPeriod,
   Tag,
 } from '../types';
-import { CmsConfig, DEFAULT_CMS_CONFIG } from '../types/cms';
+import { CmsConfig, DEFAULT_CMS_CONFIG, mergeCmsConfig } from '../types/cms';
 
 import {
   PROVINCE,
@@ -230,6 +230,15 @@ class ArchiveDatabase {
     this.state.images = mappedImages;
     this.state.museumProfiles = mappedProfiles;
     this.state.sources = [...mappedSources.values()];
+    try {
+      const chromeResponse = await fetch('/api/v1/cms/public', { headers: { Accept: 'application/json' } });
+      if (chromeResponse.ok) {
+        const chrome = await chromeResponse.json();
+        this.state.cms = mergeCmsConfig(chrome.cms);
+      }
+    } catch {
+      // Public content still loads with built-in chrome defaults if settings are unavailable.
+    }
     this.notify();
   }
 
@@ -287,14 +296,7 @@ class ArchiveDatabase {
           siteTypes: parsed.siteTypes || SITE_TYPES,
           historicalPeriods: parsed.historicalPeriods || HISTORICAL_PERIODS,
           tags: parsed.tags || INITIAL_TAGS,
-          cms: {
-            homepage: { ...DEFAULT_CMS_CONFIG.homepage, ...(parsed.cms?.homepage || {}) },
-            navigation: parsed.cms?.navigation?.length ? parsed.cms.navigation : DEFAULT_CMS_CONFIG.navigation,
-            footer_columns: parsed.cms?.footer_columns?.length
-              ? parsed.cms.footer_columns
-              : DEFAULT_CMS_CONFIG.footer_columns,
-            settings: { ...DEFAULT_CMS_CONFIG.settings, ...(parsed.cms?.settings || {}) },
-          },
+          cms: mergeCmsConfig(parsed.cms),
         };
       }
     } catch {
@@ -1304,12 +1306,7 @@ class ArchiveDatabase {
   }
 
   public updateCms(partial: Partial<CmsConfig>, actorName: string): CmsConfig {
-    this.state.cms = {
-      homepage: { ...this.state.cms.homepage, ...(partial.homepage || {}) },
-      navigation: partial.navigation || this.state.cms.navigation,
-      footer_columns: partial.footer_columns || this.state.cms.footer_columns,
-      settings: { ...this.state.cms.settings, ...(partial.settings || {}) },
-    };
+    this.state.cms = mergeCmsConfig({ ...this.state.cms, ...partial });
     this.logAudit({
       action: 'UPDATE_CMS_CONFIG',
       entity_type: 'CmsConfig',

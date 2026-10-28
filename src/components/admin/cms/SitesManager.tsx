@@ -13,7 +13,7 @@ interface Props {
 type Option = { id: string | number; name_ar: string; name_en?: string; slug?: string };
 type SiteFormTaxonomies = { siteTypes: Option[]; periods: Option[]; areas: Option[]; province: Option };
 
-const emptyForm = (taxonomies?: SiteFormTaxonomies): Partial<Site> => ({
+const emptyForm = (taxonomies?: SiteFormTaxonomies): Partial<Site> & { museum_profile?: Record<string, any> } => ({
   name_ar: '',
   name_en: '',
   short_description: '',
@@ -23,12 +23,12 @@ const emptyForm = (taxonomies?: SiteFormTaxonomies): Partial<Site> => ({
   cultural_significance: '',
   current_condition: '',
   location_description: '',
-  site_type_id: taxonomies?.siteTypes[0]?.id ? String(taxonomies.siteTypes[0].id) : '',
-  historical_period_id: taxonomies?.periods[0]?.id ? String(taxonomies.periods[0].id) : '',
-  area_id: taxonomies?.areas[0]?.id ? String(taxonomies.areas[0].id) : '',
-  lat: 32.616,
-  lng: 44.0249,
-  location_precision: 'approximate',
+  site_type_id: '',
+  historical_period_id: '',
+  area_id: '',
+  lat: null,
+  lng: null,
+  location_precision: 'unknown',
   publication_status: 'draft',
   verification_status: 'unverified',
   is_demo: false,
@@ -36,6 +36,7 @@ const emptyForm = (taxonomies?: SiteFormTaxonomies): Partial<Site> => ({
   is_lost_or_vanished: false,
   is_under_research: true,
   ai_assisted: false,
+  museum_profile: {},
 });
 
 export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
@@ -70,9 +71,9 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
           setTaxonomies(loaded);
           setForm(current => ({
             ...current,
-            site_type_id: loaded.siteTypes.some(item => String(item.id) === String(current.site_type_id)) ? String(current.site_type_id) : String(loaded.siteTypes[0].id),
-            historical_period_id: loaded.periods.some(item => String(item.id) === String(current.historical_period_id)) ? String(current.historical_period_id) : String(loaded.periods[0].id),
-            area_id: loaded.areas.some((item: any) => String(item.id) === String(current.area_id)) ? String(current.area_id) : String(loaded.areas[0].id),
+            site_type_id: loaded.siteTypes.some(item => String(item.id) === String(current.site_type_id)) ? String(current.site_type_id) : '',
+            historical_period_id: loaded.periods.some(item => String(item.id) === String(current.historical_period_id)) ? String(current.historical_period_id) : '',
+            area_id: loaded.areas.some((item: any) => String(item.id) === String(current.area_id)) ? String(current.area_id) : '',
           }));
         }
       })
@@ -109,7 +110,7 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
     if (entityId === 'new') setForm(emptyForm(taxonomies || undefined));
     else if (editing) {
       const row = editing as any;
-      setForm({ ...editing, site_type_id: String(row.site_type_id || ''), historical_period_id: String(row.historical_period_id || ''), area_id: String(row.area_id || ''), lat: Number(row.latitude ?? row.lat ?? 0), lng: Number(row.longitude ?? row.lng ?? 0) });
+      setForm({ ...editing, site_type_id: String(row.site_type_id || ''), historical_period_id: String(row.historical_period_id || ''), area_id: String(row.area_id || ''), lat: row.latitude == null && row.lat == null ? null : Number(row.latitude ?? row.lat), lng: row.longitude == null && row.lng == null ? null : Number(row.longitude ?? row.lng), museum_profile: row.museum_profile || {} } as any);
     }
   }, [entityId, editing?.id, taxonomies]);
 
@@ -122,6 +123,9 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
   }, [sites, filter]);
 
   const set = (key: keyof Site, value: unknown) => setForm(prev => ({ ...prev, [key]: value }));
+  const selectedType = taxonomies?.siteTypes.find(type => String(type.id) === String(form.site_type_id));
+  const isMuseum = selectedType?.slug === 'museums';
+  const setMuseumProfile = (key: string, value: string) => setForm(prev => ({ ...prev, museum_profile: { ...(prev as any).museum_profile, [key]: value } }));
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +152,8 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
         architectural_description: form.architectural_description, cultural_significance: form.cultural_significance,
         current_condition: form.current_condition, location_description: form.location_description,
         site_type_id: Number(form.site_type_id), historical_period_id: Number(form.historical_period_id), area_id: Number(form.area_id),
-        location_precision: form.location_precision, latitude: form.lat, longitude: form.lng,
+        location_precision: form.location_precision, latitude: form.lat ?? null, longitude: form.lng ?? null,
+        ...(isMuseum ? { museum_profile: (form as any).museum_profile || {} } : {}),
         is_demo: form.is_demo, featured: form.featured, ai_assisted: form.ai_assisted,
         is_lost_or_vanished: form.is_lost_or_vanished, is_under_research: form.is_under_research,
       };
@@ -163,7 +168,7 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
       if (!response.ok) throw new Error(body.errors ? Object.values(body.errors).flat().join(' ') : body.message || `تعذر الحفظ (${response.status}).`);
       const saved = { ...body.site } as Site;
       setSites(current => editing ? current.map(site => String(site.id) === String(saved.id) ? saved : site) : [saved, ...current]);
-      setForm({ ...form, ...saved, site_type_id: form.site_type_id, historical_period_id: form.historical_period_id, area_id: form.area_id, lat: Number((saved as any).latitude ?? form.lat ?? 0), lng: Number((saved as any).longitude ?? form.lng ?? 0) });
+      setForm({ ...form, ...saved, site_type_id: form.site_type_id, historical_period_id: form.historical_period_id, area_id: form.area_id, lat: (saved as any).latitude == null ? form.lat ?? null : Number((saved as any).latitude), lng: (saved as any).longitude == null ? form.lng ?? null : Number((saved as any).longitude) });
       if (!editing) {
         openEntity(String(saved.id));
       }
@@ -210,7 +215,8 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
           </div>
           <div>
             <label className={labelClass}>النوع</label>
-            <select className={inputClass} value={form.site_type_id || ''} disabled={loadingTaxonomies || !taxonomies} onChange={e => set('site_type_id', e.target.value)}>
+            <select required className={inputClass} value={form.site_type_id || ''} disabled={loadingTaxonomies || !taxonomies} onChange={e => set('site_type_id', e.target.value)}>
+              <option value="">اختر النوع من التصنيفات</option>
               {(taxonomies?.siteTypes || []).map(t => (
                 <option key={t.id} value={t.id}>{t.name_ar}</option>
               ))}
@@ -218,7 +224,8 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
           </div>
           <div>
             <label className={labelClass}>الحقبة التاريخية</label>
-            <select className={inputClass} value={form.historical_period_id || ''} disabled={loadingTaxonomies || !taxonomies} onChange={e => set('historical_period_id', e.target.value)}>
+            <select required className={inputClass} value={form.historical_period_id || ''} disabled={loadingTaxonomies || !taxonomies} onChange={e => set('historical_period_id', e.target.value)}>
+              <option value="">اختر الحقبة أو حالة غير محددة من التصنيف</option>
               {(taxonomies?.periods || []).map(t => (
                 <option key={t.id} value={t.id}>{t.name_ar}</option>
               ))}
@@ -226,7 +233,8 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
           </div>
           <div>
             <label className={labelClass}>المنطقة</label>
-            <select className={inputClass} value={form.area_id || ''} disabled={loadingTaxonomies || !taxonomies} onChange={e => set('area_id', e.target.value)}>
+            <select required className={inputClass} value={form.area_id || ''} disabled={loadingTaxonomies || !taxonomies} onChange={e => set('area_id', e.target.value)}>
+              <option value="">اختر المنطقة</option>
               {(taxonomies?.areas || []).map((t: any) => (
                 <option key={t.id} value={t.id}>{t.name_ar} · {t.district_name_ar}</option>
               ))}
@@ -238,6 +246,7 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
               <option value="exact">دقيقة</option>
               <option value="approximate">تقريبية</option>
               <option value="restricted">محجوبة احترازياً</option>
+              <option value="unknown">غير معلومة</option>
             </select>
           </div>
           <div>
@@ -248,6 +257,14 @@ export const SitesManager: React.FC<Props> = ({ entityId, onOpenEntity }) => {
             <label className={labelClass}>خط الطول</label>
             <input type="number" step="0.0001" className={inputClass} value={form.lng ?? ''} onChange={e => set('lng', parseFloat(e.target.value))} />
           </div>
+          {isMuseum && <div className="md:col-span-2 rounded-lg border border-amber-200 bg-amber-50/50 p-4">
+            <h2 className="mb-3 font-semibold">بيانات المؤسسة المتحفية</h2>
+            <div className="grid gap-3 md:grid-cols-2">
+              {[['operator_name','الجهة المشغلة'],['official_website','الموقع الرسمي'],['address_text','العنوان المثبت'],['founding_year','سنة التأسيس كما وردت في مصدر'],['collection_summary','ملخص المجموعات']].map(([key,title]) => <label key={key} className="space-y-1 text-sm"><span>{title}</span>{['address_text','collection_summary'].includes(key) ? <textarea rows={2} className={inputClass} value={(form as any).museum_profile?.[key] || ''} onChange={e => setMuseumProfile(key,e.target.value)} /> : <input className={inputClass} value={(form as any).museum_profile?.[key] || ''} onChange={e => setMuseumProfile(key,e.target.value)} />}</label>)}
+              <label className="space-y-1 text-sm"><span>نوع الجهة</span><select className={inputClass} value={(form as any).museum_profile?.operator_type || ''} onChange={e => setMuseumProfile('operator_type',e.target.value)}><option value="">غير محدد</option>{['shrine_run_endowment','government','private','other'].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+              <label className="space-y-1 text-sm"><span>دقة سنة التأسيس</span><select className={inputClass} value={(form as any).museum_profile?.founding_year_precision || 'unknown'} onChange={e => setMuseumProfile('founding_year_precision',e.target.value)}>{['unknown','exact','approximate','century'].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+            </div>
+          </div>}
           <div>
             <label className={labelClass}>حالة النشر</label>
             <select className={inputClass} value={form.publication_status} disabled>

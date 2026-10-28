@@ -28,6 +28,7 @@ export const HeritageEditorialManager: React.FC = () => {
   const [filters, setFilters] = useState<Filters | null>(null);
   const [rows, setRows] = useState<RecordRow[]>([]);
   const [selected, setSelected] = useState<RecordRow | null>(null);
+  const [creating, setCreating] = useState(false);
   const [citations, setCitations] = useState<Citation[]>([]);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState({ museum_id: '', site_id: '', category: '', historical_period_id: '', status: '' });
@@ -79,7 +80,10 @@ export const HeritageEditorialManager: React.FC = () => {
       const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
       data.revision_notes = revisionNotes;
       data.citations = citations as any;
-      const response = await request(`/${kind}/${selected.id}`, { method: 'PUT', body: JSON.stringify(data) });
+      const response = creating
+        ? await request('/artifacts', { method: 'POST', body: JSON.stringify(data) })
+        : await request(`/${kind}/${selected.id}`, { method: 'PUT', body: JSON.stringify(data) });
+      if (creating) setCreating(false);
       setNotice(response.message || 'تم الحفظ.'); setSelected(response.record); await loadRows();
     } catch (e) { setError(e instanceof Error ? e.message : 'فشل حفظ التعديلات.'); }
     finally { setSaving(false); }
@@ -106,11 +110,12 @@ export const HeritageEditorialManager: React.FC = () => {
   };
 
   return <section className="space-y-5" dir="rtl">
-    <header><h1 className="text-2xl font-serif font-bold">تحرير المواقع والمقتنيات</h1><p className="mt-1 text-sm text-stone-600">تعديلات وقرارات مرتبطة مباشرة بسجلات الأرشيف وسجل المراجعة.</p></header>
+    <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-2xl font-serif font-bold">تحرير المواقع والمقتنيات</h1><p className="mt-1 text-sm text-stone-600">تعديلات وقرارات مرتبطة مباشرة بسجلات الأرشيف وسجل المراجعة.</p></div>{kind === 'artifacts' && <button type="button" disabled={!museums.length} onClick={() => { setCreating(true); setCitations([]); setRevisionNotes(''); setSelected({ id: -1, title_ar: '', publication_status: 'draft', verification_status: 'unverified' }); }} className="rounded-lg bg-[#78350F] px-4 py-2 text-sm text-white disabled:opacity-50">مقتنى جديد</button>}</header>
+    {kind === 'artifacts' && !museums.length && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">لا توجد متاحف لها ملف متحفي في قاعدة البيانات؛ أنشئ ملف المتحف قبل إضافة مقتنياته.</p>}
     {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</div>}
     {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</div>}
     <div className="grid gap-3 rounded-2xl border border-stone-200 bg-white p-4 md:grid-cols-3">
-      <select className="rounded-lg border p-2" value={kind} onChange={e => { setKind(e.target.value as any); setSelected(null); setPage(1); }}><option value="sites">المواقع والمعالم</option><option value="artifacts">مقتنيات المتاحف</option></select>
+      <select className="rounded-lg border p-2" value={kind} onChange={e => { setKind(e.target.value as any); setSelected(null); setCreating(false); setPage(1); }}><option value="sites">المواقع والمعالم</option><option value="artifacts">مقتنيات المتاحف</option></select>
       <input className="rounded-lg border p-2" placeholder="بحث بالاسم أو السجل" value={query} onChange={e => { setQuery(e.target.value); setPage(1); }} />
       <select className="rounded-lg border p-2" value={filter.status} onChange={e => setFilter({ ...filter, status: e.target.value })}><option value="">كل حالات المراجعة</option>{[...(filters?.statuses.publication || []), ...(filters?.statuses.verification || [])].map(s => <option key={s}>{s}</option>)}</select>
       <select className="rounded-lg border p-2" value={filter.museum_id} onChange={e => setFilter({ ...filter, museum_id: e.target.value })}><option value="">كل المتاحف</option>{museums.map(m => <option key={m.id} value={m.id}>{selectedName(m)}</option>)}</select>
@@ -127,10 +132,12 @@ export const HeritageEditorialManager: React.FC = () => {
       <div className="rounded-2xl border border-stone-200 bg-white p-4 sm:p-6">
         {!selected ? <p className="py-12 text-center text-sm text-stone-500">اختر سجلاً لعرضه وتحريره.</p> : <>
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-xl font-semibold">{label(selected, kind)}</h2><p className="mt-1 text-xs text-stone-500">الحالة: {selected.publication_status} · التحقق: {selected.verification_status}</p></div><div className="flex flex-wrap gap-2">{[['approve','اعتماد'],['return','إعادة للتصحيح'],['reject','رفض'],['publish','نشر'],['unpublish','إلغاء النشر'],['archive','أرشفة']].map(([action,text]) => <button key={action} disabled={saving} onClick={() => void decide(action)} className="rounded-lg border border-stone-300 px-3 py-2 text-xs hover:bg-stone-100 disabled:opacity-50">{text}</button>)}</div></div>
-          <form id="heritage-editor-form" onSubmit={e => { e.preventDefault(); void save(); }} className="grid gap-3 md:grid-cols-2">{editFields.map(([field,title]) => <label key={field} className="space-y-1 text-sm"><span>{title}</span>{['description','description_en','historical_description','historical_description_en','architectural_description','architectural_description_en','current_condition','current_condition_en','location_description','location_description_en','archaeological_context'].includes(field) ? <textarea name={field} defaultValue={value(selected,field)} rows={3} className="w-full rounded-lg border p-2" /> : <input name={field} defaultValue={value(selected,field)} className="w-full rounded-lg border p-2" />}</label>)}
+          <form id="heritage-editor-form" onSubmit={e => { e.preventDefault(); void save(); }} className="grid gap-3 md:grid-cols-2">
+            {creating && <label className="space-y-1 text-sm md:col-span-2"><span>المتحف المرتبط *</span><select name="museum_site_id" required defaultValue="" className="w-full rounded-lg border p-2"><option value="" disabled>اختر متحفاً من قاعدة البيانات</option>{museums.map(m => <option key={m.id} value={m.id}>{selectedName(m)}</option>)}</select></label>}
+            {editFields.map(([field,title]) => <label key={field} className="space-y-1 text-sm"><span>{title}</span>{['description','description_en','historical_description','historical_description_en','architectural_description','architectural_description_en','current_condition','current_condition_en','location_description','location_description_en','archaeological_context'].includes(field) ? <textarea name={field} defaultValue={value(selected,field)} rows={3} required={creating && field === 'description'} className="w-full rounded-lg border p-2" /> : <input name={field} defaultValue={value(selected,field)} required={creating && field === 'title_ar'} className="w-full rounded-lg border p-2" />}</label>)}
             {kind === 'sites' && <label className="space-y-1 text-sm"><span>دقة الموقع</span><select name="location_precision" defaultValue={selected.location_precision || 'unknown'} className="w-full rounded-lg border p-2">{['exact','approximate','restricted','unknown'].map(s => <option key={s}>{s}</option>)}</select></label>}
           </form>
-          <div className="mt-5 border-t pt-4"><div className="mb-2 flex items-center justify-between"><h3 className="font-semibold">المصادر والاستشهادات</h3><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => setCitations([...citations, { source_id: Number(filters?.sources[0]?.id || 0), relevance: 'direct' }])}>إضافة مصدر</button></div>
+          <div className="mt-5 border-t pt-4"><div className="mb-2 flex items-center justify-between"><h3 className="font-semibold">المصادر والاستشهادات</h3><button type="button" disabled={!filters?.sources.length} className="rounded border px-3 py-1 text-sm disabled:opacity-50" onClick={() => setCitations([...citations, { source_id: Number(filters?.sources[0]?.id || 0), relevance: 'direct' }])}>إضافة مصدر</button></div>
             {citations.map((citation,index) => <div key={`${index}-${citation.source_id}`} className="mb-2 grid gap-2 rounded-xl bg-stone-50 p-3 md:grid-cols-[1fr_1fr_1fr_auto]"><select className="rounded border p-2" value={citation.source_id} onChange={e => setCitations(citations.map((c,i) => i === index ? {...c,source_id:Number(e.target.value)} : c))}>{(filters?.sources || []).map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</select><input aria-label="رقم الصفحة" placeholder="الصفحة" value={citation.page_reference || ''} onChange={e => setCitations(citations.map((c,i) => i === index ? {...c,page_reference:e.target.value} : c))} className="rounded border p-2"/><input aria-label="ملاحظة المحرر" placeholder="ملاحظة المحرر" value={citation.editor_note || ''} onChange={e => setCitations(citations.map((c,i) => i === index ? {...c,editor_note:e.target.value} : c))} className="rounded border p-2"/><button type="button" onClick={() => setCitations(citations.filter((_,i) => i !== index))} className="text-rose-700">حذف</button></div>)}
           </div>
           {kind === 'sites' && selected.images?.length > 0 && <div className="mt-5 border-t pt-4"><h3 className="mb-2 font-semibold">حقوق الصور</h3>{selected.images.map((image: any) => <div key={image.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 text-sm"><span>صورة #{image.id} · الحقوق: {image.rights_status} · {image.visibility ? 'ظاهرة' : 'مخفية'}</span><button type="button" disabled={saving} onClick={() => void updateRights(image)} className="rounded border px-3 py-1">{image.visibility ? 'إلغاء الإتاحة' : 'مراجعة وإتاحة'}</button></div>)}</div>}
@@ -142,7 +149,7 @@ export const HeritageEditorialManager: React.FC = () => {
               {!(selected.revisions || []).length && !(selected.verifications || []).length && <p className="text-sm text-stone-500">لا توجد مراجعات أو قرارات تحقق مسجلة لهذا السجل.</p>}
             </div>
           </details>
-          <div className="mt-5 grid gap-3 border-t pt-4"><label className="space-y-1 text-sm"><span>سبب التعديل (إلزامي لسجل المراجعة)</span><textarea value={revisionNotes} onChange={e => setRevisionNotes(e.target.value)} minLength={5} maxLength={1000} rows={2} className="w-full rounded-lg border p-2" /></label><button form="heritage-editor-form" disabled={saving || revisionNotes.trim().length < 5 || citations.length === 0} className="rounded-xl bg-[#78350F] px-5 py-3 font-semibold text-white disabled:opacity-50">{saving ? 'جارٍ الحفظ…' : 'حفظ التعديلات'}</button></div>
+          <div className="mt-5 grid gap-3 border-t pt-4"><label className="space-y-1 text-sm"><span>{creating ? 'سبب إنشاء السجل (إلزامي)' : 'سبب التعديل (إلزامي لسجل المراجعة)'}</span><textarea value={revisionNotes} onChange={e => setRevisionNotes(e.target.value)} minLength={5} maxLength={1000} rows={2} className="w-full rounded-lg border p-2" /></label><button form="heritage-editor-form" disabled={saving || revisionNotes.trim().length < 5 || citations.length === 0 || (creating && !filters?.sources.length)} className="rounded-xl bg-[#78350F] px-5 py-3 font-semibold text-white disabled:opacity-50">{saving ? 'جارٍ الحفظ…' : creating ? 'إنشاء المسودة' : 'حفظ التعديلات'}</button></div>
         </>}
       </div>
     </div>

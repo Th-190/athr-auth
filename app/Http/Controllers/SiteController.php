@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Actions\CreateAuditLogAction;
 use App\Models\Site;
 use App\Models\SiteRevision;
+use App\Models\MuseumProfile;
+use App\Models\SiteType;
 use App\Services\ArabicSearchNormalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,7 +30,7 @@ class SiteController extends Controller
 
         return response()->json(
             Site::query()
-                ->select(['id', 'name_ar', 'name_en', 'slug', 'permanent_id'])
+                ->select(['id', 'name_ar', 'name_en', 'slug', 'permanent_id', 'publication_status', 'featured', 'is_demo'])
                 ->orderBy('name_ar')
                 ->paginate($perPage)
         );
@@ -200,6 +202,17 @@ class SiteController extends Controller
             'ai_assisted' => 'sometimes|boolean',
             'is_lost_or_vanished' => 'sometimes|boolean',
             'is_under_research' => 'sometimes|boolean',
+            'museum_profile' => 'sometimes|array',
+            'museum_profile.operator_name' => 'nullable|string|max:255',
+            'museum_profile.operator_type' => 'nullable|string|max:100',
+            'museum_profile.official_website' => 'nullable|url|max:2048',
+            'museum_profile.address_text' => 'nullable|string|max:2000',
+            'museum_profile.visiting_info' => 'nullable|array',
+            'museum_profile.visiting_info_source_id' => 'nullable|integer|exists:sources,id',
+            'museum_profile.accessibility_notes' => 'nullable|string|max:4000',
+            'museum_profile.founding_year' => 'nullable|string|max:50',
+            'museum_profile.founding_year_precision' => 'nullable|in:exact,approximate,century,unknown',
+            'museum_profile.collection_summary' => 'nullable|string|max:4000',
         ]);
 
         $validated['slug'] = Str::slug($validated['name_en'] ?? $validated['name_ar']).'-'.Str::random(5);
@@ -215,11 +228,17 @@ class SiteController extends Controller
         $validated['created_by'] = $request->user()?->id;
 
         $site = DB::transaction(function () use ($validated, $request) {
+            $museumProfileData = $validated['museum_profile'] ?? [];
+            unset($validated['museum_profile']);
             $lat = $validated['latitude'] ?? null;
             $lng = $validated['longitude'] ?? null;
             unset($validated['latitude'], $validated['longitude']);
 
             $site = Site::create($validated);
+
+            if (SiteType::query()->whereKey($site->site_type_id)->where('slug', 'museums')->exists()) {
+                $site->museumProfile()->create($museumProfileData);
+            }
 
             if ($lat !== null && $lng !== null) {
                 $site->setCoordinates($lat, $lng);
@@ -271,6 +290,17 @@ class SiteController extends Controller
             'is_under_research' => 'sometimes|boolean',
             'is_demo' => 'sometimes|boolean',
             'ai_assisted' => 'sometimes|boolean',
+            'museum_profile' => 'sometimes|array',
+            'museum_profile.operator_name' => 'nullable|string|max:255',
+            'museum_profile.operator_type' => 'nullable|string|max:100',
+            'museum_profile.official_website' => 'nullable|url|max:2048',
+            'museum_profile.address_text' => 'nullable|string|max:2000',
+            'museum_profile.visiting_info' => 'nullable|array',
+            'museum_profile.visiting_info_source_id' => 'nullable|integer|exists:sources,id',
+            'museum_profile.accessibility_notes' => 'nullable|string|max:4000',
+            'museum_profile.founding_year' => 'nullable|string|max:50',
+            'museum_profile.founding_year_precision' => 'nullable|in:exact,approximate,century,unknown',
+            'museum_profile.collection_summary' => 'nullable|string|max:4000',
             'location_precision' => 'sometimes|in:exact,approximate,restricted,unknown',
             'latitude' => 'nullable|required_with:longitude|numeric|between:-90,90',
             'longitude' => 'nullable|required_with:latitude|numeric|between:-180,180',
@@ -289,6 +319,8 @@ class SiteController extends Controller
         DB::transaction(function () use ($site, $validated, $request) {
             $notes = $validated['revision_notes'];
             unset($validated['revision_notes']);
+            $museumProfileData = $validated['museum_profile'] ?? null;
+            unset($validated['museum_profile']);
 
             $lat = $validated['latitude'] ?? null;
             $lng = $validated['longitude'] ?? null;
@@ -351,6 +383,14 @@ class SiteController extends Controller
             }
 
             $site->update($validated);
+
+            if ($museumProfileData !== null) {
+                abort_unless(SiteType::query()->whereKey($site->site_type_id)->where('slug', 'museums')->exists(), 422, 'بيانات ملف المتحف لا تقبل إلا لسجل مصنف كمتحف.');
+                $profile = $site->museumProfile()->firstOrNew();
+                $profile->fill($museumProfileData);
+                $profile->save();
+                $this->auditLogAction->execute('museum_profile.updated', MuseumProfile::class, (string) $profile->id, $request->user()->name, $notes, $request->ip(), $request->user()->id);
+            }
 
             if ($lat !== null && $lng !== null) {
                 $site->setCoordinates($lat, $lng);

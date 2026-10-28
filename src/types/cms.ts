@@ -41,6 +41,7 @@ export interface CmsSiteSettings {
   contact_note: string;
   footer_copyright: string;
   allow_public_contributions: boolean;
+  seo_description: string;
 }
 
 export interface CmsConfig {
@@ -48,6 +49,17 @@ export interface CmsConfig {
   navigation: CmsNavItem[];
   footer_columns: CmsFooterColumn[];
   settings: CmsSiteSettings;
+  featured_site_ids: string[];
+}
+
+export function mergeCmsConfig(value?: Partial<CmsConfig> | null): CmsConfig {
+  return {
+    homepage: { ...DEFAULT_CMS_CONFIG.homepage, ...(value?.homepage || {}) },
+    navigation: Array.isArray(value?.navigation) ? value.navigation : DEFAULT_CMS_CONFIG.navigation,
+    footer_columns: Array.isArray(value?.footer_columns) ? value.footer_columns : DEFAULT_CMS_CONFIG.footer_columns,
+    settings: { ...DEFAULT_CMS_CONFIG.settings, ...(value?.settings || {}) },
+    featured_site_ids: Array.isArray(value?.featured_site_ids) ? value.featured_site_ids.map(String) : [],
+  };
 }
 
 export const DEFAULT_CMS_CONFIG: CmsConfig = {
@@ -113,7 +125,9 @@ export const DEFAULT_CMS_CONFIG: CmsConfig = {
     footer_copyright:
       'أثر كربلاء — الأرشيف الرقمي للتراث والآثار. جميع الحقوق المعنوية محفوظة للباحثين والمصورين والجهات الموثقة.',
     allow_public_contributions: true,
+    seo_description: 'سجل رقمي توثيقي مكرّس لحصر وتوثيق المعالم الأثرية والتاريخية في محافظة كربلاء، مسنداً بالمصادر الأكاديمية وسجلات التوثيق والمطابقة العلمية.',
   },
+  featured_site_ids: [],
 };
 
 export type AdminSection =

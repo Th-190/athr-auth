@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { archiveDB } from '../../../db/archiveStore';
-import { CmsHomepage } from '../../../types/cms';
+import { CmsConfig, CmsHomepage, mergeCmsConfig } from '../../../types/cms';
+import { cmsApi } from '../../../services/cmsApi';
+import { apiFetch } from '../../../services/apiFetch';
 import { inputClass, labelClass, primaryBtn, ghostBtn } from './formStyles';
 import { LayoutTemplate, Star, Eye, EyeOff, Save, CheckCircle2, ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -8,19 +10,44 @@ interface Props {
   actorName: string;
 }
 
+type SiteOption = { id: string; name_ar: string; permanent_id: string; publication_status: string; is_demo: boolean };
+
 export const HomepageManager: React.FC<Props> = ({ actorName }) => {
-  const [, setTick] = useState(0);
-  const refresh = () => setTick(t => t + 1);
-
-  const cms = archiveDB.getCms();
-  const allSites = archiveDB.getAllSites(true);
-
+  const [cms, setCms] = useState<CmsConfig>(() => mergeCmsConfig(archiveDB.getCms()));
   const [homepage, setHomepage] = useState<CmsHomepage>(cms.homepage);
-  const [featuredSiteIds, setFeaturedSiteIds] = useState<string[]>(
-    allSites.filter(s => s.featured).map(s => s.id)
-  );
+  const [allSites, setAllSites] = useState<SiteOption[]>([]);
+  const [featuredSiteIds, setFeaturedSiteIds] = useState<string[]>(cms.featured_site_ids);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void Promise.all([
+      cmsApi.getAdminCms(),
+      (async () => {
+        const rows: SiteOption[] = [];
+        let page = 1;
+        let lastPage = 1;
+        do {
+          const response = await apiFetch(`/api/v1/admin/site-options?per_page=500&page=${page}`, { headers: { Accept: 'application/json' } });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(body.message || `تعذر تحميل المعالم (${response.status}).`);
+          rows.push(...(body.data || []).map((row: any) => ({
+            id: String(row.id), name_ar: row.name_ar, permanent_id: row.permanent_id || String(row.id),
+            publication_status: row.publication_status, is_demo: Boolean(row.is_demo),
+          })));
+          lastPage = Number(body.last_page || 1); page += 1;
+        } while (page <= lastPage);
+        return rows;
+      })(),
+    ]).then(([config, sites]) => {
+      const loaded = mergeCmsConfig(config.cms);
+      setCms(loaded); setHomepage(loaded.homepage); setFeaturedSiteIds(loaded.featured_site_ids); setAllSites(sites);
+    }).catch(error => setErrorMessage(error instanceof Error ? error.message : 'تعذر تحميل بيانات الصفحة الرئيسية.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleToggleFeatured = (siteId: string) => {
     setFeaturedSiteIds(prev =>
@@ -42,23 +69,19 @@ export const HomepageManager: React.FC<Props> = ({ actorName }) => {
     });
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // 1. Save CMS homepage config
-    archiveDB.updateCms({ homepage }, actorName);
-
-    // 2. Update featured status and sort orders for sites
-    allSites.forEach(s => {
-      const isFeat = featuredSiteIds.includes(s.id);
-      if (s.featured !== isFeat) {
-        archiveDB.updateSite(s.id, { featured: isFeat }, 'تحديث المعالم البارزة في الصفحة الرئيسية', actorName);
-      }
-    });
-
-    setStatusMessage('تم حفظ إعدادات الصفحة الرئيسية وتحديثها على الواجهة العامة بنجاح.');
-    refresh();
-    setTimeout(() => setStatusMessage(null), 4000);
+    setSaving(true); setErrorMessage(''); setStatusMessage(null);
+    try {
+      const result = await cmsApi.saveCms({ ...cms, homepage, featured_site_ids: featuredSiteIds });
+      const saved = mergeCmsConfig(result.cms);
+      archiveDB.updateCms(saved, actorName);
+      setCms(saved); setHomepage(saved.homepage); setFeaturedSiteIds(saved.featured_site_ids);
+      setStatusMessage(result.message || 'تم حفظ إعدادات الصفحة الرئيسية.');
+      setTimeout(() => setStatusMessage(null), 4000);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'تعذر حفظ إعدادات الصفحة الرئيسية.');
+    } finally { setSaving(false); }
   };
 
   return (
@@ -71,7 +94,7 @@ export const HomepageManager: React.FC<Props> = ({ actorName }) => {
             التحكم في العناوين والوصف والشريط الإعلاني، وترتيب المعالم الشاخصة البارزة ونموذج البطل ثلاثي الأبعاد.
           </p>
         </div>
-        <button type="submit" className={primaryBtn}>
+        <button type="submit" disabled={loading || saving} className={primaryBtn + ' disabled:opacity-60'}>
           <Save className="w-4 h-4 ml-1.5" />
           حفظ التغييرات
         </button>
@@ -83,6 +106,8 @@ export const HomepageManager: React.FC<Props> = ({ actorName }) => {
           <span>{statusMessage}</span>
         </div>
       )}
+      {loading && <p role="status" className="text-sm text-stone-600">جارٍ تحميل إعدادات الصفحة والمعالم من الخادم…</p>}
+      {errorMessage && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{errorMessage}</p>}
 
       {/* Predefined Hero Section */}
       <div className="bg-white border border-[#E8E2D8] rounded-xl p-5 space-y-4">
@@ -188,7 +213,8 @@ export const HomepageManager: React.FC<Props> = ({ actorName }) => {
                     </span>
                     <div>
                       <span className="font-medium text-stone-900">{site.name_ar}</span>
-                      <span className="text-xs text-stone-500 mr-2 font-mono">({site.permanent_id})</span>
+                  <span className="text-xs text-stone-500 mr-2 font-mono">({site.permanent_id})</span>
+                  {(site.publication_status !== 'published' || site.is_demo) && <span className="mr-2 text-xs text-rose-700">غير مؤهل للنشر</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -229,7 +255,7 @@ export const HomepageManager: React.FC<Props> = ({ actorName }) => {
           <p className="text-xs font-medium text-stone-600 mb-2">إضافة من بقية سجلات الأرشيف:</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
             {allSites
-              .filter(s => !featuredSiteIds.includes(s.id))
+              .filter(s => s.publication_status === 'published' && !s.is_demo && !featuredSiteIds.includes(s.id))
               .map(s => (
                 <button
                   type="button"

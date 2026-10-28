@@ -1,20 +1,25 @@
-import { apiFetch } from '../../../services/apiFetch';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { archiveDB } from '../../../db/archiveStore';
-import { CmsSiteSettings } from '../../../types/cms';
+import { CmsConfig, CmsSiteSettings, mergeCmsConfig } from '../../../types/cms';
+import { cmsApi } from '../../../services/cmsApi';
 import { inputClass, labelClass, primaryBtn, ghostBtn } from './formStyles';
 import { Settings, Save, CheckCircle2, Globe, Mail, Shield, Sparkles } from 'lucide-react';
 
 export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) => {
-  const [, setTick] = useState(0);
-  const cms = archiveDB.getCms();
-  const [form, setForm] = useState<CmsSiteSettings>({ ...cms.settings });
-  const [seoDescription, setSeoDescription] = useState(
-    'سجل رقمي توثيقي مكرّس لحصر وتوثيق المعالم الأثرية والتاريخية في محافظة كربلاء، مسنداً بالمصادر الأكاديمية وسجلات التوثيق والمطابقة العلمية.'
-  );
+  const [cms, setCms] = useState<CmsConfig>(() => mergeCmsConfig(archiveDB.getCms()));
+  const [form, setForm] = useState<CmsSiteSettings>(cms.settings);
+  const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+
+  useEffect(() => {
+    void cmsApi.getAdminCms().then(result => {
+      const loaded = mergeCmsConfig(result.cms);
+      setCms(loaded); setForm(loaded.settings);
+    }).catch(error => setSaveError(error instanceof Error ? error.message : 'تعذر تحميل إعدادات الموقع.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,26 +31,10 @@ export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) 
     setIsSaving(true);
     setSaveError('');
     try {
-      const response = await apiFetch('/api/v1/admin/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          settings: {
-            site_name_ar: form.site_name_ar,
-            site_name_en: form.site_name_en,
-            tagline_ar: form.tagline_ar,
-            contact_email: form.contact_email,
-            contact_note: form.contact_note,
-            footer_copyright: form.footer_copyright,
-            allow_public_contributions: form.allow_public_contributions ? '1' : '0',
-            seo_description: seoDescription,
-          },
-        }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.message || `تعذر حفظ إعدادات الموقع (${response.status}).`);
-      archiveDB.updateCms({ settings: form }, actorName);
-      setTick(t => t + 1);
+      const result = await cmsApi.saveCms({ ...cms, settings: form });
+      const saved = mergeCmsConfig(result.cms);
+      archiveDB.updateCms(saved, actorName);
+      setCms(saved); setForm(saved.settings);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
       alert('تم حفظ وتحديث إعدادات الموقع بنجاح، وستنعكس فوراً على الواجهة العامة.');
@@ -71,6 +60,7 @@ export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) 
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
+        {loading && <p role="status" className="text-sm text-stone-600">جارٍ تحميل الإعدادات المحفوظة…</p>}
         {saveError && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{saveError}</div>}
         {/* General Site Identity */}
         <div className="bg-white border border-[#E8E2D8] rounded-xl p-5 space-y-4">
@@ -116,8 +106,8 @@ export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) 
             <textarea
               rows={3}
               className={inputClass}
-              value={seoDescription}
-              onChange={e => setSeoDescription(e.target.value)}
+              value={form.seo_description}
+              onChange={e => setForm({ ...form, seo_description: e.target.value })}
             />
           </div>
         </div>
@@ -190,7 +180,7 @@ export const SettingsManager: React.FC<{ actorName: string }> = ({ actorName }) 
 
         {/* Submit */}
         <div className="flex items-center gap-3 pt-2">
-          <button type="submit" disabled={isSaving} className={primaryBtn + ' flex items-center gap-2 disabled:opacity-60'}>
+          <button type="submit" disabled={isSaving || loading} className={primaryBtn + ' flex items-center gap-2 disabled:opacity-60'}>
             <Save className="w-4 h-4" />
             <span>{isSaving ? 'جارٍ الحفظ…' : 'حفظ الإعدادات'}</span>
           </button>

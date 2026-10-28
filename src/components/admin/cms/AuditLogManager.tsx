@@ -1,46 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { archiveDB } from '../../../db/archiveStore';
+import { apiFetch } from '../../../services/apiFetch';
 import { AuditLogEntry } from '../../../types';
 import { inputClass, ghostBtn } from './formStyles';
 import { Shield, Search, Filter, History, RefreshCw, Lock, Terminal } from 'lucide-react';
 
 export const AuditLogManager: React.FC = () => {
-  const [logs, setLogs] = useState<AuditLogEntry[]>(() => archiveDB.getAuditLogs());
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [entityFilter, setEntityFilter] = useState('all');
-
-  const refresh = () => {
-    setLogs(archiveDB.getAuditLogs());
-  };
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    refresh();
-  }, []);
+    let cancelled = false;
+    const params = new URLSearchParams({ page: String(page), per_page: '50' });
+    if (search.trim()) params.set('q', search.trim());
+    if (actionFilter !== 'all') params.set('action', actionFilter);
+    if (entityFilter !== 'all') params.set('entity_type', entityFilter);
+    setLoading(true); setError('');
+    void apiFetch(`/api/v1/admin/audit-logs?${params}`, { headers: { Accept: 'application/json' } })
+      .then(async response => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || `تعذر تحميل سجل التدقيق (${response.status}).`);
+        if (cancelled) return;
+        setLogs((body.data || []).map((entry: any) => ({
+          id: String(entry.id), action: entry.action, entity_type: entry.entity_type,
+          entity_id: String(entry.entity_identifier || entry.entity_id || ''),
+          performed_by: entry.actor_name || entry.user?.name || 'غير معروف',
+          ip_hash: entry.ip_hash || '', details: entry.details || '', created_at: entry.created_at || '',
+        })));
+        setLastPage(Number(body.last_page || 1));
+      })
+      .catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'تعذر تحميل سجل التدقيق.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [search, actionFilter, entityFilter, page]);
 
   const actions = Array.from(new Set(logs.map(l => l.action))).filter(Boolean);
   const entities = Array.from(new Set(logs.map(l => l.entity_type))).filter(Boolean);
 
-  const filtered = logs.filter(l => {
-    if (actionFilter !== 'all' && l.action !== actionFilter) return false;
-    if (entityFilter !== 'all' && l.entity_type !== entityFilter) return false;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      return (
-        l.performed_by.toLowerCase().includes(q) ||
-        l.action.toLowerCase().includes(q) ||
-        l.entity_type.toLowerCase().includes(q) ||
-        l.details.toLowerCase().includes(q) ||
-        l.entity_id.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const filtered = logs;
 
   const getActionBadgeClass = (action: string) => {
-    if (action.includes('DELETE')) return 'bg-rose-50 text-rose-800 border-rose-200';
-    if (action.includes('VERIFICATION')) return 'bg-purple-50 text-purple-800 border-purple-200';
-    if (action.includes('CREATE') || action.includes('SAVE') || action.includes('ADD'))
+    if (action.includes('delete') || action.includes('rejected')) return 'bg-rose-50 text-rose-800 border-rose-200';
+    if (action.includes('verification') || action.includes('verified')) return 'bg-purple-50 text-purple-800 border-purple-200';
+    if (action.includes('create') || action.includes('save') || action.includes('add'))
       return 'bg-emerald-50 text-emerald-800 border-emerald-200';
     return 'bg-amber-50 text-amber-800 border-amber-200';
   };
@@ -61,14 +68,16 @@ export const AuditLogManager: React.FC = () => {
         <div className="flex items-center gap-2">
           <div className="px-3 py-1.5 bg-stone-100 text-stone-700 text-xs rounded-lg border border-stone-200 flex items-center gap-1.5">
             <Lock className="w-3.5 h-3.5 text-stone-500" />
-            <span>سجل محمي وموثق ({filtered.length} قيد)</span>
+            <span>سجل الخادم ({filtered.length} قيد في هذه الصفحة)</span>
           </div>
-          <button onClick={refresh} className={ghostBtn + ' flex items-center gap-1 text-xs py-1.5'}>
+          <button onClick={() => setPage(1)} className={ghostBtn + ' flex items-center gap-1 text-xs py-1.5'}>
             <RefreshCw className="w-3.5 h-3.5" />
             <span>تحديث</span>
           </button>
         </div>
       </div>
+
+      {error && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
 
       {/* Filter and search */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -79,14 +88,14 @@ export const AuditLogManager: React.FC = () => {
             className={inputClass + ' pr-9'}
             placeholder="بحث بالمسؤول، الكيان، الإجراء، أو التفاصيل..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
           />
         </div>
         <div className="flex gap-2">
           <select
             className={inputClass + ' w-auto text-xs'}
             value={actionFilter}
-            onChange={e => setActionFilter(e.target.value)}
+            onChange={e => { setActionFilter(e.target.value); setPage(1); }}
           >
             <option value="all">كافة الإجراءات</option>
             {actions.map(a => (
@@ -96,7 +105,7 @@ export const AuditLogManager: React.FC = () => {
           <select
             className={inputClass + ' w-auto text-xs'}
             value={entityFilter}
-            onChange={e => setEntityFilter(e.target.value)}
+            onChange={e => { setEntityFilter(e.target.value); setPage(1); }}
           >
             <option value="all">كافة الكيانات</option>
             {entities.map(e => (
@@ -121,6 +130,7 @@ export const AuditLogManager: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E8E2D8]">
+              {loading && <tr><td colSpan={6} className="py-5 text-center text-stone-500">جارٍ تحميل السجل من الخادم…</td></tr>}
               {filtered.map(entry => (
                 <tr key={entry.id} className="hover:bg-stone-50/80 transition-colors">
                   <td className="py-3.5 px-4 font-mono text-[11px] text-stone-500 whitespace-nowrap">
@@ -147,11 +157,11 @@ export const AuditLogManager: React.FC = () => {
                     {entry.details}
                   </td>
                   <td className="py-3.5 px-4 font-mono text-[10px] text-stone-400 whitespace-nowrap">
-                    {entry.ip_hash.substring(0, 14)}...
+                    {entry.ip_hash ? `${entry.ip_hash.substring(0, 14)}…` : '—'}
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {!loading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-stone-400">
                     لا توجد قيود تدقيق مطابقة لبحثك.
@@ -161,6 +171,12 @@ export const AuditLogManager: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between text-sm text-stone-600">
+        <button type="button" className={ghostBtn} disabled={page <= 1 || loading} onClick={() => setPage(value => value - 1)}>السابق</button>
+        <span>الصفحة {page} من {lastPage}</span>
+        <button type="button" className={ghostBtn} disabled={page >= lastPage || loading} onClick={() => setPage(value => value + 1)}>التالي</button>
       </div>
     </div>
   );

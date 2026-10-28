@@ -31,7 +31,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const stats = archiveDB.getArchiveStatistics();
   const allSites = archiveDB.getAllSites(false);
-  const featuredSites = allSites.filter(s => s.featured);
+  const featuredOrder = archiveDB.getCms().featured_site_ids;
+  const featuredSites = allSites.filter(s => s.featured).sort((a, b) => {
+    const aIndex = featuredOrder.indexOf(String(a.id));
+    const bIndex = featuredOrder.indexOf(String(b.id));
+    return (aIndex < 0 ? Number.MAX_SAFE_INTEGER : aIndex) - (bIndex < 0 ? Number.MAX_SAFE_INTEGER : bIndex);
+  });
   const featuredModels = archiveDB.getFeaturedSiteModels();
 
   const recentlyReviewed = [...allSites].sort(

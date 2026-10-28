@@ -30,6 +30,7 @@ class HeritageEditorialController extends Controller
 
         return response()->json([
             'museums' => Site::query()->whereHas('siteType', fn (Builder $query) => $query->where('slug', 'museums'))
+                ->whereHas('museumProfile')
                 ->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']),
             'sites' => Site::query()->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']),
             'periods' => HistoricalPeriod::query()->orderBy('sort_order')->get(['id', 'name_ar', 'name_en']),
@@ -98,7 +99,7 @@ class HeritageEditorialController extends Controller
         }
 
         $query = Site::query()->with([
-            'siteType', 'historicalPeriod', 'province', 'area.subDistrict.district', 'names', 'sources',
+            'siteType', 'historicalPeriod', 'province', 'area.subDistrict.district', 'names', 'sources', 'museumProfile',
             'images' => fn ($builder) => $builder->orderBy('sort_order'),
             'revisions.user', 'verifications.verifier',
         ]);
@@ -290,6 +291,72 @@ class HeritageEditorialController extends Controller
         });
 
         return response()->json(['message' => 'تم حفظ تعديلات المقتنى وسجل المراجعة.', 'record' => $artifact->fresh(['source', 'sources', 'museumProfile.site'])]);
+    }
+
+    public function storeArtifact(Request $request): JsonResponse
+    {
+        Gate::authorize('create', MuseumArtifact::class);
+        $data = $request->validate([
+            'museum_site_id' => ['required', 'integer', 'exists:sites,id'],
+            'title_ar' => ['required', 'string', 'max:255'],
+            'title_en' => ['nullable', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'description_en' => ['nullable', 'string'],
+            'category' => ['nullable', 'string', 'max:150'],
+            'material' => ['nullable', 'string', 'max:255'],
+            'estimated_date' => ['nullable', 'string', 'max:255'],
+            'origin' => ['nullable', 'string', 'max:255'],
+            'archaeological_context' => ['nullable', 'string'],
+            'citations' => ['required', 'array', 'min:1'],
+            'citations.*.source_id' => ['required', 'integer', 'distinct', 'exists:sources,id'],
+            'citations.*.page_reference' => ['nullable', 'string', 'max:255'],
+            'citations.*.excerpt' => ['nullable', 'string', 'max:2000'],
+            'citations.*.editor_note' => ['nullable', 'string', 'max:2000'],
+            'citations.*.relevance' => ['nullable', 'in:direct,contextual,comparative'],
+            'revision_notes' => ['required', 'string', 'min:5', 'max:1000'],
+        ]);
+
+        $museum = Site::query()
+            ->whereKey($data['museum_site_id'])
+            ->whereHas('siteType', fn (Builder $query) => $query->where('slug', 'museums'))
+            ->whereHas('museumProfile')
+            ->firstOrFail();
+
+        $artifact = DB::transaction(function () use ($data, $museum, $request): MuseumArtifact {
+            $citations = $data['citations'];
+            $reason = $data['revision_notes'];
+            unset($data['citations'], $data['revision_notes'], $data['museum_site_id']);
+            $artifact = MuseumArtifact::create([
+                ...$data,
+                'museum_profile_id' => $museum->museumProfile->id,
+                'publication_status' => 'draft',
+                'verification_status' => 'unverified',
+            ]);
+
+            $sync = [];
+            foreach ($citations as $citation) {
+                $sourceId = $citation['source_id'];
+                unset($citation['source_id']);
+                $sync[$sourceId] = $citation;
+            }
+            $artifact->sources()->sync($sync);
+            $artifact->source_id = array_key_first($sync);
+            $artifact->save();
+
+            MuseumArtifactRevision::create([
+                'museum_artifact_id' => $artifact->id,
+                'field_name' => 'created',
+                'new_value' => json_encode(['museum_site_id' => $museum->id, 'source_ids' => array_keys($sync)], JSON_UNESCAPED_UNICODE),
+                'changed_by' => $request->user()->id,
+                'reason' => $reason,
+                'verification_status_at_time' => 'unverified',
+            ]);
+            $this->auditLogAction->execute('museum_artifact.created', MuseumArtifact::class, (string) $artifact->id, $request->user()->name, $reason, $request->ip(), $request->user()->id);
+
+            return $artifact;
+        });
+
+        return response()->json(['message' => 'أُنشئ سجل المقتنى كمسودة غير موثقة، وربط بالمتحف والمصدر المحددين.', 'record' => $artifact->fresh(['source', 'sources', 'museumProfile.site'])], 201);
     }
 
     public function decide(Request $request, string $kind, int $id): JsonResponse

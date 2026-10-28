@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../../../services/apiFetch';
-import { archiveDB } from '../../../db/archiveStore';
 import { Area, EncyclopediaEntry, HistoricalPeriod, SiteType, Source, SourceType, Tag } from '../../../types';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
 
@@ -528,7 +527,7 @@ export const AreasManager: React.FC<{ actorName: string }> = ({ actorName }) => 
     setItems((body.areas || []).map((area: any) => ({
       ...area, id: String(area.id), sub_district_id: String(area.sub_district_id),
       district_id: String(subs.find((sub: any) => sub.id === String(area.sub_district_id))?.id || ''),
-      lat: 32.616, lng: 44.0249,
+      lat: null, lng: null,
     })));
   };
   useEffect(() => { void load().catch(reason => setError(reason.message || 'تعذر تحميل المناطق.')); }, []);
@@ -568,7 +567,7 @@ export const AreasManager: React.FC<{ actorName: string }> = ({ actorName }) => 
               : 'border-transparent text-stone-500 hover:text-stone-900'
           }`}
         >
-          الوسوم والكلمات الدلالية ({archiveDB.getTags().length})
+          الوسوم والكلمات الدلالية
         </button>
       </div>
 
@@ -585,8 +584,8 @@ export const AreasManager: React.FC<{ actorName: string }> = ({ actorName }) => 
             name_ar: '',
             name_en: '',
             description: '',
-            lat: 32.616,
-            lng: 44.0249,
+            lat: null,
+            lng: null,
           })}
           onSelect={id => setForm(items.find(i => i.id === id) || null)}
           form={form && (
