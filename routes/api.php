@@ -63,6 +63,10 @@ Route::prefix('v1')->group(function () {
     Route::middleware('staff')->group(function () {
         Route::post('/admin/sites', [SiteController::class, 'store'])->name('api.v1.admin.sites.store');
         Route::put('/admin/sites/{site}', [SiteController::class, 'update'])->name('api.v1.admin.sites.update');
+        Route::post('/admin/taxonomies/types', [TaxonomyController::class, 'storeType'])->name('api.v1.staff.taxonomies.types.store');
+        Route::post('/admin/taxonomies/periods', [TaxonomyController::class, 'storePeriod'])->name('api.v1.staff.taxonomies.periods.store');
+        Route::post('/admin/taxonomies/areas', [TaxonomyController::class, 'storeArea'])->name('api.v1.staff.taxonomies.areas.store');
+        Route::post('/admin/taxonomies/tags', [TaxonomyController::class, 'storeTag'])->name('api.v1.staff.taxonomies.tags.store');
     });
 
     // Public Taxonomies

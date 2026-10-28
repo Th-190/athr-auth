@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../../../services/apiFetch';
 import { Area, EncyclopediaEntry, HistoricalPeriod, SiteType, Source, SourceType, Tag } from '../../../types';
 import { inputClass, labelClass, primaryBtn, ghostBtn, dangerBtn } from './formStyles';
+import { EditableSuggestionInput } from '../../common/EditableSuggestionInput';
 
 function slugify(value: string) {
   return value
@@ -134,14 +135,41 @@ export const EncyclopediaManager: React.FC<{ actorName: string }> = ({ actorName
           <input className={inputClass} value={form.term_en || ''} onChange={e => setForm({ ...form, term_en: e.target.value })} />
         </div>
         <div>
-          <label className={labelClass}>التصنيف</label>
-          <select className={inputClass} value={form.category} onChange={e => setForm({ ...form, category: e.target.value as EncyclopediaEntry['category'] })}>
-            <option value="architecture">عمارة</option>
-            <option value="historical_event">حدث تاريخي</option>
-            <option value="person">علم</option>
-            <option value="geography">جغرافيا</option>
-            <option value="dynasty">دولة / سلالة</option>
-          </select>
+          <EditableSuggestionInput
+            label="التصنيف الموضوعي"
+            value={
+              form.category === 'architecture' ? 'عمارة وتخطيط' :
+              form.category === 'historical_event' ? 'حدث تاريخي' :
+              form.category === 'person' ? 'علم / شخصية تاريخية' :
+              form.category === 'geography' ? 'جغرافيا ومواقع' :
+              form.category === 'dynasty' ? 'دولة / سلالة حاكمة' :
+              form.category || ''
+            }
+            onChange={val => {
+              const map: Record<string, EncyclopediaEntry['category']> = {
+                'عمارة وتخطيط': 'architecture',
+                'عمارة': 'architecture',
+                'حدث تاريخي': 'historical_event',
+                'علم / شخصية تاريخية': 'person',
+                'علم': 'person',
+                'جغرافيا ومواقع': 'geography',
+                'جغرافيا': 'geography',
+                'دولة / سلالة حاكمة': 'dynasty',
+                'سلالة': 'dynasty',
+              };
+              setForm({ ...form, category: map[val] || (val as any) });
+            }}
+            suggestions={[
+              { id: 'architecture', label: 'عمارة وتخطيط', subLabel: 'مساجد، خانات، مدارس، أسوار' },
+              { id: 'historical_event', label: 'حدث تاريخي', subLabel: 'وقائع ومعارك وتحولات كبرى' },
+              { id: 'person', label: 'علم / شخصية تاريخية', subLabel: 'علماء، رحالة، ولاة، معماريون' },
+              { id: 'geography', label: 'جغرافيا ومواقع', subLabel: 'أنهار، تلال، بوادي، طرق قديمة' },
+              { id: 'dynasty', label: 'دولة / سلالة حاكمة', subLabel: 'دول وخلافات وسلالات تاريخية' },
+              { id: 'archaeology', label: 'آثار ومكتشفات', subLabel: 'لقى، مسكوكات، تنقيبات' },
+              { id: 'manuscripts', label: 'مخطوطات ووثائق', subLabel: 'وقفيات، فرمانات، سجلات' },
+            ]}
+            placeholder="اختر أو اكتب تصنيف المادة..."
+          />
         </div>
         <div>
           <label className={labelClass}>ملخص</label>
@@ -258,10 +286,62 @@ export const SourcesManager: React.FC<{ actorName: string }> = ({ actorName }) =
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelClass}>النوع</label>
-              <select className={inputClass} value={form.source_type} onChange={e => setForm({ ...form, source_type: e.target.value as SourceType })}>
-                {SOURCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              <EditableSuggestionInput
+                label="نوع المصدر والتوثيق"
+                value={
+                  form.source_type === 'book' ? 'كتاب مطبوع' :
+                  form.source_type === 'academic_paper' ? 'بحث أكاديمي محكّم' :
+                  form.source_type === 'document' ? 'وثيقة تاريخية أو وقفية' :
+                  form.source_type === 'archive' ? 'سجل أرشيفي' :
+                  form.source_type === 'official_site' ? 'موقع رسمي حكومي' :
+                  form.source_type === 'government_record' ? 'سجل دائرة الآثار' :
+                  form.source_type === 'field_source' ? 'مصدر ميداني / استطلاع' :
+                  form.source_type === 'interview' ? 'شهادة شفوية موثقة' :
+                  form.source_type === 'historical_photo' ? 'صورة تاريخية أرشيفية' :
+                  form.source_type === 'map' ? 'خارطة أو مصور جغرافي' :
+                  form.source_type === 'press' ? 'مادة صحفية تاريخية' :
+                  form.source_type === 'other' ? 'مصدر آخر' :
+                  form.source_type || ''
+                }
+                onChange={val => {
+                  const map: Record<string, SourceType> = {
+                    'كتاب مطبوع': 'book',
+                    'كتاب': 'book',
+                    'بحث أكاديمي محكّم': 'academic_paper',
+                    'بحث أكاديمي': 'academic_paper',
+                    'وثيقة تاريخية أو وقفية': 'document',
+                    'وثيقة': 'document',
+                    'سجل أرشيفي': 'archive',
+                    'موقع رسمي حكومي': 'official_site',
+                    'سجل دائرة الآثار': 'government_record',
+                    'مصدر ميداني / استطلاع': 'field_source',
+                    'مصدر ميداني': 'field_source',
+                    'شهادة شفوية موثقة': 'interview',
+                    'صورة تاريخية أرشيفية': 'historical_photo',
+                    'خارطة أو مصور جغرافي': 'map',
+                    'خريطة': 'map',
+                    'مادة صحفية تاريخية': 'press',
+                    'صحافة': 'press',
+                    'مصدر آخر': 'other',
+                  };
+                  setForm({ ...form, source_type: map[val] || (val as any) });
+                }}
+                suggestions={[
+                  { id: 'book', label: 'كتاب مطبوع', subLabel: 'كتب تاريخية ومصادر بلدانية' },
+                  { id: 'academic_paper', label: 'بحث أكاديمي محكّم', subLabel: 'أطروحات ودراسات علمية' },
+                  { id: 'document', label: 'وثيقة تاريخية أو وقفية', subLabel: 'حجج شرعية، وقفيات، سجلات محاكم' },
+                  { id: 'archive', label: 'سجل أرشيفي', subLabel: 'وثائق الأرشيف العثماني والعراقي' },
+                  { id: 'official_site', label: 'موقع رسمي حكومي', subLabel: 'بيانات وزارية وهيئات رسمية' },
+                  { id: 'government_record', label: 'سجل دائرة الآثار', subLabel: 'تقارير مفتشية آثار كربلاء' },
+                  { id: 'field_source', label: 'مصدر ميداني / استطلاع', subLabel: 'مسح ومعاينة ميدانية مباشرة' },
+                  { id: 'interview', label: 'شهادة شفوية موثقة', subLabel: 'روايات شفوية لكبار السن والباحثين' },
+                  { id: 'historical_photo', label: 'صورة تاريخية أرشيفية', subLabel: 'صور جوية وأرشيفية قديمة' },
+                  { id: 'map', label: 'خارطة أو مصور جغرافي', subLabel: 'خرائط تاريخية ومخططات قديمة' },
+                  { id: 'press', label: 'مادة صحفية تاريخية', subLabel: 'صحف ومجلات عراقية قديمة' },
+                  { id: 'other', label: 'مصدر آخر', subLabel: 'مصادر توثيقية أخرى' },
+                ]}
+                placeholder="كتاب، وثيقة، بحث أكاديمي..."
+              />
             </div>
             <div>
               <label className={labelClass}>سنة النشر</label>
@@ -277,12 +357,32 @@ export const SourcesManager: React.FC<{ actorName: string }> = ({ actorName }) =
             <textarea className={inputClass} rows={3} value={form.excerpt || ''} onChange={e => setForm({ ...form, excerpt: e.target.value })} />
           </div>
           <div>
-            <label className={labelClass}>مستوى الموثوقية</label>
-            <select className={inputClass} value={form.reliability_level} onChange={e => setForm({ ...form, reliability_level: e.target.value as Source['reliability_level'] })}>
-              <option value="high">عالية</option>
-              <option value="medium">متوسطة</option>
-              <option value="preliminary">أولية</option>
-            </select>
+            <EditableSuggestionInput
+              label="مستوى الموثوقية التوثيقية"
+              value={
+                form.reliability_level === 'high' ? 'عالية / مصدر أكاديمي موثوق' :
+                form.reliability_level === 'medium' ? 'متوسطة / دراسة مساعدة' :
+                form.reliability_level === 'preliminary' ? 'أولية / معاينة غير مكتملة' :
+                form.reliability_level || ''
+              }
+              onChange={val => {
+                const map: Record<string, Source['reliability_level']> = {
+                  'عالية / مصدر أكاديمي موثوق': 'high',
+                  'عالية': 'high',
+                  'متوسطة / دراسة مساعدة': 'medium',
+                  'متوسطة': 'medium',
+                  'أولية / معاينة غير مكتملة': 'preliminary',
+                  'أولية': 'preliminary',
+                };
+                setForm({ ...form, reliability_level: map[val] || (val as any) });
+              }}
+              suggestions={[
+                { id: 'high', label: 'عالية / مصدر أكاديمي موثوق', subLabel: 'مصادر أولية وبحوث محكمة' },
+                { id: 'medium', label: 'متوسطة / دراسة مساعدة', subLabel: 'دراسات ومقالات مساندة' },
+                { id: 'preliminary', label: 'أولية / معاينة غير مكتملة', subLabel: 'ملاحظات استطلاعية قيد التدقيق' },
+              ]}
+              placeholder="عالية، متوسطة، أولية..."
+            />
           </div>
           <div>
             <label className={labelClass}>ملاحظات الموثوقية</label>

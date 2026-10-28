@@ -5,8 +5,12 @@ namespace App\Http\Controllers;
 use App\Actions\CreateAuditLogAction;
 use App\Models\Site;
 use App\Models\SiteRevision;
+use App\Models\Area;
+use App\Models\HistoricalPeriod;
 use App\Models\MuseumProfile;
+use App\Models\Province;
 use App\Models\SiteType;
+use App\Models\SubDistrict;
 use App\Services\ArabicSearchNormalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -179,6 +183,7 @@ class SiteController extends Controller
     public function store(Request $request): JsonResponse
     {
         Gate::authorize('create', Site::class);
+        $this->resolveDynamicTaxonomies($request);
         $validated = $request->validate([
             'name_ar' => 'required|string|max:255',
             'name_en' => 'nullable|string|max:255',
@@ -271,6 +276,7 @@ class SiteController extends Controller
     public function update(Request $request, Site $site): JsonResponse
     {
         Gate::authorize('update', $site);
+        $this->resolveDynamicTaxonomies($request);
         $validated = $request->validate([
             'name_ar' => 'sometimes|string|max:255',
             'name_en' => 'nullable|string|max:255',
@@ -652,6 +658,111 @@ class SiteController extends Controller
         $xml .= '</rss>';
 
         return response($xml, 200, ['Content-Type' => 'application/rss+xml; charset=utf-8']);
+    }
+
+    /**
+     * Resolve dynamic taxonomies, accepting string names, creating on-the-fly when authorized,
+     * and normalizing location precision and province scoping.
+     */
+    private function resolveDynamicTaxonomies(Request $request): void
+    {
+        // 1. Resolve province_id (default to Karbala if not provided)
+        if (!$request->filled('province_id')) {
+            $provinceId = Province::where('code', 'KHA')->value('id') ?? Province::first()?->id;
+            if ($provinceId) {
+                $request->merge(['province_id' => $provinceId]);
+            }
+        }
+
+        // 2. Resolve site_type_id / site_type_name
+        $siteTypeId = $request->input('site_type_id');
+        $siteTypeName = trim((string) ($request->input('site_type_name') ?? ''));
+        if (!is_numeric($siteTypeId) && filled($siteTypeId)) {
+            $siteTypeName = (string) $siteTypeId;
+        }
+
+        if (filled($siteTypeName)) {
+            $type = SiteType::where('name_ar', $siteTypeName)
+                ->orWhere('name_en', $siteTypeName)
+                ->orWhere('slug', Str::slug($siteTypeName))
+                ->first();
+            if (!$type) {
+                $type = SiteType::create([
+                    'name_ar' => $siteTypeName,
+                    'name_en' => Str::title(Str::slug($siteTypeName)) ?: $siteTypeName,
+                    'slug' => Str::slug($siteTypeName) ?: 'type-'.time(),
+                    'definition' => $siteTypeName,
+                    'is_active' => true,
+                ]);
+            }
+            $request->merge(['site_type_id' => $type->id]);
+        }
+
+        // 3. Resolve historical_period_id / historical_period_name
+        $periodId = $request->input('historical_period_id');
+        $periodName = trim((string) ($request->input('historical_period_name') ?? ''));
+        if (!is_numeric($periodId) && filled($periodId)) {
+            $periodName = (string) $periodId;
+        }
+
+        if (filled($periodName)) {
+            $period = HistoricalPeriod::where('name_ar', $periodName)
+                ->orWhere('name_en', $periodName)
+                ->orWhere('slug', Str::slug($periodName))
+                ->first();
+            if (!$period) {
+                $period = HistoricalPeriod::create([
+                    'name_ar' => $periodName,
+                    'name_en' => Str::title(Str::slug($periodName)) ?: $periodName,
+                    'slug' => Str::slug($periodName) ?: 'period-'.time(),
+                    'start_year_label' => 'غير محدد',
+                    'end_year_label' => 'غير محدد',
+                    'description' => $periodName,
+                    'is_active' => true,
+                ]);
+            }
+            $request->merge(['historical_period_id' => $period->id]);
+        }
+
+        // 4. Resolve area_id / area_name
+        $areaId = $request->input('area_id');
+        $areaName = trim((string) ($request->input('area_name') ?? ''));
+        if (!is_numeric($areaId) && filled($areaId)) {
+            $areaName = (string) $areaId;
+        }
+
+        if (filled($areaName)) {
+            $area = Area::where('name_ar', $areaName)
+                ->orWhere('name_en', $areaName)
+                ->orWhere('slug', Str::slug($areaName))
+                ->first();
+            if (!$area) {
+                $subDistrictId = $request->input('sub_district_id') ?: SubDistrict::first()?->id;
+                $area = Area::create([
+                    'name_ar' => $areaName,
+                    'name_en' => Str::title(Str::slug($areaName)) ?: $areaName,
+                    'slug' => Str::slug($areaName) ?: 'area-'.time(),
+                    'sub_district_id' => $subDistrictId,
+                    'is_active' => true,
+                ]);
+            }
+            $request->merge(['area_id' => $area->id]);
+        }
+
+        // 5. Normalize location_precision
+        if ($request->filled('location_precision')) {
+            $precision = strtolower(trim((string) $request->input('location_precision')));
+            if (str_contains($precision, 'مسح') || str_contains($precision, 'دقيق') || str_contains($precision, 'رسمي') || $precision === 'exact') {
+                $norm = 'exact';
+            } elseif (str_contains($precision, 'حجب') || str_contains($precision, 'محجوب') || $precision === 'restricted') {
+                $norm = 'restricted';
+            } elseif (str_contains($precision, 'مجهول') || str_contains($precision, 'غير معلوم') || str_contains($precision, 'غير محدد') || $precision === 'unknown') {
+                $norm = 'unknown';
+            } else {
+                $norm = 'approximate';
+            }
+            $request->merge(['location_precision' => $norm]);
+        }
     }
 }
 

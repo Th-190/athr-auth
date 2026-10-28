@@ -7,7 +7,7 @@ export type PublicationStatus = 'draft' | 'pending_review' | 'published' | 'arch
 
 export type VerificationStatus = 'verified' | 'partially_verified' | 'unverified' | 'disputed' | 'unknown';
 
-export type LocationPrecision = 'exact' | 'approximate' | 'restricted';
+export type LocationPrecision = 'exact' | 'approximate' | 'restricted' | 'unknown';
 
 export type SourceType =
   | 'book'
@@ -197,8 +197,8 @@ export interface Site {
   historical_period_id: string;
   
   // Coordinates & PostGIS Location Precision
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   location_precision: LocationPrecision;
 
   // Statuses

@@ -65,6 +65,8 @@ class TaxonomyController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        $validated['definition'] = $validated['definition'] ?? $validated['name_ar'];
+        $validated['name_en'] = $validated['name_en'] ?? $validated['name_ar'];
         $validated['slug'] = Str::slug($validated['name_en'] ?? $validated['name_ar']) ?: 'type-' . time();
         $type = SiteType::create($validated);
 
@@ -108,8 +110,8 @@ class TaxonomyController extends Controller
         $validated = $request->validate([
             'name_ar' => 'required|string|max:255',
             'name_en' => 'nullable|string|max:255',
-            'start_year_label' => 'required|string|max:100',
-            'end_year_label' => 'required|string|max:100',
+            'start_year_label' => 'nullable|string|max:100',
+            'end_year_label' => 'nullable|string|max:100',
             'start_year_numeric' => 'nullable|integer',
             'end_year_numeric' => 'nullable|integer',
             'description' => 'nullable|string',
@@ -117,6 +119,10 @@ class TaxonomyController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        $validated['start_year_label'] = $validated['start_year_label'] ?? 'غير محدد';
+        $validated['end_year_label'] = $validated['end_year_label'] ?? 'غير محدد';
+        $validated['description'] = $validated['description'] ?? $validated['name_ar'];
+        $validated['name_en'] = $validated['name_en'] ?? $validated['name_ar'];
         $validated['slug'] = Str::slug($validated['name_en'] ?? $validated['name_ar']) ?: 'period-' . time();
         $period = HistoricalPeriod::create($validated);
 
@@ -163,12 +169,14 @@ class TaxonomyController extends Controller
         $validated = $request->validate([
             'name_ar' => 'required|string|max:255',
             'name_en' => 'nullable|string|max:255',
-            'sub_district_id' => 'required|exists:sub_districts,id',
+            'sub_district_id' => 'nullable|exists:sub_districts,id',
             'description' => 'nullable|string',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
         ]);
 
+        $validated['sub_district_id'] = $validated['sub_district_id'] ?? \App\Models\SubDistrict::first()?->id;
+        $validated['name_en'] = $validated['name_en'] ?? $validated['name_ar'];
         $validated['slug'] = Str::slug($validated['name_en'] ?? $validated['name_ar']) ?: 'area-' . time();
         $area = Area::create($validated);
 
@@ -216,6 +224,7 @@ class TaxonomyController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        $validated['name_en'] = $validated['name_en'] ?? $validated['name_ar'];
         $validated['slug'] = Str::slug($validated['name_en'] ?? $validated['name_ar']) ?: 'tag-' . time();
         $tag = Tag::create($validated);
 
