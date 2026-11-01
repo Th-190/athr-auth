@@ -8,10 +8,12 @@ use App\Models\District;
 use App\Models\HistoricalPeriod;
 use App\Models\Province;
 use App\Models\SiteType;
+use App\Models\SubDistrict;
 use App\Models\Tag;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class TaxonomyController extends Controller
 {
@@ -175,7 +177,12 @@ class TaxonomyController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $validated['sub_district_id'] = $validated['sub_district_id'] ?? \App\Models\SubDistrict::first()?->id;
+        $validated['sub_district_id'] = $validated['sub_district_id'] ?? SubDistrict::query()->value('id');
+        if (!$validated['sub_district_id']) {
+            throw ValidationException::withMessages([
+                'sub_district_id' => 'لا توجد بيانات جغرافية أساسية. شغّل GeographicBaselineSeeder أولاً.',
+            ]);
+        }
         $validated['name_en'] = $validated['name_en'] ?? $validated['name_ar'];
         $validated['slug'] = Str::slug($validated['name_en'] ?? $validated['name_ar']) ?: 'area-' . time();
         $area = Area::create($validated);

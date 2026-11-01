@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SiteController extends Controller
 {
@@ -692,7 +693,6 @@ class SiteController extends Controller
                     'name_en' => Str::title(Str::slug($siteTypeName)) ?: $siteTypeName,
                     'slug' => Str::slug($siteTypeName) ?: 'type-'.time(),
                     'definition' => $siteTypeName,
-                    'is_active' => true,
                 ]);
             }
             $request->merge(['site_type_id' => $type->id]);
@@ -718,7 +718,6 @@ class SiteController extends Controller
                     'start_year_label' => 'غير محدد',
                     'end_year_label' => 'غير محدد',
                     'description' => $periodName,
-                    'is_active' => true,
                 ]);
             }
             $request->merge(['historical_period_id' => $period->id]);
@@ -738,12 +737,17 @@ class SiteController extends Controller
                 ->first();
             if (!$area) {
                 $subDistrictId = $request->input('sub_district_id') ?: SubDistrict::first()?->id;
+                if (!$subDistrictId) {
+                    throw ValidationException::withMessages([
+                        'area_id' => 'لا توجد بيانات جغرافية أساسية. يرجى تشغيل GeographicBaselineSeeder قبل إضافة معلم أو منطقة جديدة.',
+                    ]);
+                }
+
                 $area = Area::create([
                     'name_ar' => $areaName,
                     'name_en' => Str::title(Str::slug($areaName)) ?: $areaName,
                     'slug' => Str::slug($areaName) ?: 'area-'.time(),
                     'sub_district_id' => $subDistrictId,
-                    'is_active' => true,
                 ]);
             }
             $request->merge(['area_id' => $area->id]);
