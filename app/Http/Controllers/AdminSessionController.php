@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use App\Support\AdminAccess;
 use Illuminate\Http\RedirectResponse;
@@ -41,15 +42,25 @@ class AdminSessionController extends Controller
         }
 
         $user = User::with('role')->whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
-        $role = AdminAccess::roleName($user);
+        $userRole = AdminAccess::roleName($user);
+        $roleId = (int) ($user?->role_id ?? 0);
+
+        // Resolve the canonical role name from the FK if the eager-loaded
+        // relation is unavailable. Never infer privileges from numeric IDs:
+        // role IDs can differ between databases and seed orderings.
+        if ($user !== null && $userRole === '' && $roleId > 0) {
+            $userRole = strtolower(trim((string) Role::query()->whereKey($roleId)->value('name')));
+        }
+
         $designatedEmail = strtolower(trim((string) config('archive.admin_email')));
-        $allowedStaffLogin = $user !== null && match ($role) {
-            'super_admin', 'editor' => true,
+        $isSuperAdmin = $userRole === 'super_admin';
+        $isEditor = $userRole === 'editor';
+        $allowedStaffLogin = $user !== null && ($isSuperAdmin || $isEditor || match ($userRole) {
             'admin' => $designatedEmail !== ''
                 && hash_equals($designatedEmail, $email)
                 && AdminAccess::isDesignatedAdministrator($user),
             default => false,
-        };
+        });
 
         $validUser = $user !== null && $allowedStaffLogin
             && (bool) $user->is_active
