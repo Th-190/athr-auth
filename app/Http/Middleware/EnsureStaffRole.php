@@ -29,7 +29,9 @@ class EnsureStaffRole
             ], 403);
         }
 
-        $roleName = strtolower($user->role?->name ?? '');
+        $roleName = AdminAccess::isSuperAdministrator($user)
+            ? 'super_admin'
+            : AdminAccess::roleName($user);
 
         if (!in_array($roleName, ['admin', 'super_admin', 'editor'])) {
             return response()->json([

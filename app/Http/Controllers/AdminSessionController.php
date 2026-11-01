@@ -40,8 +40,8 @@ class AdminSessionController extends Controller
             ])->onlyInput('email')->setStatusCode(429));
         }
 
-        $user = User::with('role')->whereRaw('LOWER(email) = ?', [$email])->first();
-        $role = strtolower($user?->role?->name ?? '');
+        $user = User::with('role')->whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
+        $role = AdminAccess::roleName($user);
         $designatedEmail = strtolower(trim((string) config('archive.admin_email')));
         $allowedStaffLogin = $user !== null
             && ($role === 'editor'

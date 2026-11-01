@@ -6,16 +6,21 @@ use App\Models\User;
 
 class AdminAccess
 {
+    public static function roleName(?User $user): string
+    {
+        return strtolower(trim((string) $user?->role?->name));
+    }
+
     public static function isSuperAdministrator(?User $user): bool
     {
         return $user !== null
             && (bool) $user->is_active
-            && strtolower($user->role?->name ?? '') === 'super_admin';
+            && self::roleName($user) === 'super_admin';
     }
 
     public static function isDesignatedAdministrator(?User $user): bool
     {
-        if (!$user || strtolower($user->role?->name ?? '') !== 'admin') {
+        if (!$user || self::roleName($user) !== 'admin') {
             return false;
         }
 
@@ -23,13 +28,13 @@ class AdminAccess
 
         // A case-sensitive database unique index can still contain duplicate
         // normalized emails. Fail closed until that legacy data is resolved.
-        if ($designatedEmail !== '' && User::query()->whereRaw('LOWER(email) = ?', [$designatedEmail])->count() > 1) {
+        if ($designatedEmail !== '' && User::query()->whereRaw('LOWER(TRIM(email)) = ?', [$designatedEmail])->count() > 1) {
             return false;
         }
 
         // Test fixtures may use arbitrary administrator emails; production always
         // requires an exact match to the configured designation.
-        return ($designatedEmail !== '' && strtolower($user->email) === $designatedEmail)
+        return ($designatedEmail !== '' && strtolower(trim($user->email)) === $designatedEmail)
             || app()->environment('testing');
     }
 
@@ -39,7 +44,7 @@ class AdminAccess
             return false;
         }
 
-        $role = strtolower($user->role?->name ?? '');
+        $role = self::roleName($user);
 
         return $role === 'editor' || self::isSuperAdministrator($user)
             || ($role === 'admin' && self::isDesignatedAdministrator($user));
@@ -51,9 +56,9 @@ class AdminAccess
             return false;
         }
 
-        $role = strtolower($user->role?->name ?? '');
+        $role = self::roleName($user);
 
-        return $role === 'super_admin'
+        return self::isSuperAdministrator($user)
             || ($role === 'admin' && self::isDesignatedAdministrator($user));
     }
 }
