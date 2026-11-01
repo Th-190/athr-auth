@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -62,13 +63,24 @@ class AdminSessionController extends Controller
             default => false,
         });
 
-        $validUser = $user !== null && $allowedStaffLogin
-            && (bool) $user->is_active
-            && Hash::check($validated['password'], $user->password);
+        $accountIsActive = $user !== null && (bool) $user->is_active;
+        $passwordMatches = $user !== null && $allowedStaffLogin && $accountIsActive
+            ? Hash::check($validated['password'], $user->password)
+            : null;
+        $validUser = $user !== null && $allowedStaffLogin && $accountIsActive && $passwordMatches;
 
         // Editors and each active Super Admin authenticate independently. A legacy
         // admin role remains limited to the configured recovery identity.
         if (!$validUser) {
+            Log::warning('Admin login rejected', [
+                'user_id' => $user?->getKey(),
+                'role_id' => $roleId ?: null,
+                'role_name' => $userRole ?: null,
+                'account_active' => $accountIsActive,
+                'role_allowed' => $allowedStaffLogin,
+                'password_matches' => $passwordMatches,
+            ]);
+
             RateLimiter::hit($key, 60);
 
             return $this->preventCaching(back()->withErrors([
