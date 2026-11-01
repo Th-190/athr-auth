@@ -40,8 +40,8 @@ class SiteModel extends Model
         return $query->where('publication_status', PublicationStatus::PUBLISHED->value)
             ->whereNotIn('rights_status', [RightsStatus::UNKNOWN->value, RightsStatus::RESTRICTED->value])
             ->where(function ($q) {
-                $q->where('ai_assisted', false)
-                  ->orWhere('editor_approved', true);
+                $q->whereRaw('ai_assisted IS FALSE')
+                  ->orWhereRaw('editor_approved IS TRUE');
             });
     }
 }

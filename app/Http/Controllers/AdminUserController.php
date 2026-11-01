@@ -77,7 +77,7 @@ class AdminUserController extends Controller
             'super_admin_limit' => SuperAdminAccountLimit::MAX_ACTIVE,
             'active_super_admin_count' => User::query()
                 ->whereHas('role', fn ($q) => $q->where('name', 'super_admin'))
-                ->where('is_active', true)->count(),
+                ->whereRaw('is_active IS TRUE')->count(),
             'can_manage_super_admins' => strtolower($request->user()?->role?->name ?? '') === 'super_admin',
         ]);
     }
@@ -264,7 +264,7 @@ class AdminUserController extends Controller
                 SuperAdminAccountLimit::ensureAnotherUsableAccount($lockedRole, $user);
             } elseif ($roleName === 'admin' && (bool) $user->is_active) {
                 $otherAdmins = User::whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'super_admin']))
-                    ->where('is_active', true)->where('id', '!=', $user->id)->count();
+                    ->whereRaw('is_active IS TRUE')->where('id', '!=', $user->id)->count();
                 if ($otherAdmins === 0) {
                     throw ValidationException::withMessages(['account' => 'لا يمكن تعطيل آخر حساب إداري نشط.']);
                 }
@@ -392,7 +392,7 @@ class AdminUserController extends Controller
                 SuperAdminAccountLimit::ensureAnotherUsableAccount($lockedRole, $user);
             } elseif ($roleName === 'admin' && (bool) $user->is_active) {
                 $otherAdmins = User::whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'super_admin']))
-                    ->where('is_active', true)->where('id', '!=', $user->id)->count();
+                    ->whereRaw('is_active IS TRUE')->where('id', '!=', $user->id)->count();
                 if ($otherAdmins === 0) {
                     throw ValidationException::withMessages(['account' => 'لا يمكن حذف آخر حساب إداري نشط.']);
                 }

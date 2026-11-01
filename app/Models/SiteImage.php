@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
+use App\Services\SupabaseStorage;
 
 /** @method static Builder<SiteImage> publiclyUsable() */
 class SiteImage extends Model
@@ -66,7 +66,7 @@ class SiteImage extends Model
      */
     public function scopePubliclyUsable(Builder $query): Builder
     {
-        return $query->where('visibility', true)
+        return $query->whereRaw('visibility IS TRUE')
             ->whereNotNull('web_storage_path')
             ->whereNotNull('source_url')
             ->whereNotNull('rights_reviewed_by')
@@ -122,7 +122,7 @@ class SiteImage extends Model
         }
 
         try {
-            return Storage::disk('derivatives')->url($this->web_storage_path);
+            return app(SupabaseStorage::class)->publicUrl('derivatives', $this->web_storage_path);
         } catch (\Throwable) {
             return null;
         }
@@ -135,7 +135,7 @@ class SiteImage extends Model
         }
 
         try {
-            return Storage::disk('derivatives')->url($this->thumb_storage_path);
+            return app(SupabaseStorage::class)->publicUrl('derivatives', $this->thumb_storage_path);
         } catch (\Throwable) {
             return null;
         }

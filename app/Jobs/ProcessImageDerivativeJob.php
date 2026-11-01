@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Storage;
+use App\Services\SupabaseStorage;
 use App\Models\SiteImage;
 use App\Models\MediaHash;
 use RuntimeException;
@@ -31,7 +31,8 @@ class ProcessImageDerivativeJob implements ShouldQueue
             return;
         }
 
-        $source = Storage::disk('originals')->get($this->originalStoragePath);
+        $storage = app(SupabaseStorage::class);
+        $source = $storage->get('originals', $this->originalStoragePath);
         $bitmap = @imagecreatefromstring($source);
         if (!$bitmap) {
             throw new RuntimeException('Unsupported image data; derivative generation failed.');
@@ -51,7 +52,7 @@ class ProcessImageDerivativeJob implements ShouldQueue
             imagejpeg($resource, null, 84);
             $bytes = ob_get_clean();
             imagedestroy($resource);
-            if (!Storage::disk('derivatives')->put($path, $bytes)) {
+            if (!$storage->put('derivatives', $path, $bytes, 'image/jpeg', upsert: true)) {
                 throw new RuntimeException('Derivative storage failed.');
             }
             MediaHash::updateOrCreate(
@@ -60,7 +61,7 @@ class ProcessImageDerivativeJob implements ShouldQueue
             );
         }
 
-        $watermarked = $this->resizeFromBytes(Storage::disk('derivatives')->get($webPath), 1600);
+        $watermarked = $this->resizeFromBytes($storage->get('derivatives', $webPath), 1600);
         $label = 'Karbala Heritage Archive';
         $textWidth = imagefontwidth(3) * strlen($label);
         imagestring($watermarked, 3, max(8, imagesx($watermarked) - $textWidth - 12), max(8, imagesy($watermarked) - 24), $label, imagecolorallocatealpha($watermarked, 255, 255, 255, 20));
@@ -68,7 +69,7 @@ class ProcessImageDerivativeJob implements ShouldQueue
         imagejpeg($watermarked, null, 88);
         $downloadBytes = ob_get_clean();
         imagedestroy($watermarked);
-        if (!Storage::disk('downloads')->put($downloadPath, $downloadBytes)) {
+        if (!$storage->put('downloads', $downloadPath, $downloadBytes, 'image/jpeg', upsert: true)) {
             throw new RuntimeException('Private download derivative storage failed.');
         }
 
@@ -78,7 +79,7 @@ class ProcessImageDerivativeJob implements ShouldQueue
         if (!$image->hasClearedRightsForPublic()) {
             foreach ([['derivatives', $webPath], ['derivatives', $thumbPath], ['downloads', $downloadPath]] as [$disk, $path]) {
                 try {
-                    Storage::disk($disk)->delete($path);
+                    $storage->delete($disk, $path);
                 } catch (\Throwable) {
                     // A takedown must not fail open; the database still does not expose these paths.
                 }

@@ -123,7 +123,7 @@ class SiteController extends Controller
 
         // Featured only
         if ($request->boolean('featured')) {
-            $query->where('featured', true);
+            $query->whereRaw('featured IS TRUE');
         }
 
         $perPage = min(max((int) $request->input('per_page', 15), 1), 50);

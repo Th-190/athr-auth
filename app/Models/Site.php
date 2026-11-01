@@ -73,7 +73,7 @@ class Site extends Model
     public function scopePublishedAndPublic(Builder $query): Builder
     {
         return $query->where('publication_status', PublicationStatus::PUBLISHED->value ?? 'published')
-                     ->where('is_demo', false)
+                     ->whereRaw('is_demo IS FALSE')
                      ->whereNull('deleted_at');
     }
 

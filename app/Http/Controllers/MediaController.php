@@ -8,9 +8,9 @@ use App\Models\DownloadLog;
 use App\Models\MediaHash;
 use App\Models\Site;
 use App\Models\SiteImage;
+use App\Services\SupabaseStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\ProcessImageDerivativeJob;
@@ -114,7 +114,7 @@ class MediaController extends Controller
         $originalPath = "sites/{$site->slug}/original/{$ulid}.bin";
 
         try {
-            if (!Storage::disk('originals')->put($originalPath, file_get_contents($file->getRealPath()))) {
+            if (!app(SupabaseStorage::class)->put('originals', $originalPath, file_get_contents($file->getRealPath()), $realMime)) {
                 throw new \RuntimeException('Original image could not be stored.');
             }
 
@@ -152,7 +152,7 @@ class MediaController extends Controller
         } catch (\Throwable $e) {
             // Compensate if object storage succeeded but the DB transaction failed.
             try {
-                Storage::disk('originals')->delete($originalPath);
+                app(SupabaseStorage::class)->delete('originals', $originalPath);
             } catch (\Throwable $cleanupException) {
                 Log::error('Failed to remove orphaned original after media upload failure', [
                     'site_id' => $site->id,
@@ -299,14 +299,14 @@ class MediaController extends Controller
         // stops publishing their URLs first, so storage errors fail closed in API responses.
         foreach ($derivativePathsToRevoke as $path) {
             try {
-                Storage::disk('derivatives')->delete($path);
+                app(SupabaseStorage::class)->delete('derivatives', $path);
             } catch (\Throwable $e) {
                 report($e);
             }
         }
         if ($downloadPathToRevoke) {
             try {
-                Storage::disk('downloads')->delete($downloadPathToRevoke);
+                app(SupabaseStorage::class)->delete('downloads', $downloadPathToRevoke);
             } catch (\Throwable $e) {
                 report($e);
             }
@@ -361,7 +361,7 @@ class MediaController extends Controller
         $storageFailed = false;
         foreach ($derivativePaths as $path) {
             try {
-                $storageFailed = !Storage::disk('derivatives')->delete($path) || $storageFailed;
+                $storageFailed = !app(SupabaseStorage::class)->delete('derivatives', $path) || $storageFailed;
             } catch (\Throwable $e) {
                 report($e);
                 $storageFailed = true;
@@ -369,7 +369,7 @@ class MediaController extends Controller
         }
         if ($downloadPath) {
             try {
-                $storageFailed = !Storage::disk('downloads')->delete($downloadPath) || $storageFailed;
+                $storageFailed = !app(SupabaseStorage::class)->delete('downloads', $downloadPath) || $storageFailed;
             } catch (\Throwable $e) {
                 report($e);
                 $storageFailed = true;
@@ -442,8 +442,14 @@ class MediaController extends Controller
         $filename = "KHA_{$slug}_watermarked.jpg";
 
         try {
-            if ($storedPath && Storage::disk('downloads')->exists($storedPath)) {
-                return Storage::disk('downloads')->download($storedPath, $filename);
+            if ($storedPath && app(SupabaseStorage::class)->exists('downloads', $storedPath)) {
+                $contents = app(SupabaseStorage::class)->get('downloads', $storedPath);
+
+                return response()->streamDownload(
+                    static fn () => print($contents),
+                    $filename,
+                    ['Content-Type' => 'image/jpeg']
+                );
             }
         } catch (\Throwable $e) {
             report($e);
@@ -471,8 +477,8 @@ class MediaController extends Controller
                 default => [null, null],
             };
             try {
-                if ($disk && $path && Storage::disk($disk)->exists($path)
-                    && hash_equals($hash->hash_value, hash('sha256', Storage::disk($disk)->get($path)))) {
+                if ($disk && $path && app(SupabaseStorage::class)->exists($disk, $path)
+                    && hash_equals($hash->hash_value, hash('sha256', app(SupabaseStorage::class)->get($disk, $path)))) {
                     $valid++;
                 }
             } catch (\Throwable $e) {

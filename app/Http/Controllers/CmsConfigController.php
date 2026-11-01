@@ -72,7 +72,7 @@ class CmsConfigController extends Controller
 
         $featuredIds = array_map('intval', $data['featured_site_ids']);
         $eligibleCount = Site::query()->whereIn('id', $featuredIds)
-            ->where('publication_status', 'published')->where('is_demo', false)->count();
+            ->where('publication_status', 'published')->whereRaw('is_demo IS FALSE')->count();
         if ($eligibleCount !== count($featuredIds)) {
             throw ValidationException::withMessages([
                 'featured_site_ids' => ['يمكن إبراز المعالم المنشورة وغير التجريبية فقط.'],
@@ -80,7 +80,7 @@ class CmsConfigController extends Controller
         }
 
         DB::transaction(function () use ($data, $featuredIds, $request): void {
-            $sitesToUpdate = Site::query()->where('featured', true)->orWhereIn('id', $featuredIds)
+            $sitesToUpdate = Site::query()->whereRaw('featured IS TRUE')->orWhereIn('id', $featuredIds)
                 ->lockForUpdate()->get(['id', 'featured', 'verification_status']);
             foreach ($sitesToUpdate as $site) {
                 $shouldBeFeatured = in_array((int) $site->id, $featuredIds, true);

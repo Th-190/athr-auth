@@ -20,7 +20,7 @@ class SuperAdminAccountLimit
     {
         return User::query()
             ->where('role_id', $role->id)
-            ->where('is_active', true)
+            ->whereRaw('is_active IS TRUE')
             ->when($exceptUserId !== null, fn ($query) => $query->where('id', '!=', $exceptUserId))
             ->count();
     }
