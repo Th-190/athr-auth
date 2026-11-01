@@ -43,13 +43,15 @@ class AdminSessionController extends Controller
         $user = User::with('role')->whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
         $role = AdminAccess::roleName($user);
         $designatedEmail = strtolower(trim((string) config('archive.admin_email')));
-        $allowedStaffLogin = $user !== null
-            && ($role === 'editor'
-                || AdminAccess::isSuperAdministrator($user)
-                || ($role === 'admin' && $designatedEmail !== '' && hash_equals($designatedEmail, $email)
-                    && AdminAccess::isDesignatedAdministrator($user)));
+        $allowedStaffLogin = $user !== null && match ($role) {
+            'super_admin', 'editor' => true,
+            'admin' => $designatedEmail !== ''
+                && hash_equals($designatedEmail, $email)
+                && AdminAccess::isDesignatedAdministrator($user),
+            default => false,
+        };
 
-        $validUser = $user && $allowedStaffLogin
+        $validUser = $user !== null && $allowedStaffLogin
             && (bool) $user->is_active
             && Hash::check($validated['password'], $user->password);
 
