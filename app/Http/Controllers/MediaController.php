@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Jobs\ProcessImageDerivativeJob;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -149,8 +150,25 @@ class MediaController extends Controller
             });
 
         } catch (\Throwable $e) {
-            // Never claim success or fall back to instance-local storage if R2 fails.
-            try { Storage::disk('originals')->delete($originalPath); } catch (\Throwable) {}
+            // Compensate if object storage succeeded but the DB transaction failed.
+            try {
+                Storage::disk('originals')->delete($originalPath);
+            } catch (\Throwable $cleanupException) {
+                Log::error('Failed to remove orphaned original after media upload failure', [
+                    'site_id' => $site->id,
+                    'storage_path' => $originalPath,
+                    'exception' => $cleanupException::class,
+                    'message' => $cleanupException->getMessage(),
+                ]);
+            }
+
+            Log::error('Media upload failed', [
+                'site_id' => $site->id,
+                'storage_disk' => 'originals',
+                'storage_path' => $originalPath,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
             report($e);
             return response()->json(['message' => 'تعذر تخزين الصورة بأمان. يرجى المحاولة لاحقاً.'], 503);
         }
